@@ -18,7 +18,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('[AUTH] Login attempt for:', credentials?.email)
+
         if (!credentials?.email || !credentials?.password) {
+          console.log('[AUTH] Missing email or password')
           throw new Error('Email and password are required')
         }
 
@@ -26,7 +29,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email: credentials.email as string },
         })
 
+        console.log('[AUTH] User found:', user ? 'yes' : 'no')
+
         if (!user || !user.password) {
+          console.log('[AUTH] User not found or no password')
           throw new Error('Invalid email or password')
         }
 
@@ -35,7 +41,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.password
         )
 
+        console.log('[AUTH] Password valid:', isPasswordValid)
+
         if (!isPasswordValid) {
+          console.log('[AUTH] Invalid password')
           throw new Error('Invalid email or password')
         }
 
@@ -52,6 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         }
 
+        console.log('[AUTH] Login successful for:', user.email, 'role:', user.role)
         return {
           id: user.id,
           email: user.email,

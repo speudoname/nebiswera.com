@@ -36,20 +36,26 @@ function LoginContent() {
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
+        callbackUrl,
         redirect: false,
       })
 
+      console.log('SignIn result:', result)
+
       if (result?.error) {
+        console.log('SignIn error:', result.error)
         setError(errors('invalidCredentials'))
         setLoading(false)
       } else if (result?.ok) {
         // Use window.location for a full page reload to ensure session is picked up
         window.location.href = callbackUrl
       } else {
+        console.log('SignIn unexpected result:', result)
         setError(errors('somethingWrong'))
         setLoading(false)
       }
-    } catch {
+    } catch (err) {
+      console.error('SignIn exception:', err)
       setError(errors('somethingWrong'))
       setLoading(false)
     }

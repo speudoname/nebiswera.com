@@ -41,13 +41,16 @@ function LoginContent() {
 
       if (result?.error) {
         setError(errors('invalidCredentials'))
+        setLoading(false)
+      } else if (result?.ok) {
+        // Use window.location for a full page reload to ensure session is picked up
+        window.location.href = callbackUrl
       } else {
-        router.push(callbackUrl)
-        router.refresh()
+        setError(errors('somethingWrong'))
+        setLoading(false)
       }
     } catch {
       setError(errors('somethingWrong'))
-    } finally {
       setLoading(false)
     }
   }

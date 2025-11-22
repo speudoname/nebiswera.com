@@ -35,6 +35,9 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
+      cookieName: process.env.NODE_ENV === 'production'
+        ? '__Secure-authjs.session-token'
+        : 'authjs.session-token',
     })
 
     const isLoggedIn = !!token
@@ -76,7 +79,12 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token',
   })
+
+  console.log('[MIDDLEWARE] Path:', pathnameWithoutLocale, 'Token:', token ? 'exists' : 'null')
 
   const isLoggedIn = !!token
 

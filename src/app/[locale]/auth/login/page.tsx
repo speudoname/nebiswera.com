@@ -33,30 +33,17 @@ function LoginContent() {
     setLoading(true)
 
     try {
-      const result = await signIn('credentials', {
+      // Use redirect: true to let NextAuth handle the redirect properly
+      await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         callbackUrl,
-        redirect: false,
+        redirect: true,
       })
-
-      console.log('SignIn result:', result)
-
-      if (result?.error) {
-        console.log('SignIn error:', result.error)
-        setError(errors('invalidCredentials'))
-        setLoading(false)
-      } else if (result?.ok) {
-        // Use window.location for a full page reload to ensure session is picked up
-        window.location.href = callbackUrl
-      } else {
-        console.log('SignIn unexpected result:', result)
-        setError(errors('somethingWrong'))
-        setLoading(false)
-      }
     } catch (err) {
+      // If we get here, there was an error (redirect didn't happen)
       console.error('SignIn exception:', err)
-      setError(errors('somethingWrong'))
+      setError(errors('invalidCredentials'))
       setLoading(false)
     }
   }

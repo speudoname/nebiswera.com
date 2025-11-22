@@ -1,5 +1,8 @@
 import { prisma } from '@/lib/db'
 
+// Force dynamic rendering - don't try to fetch from DB at build time
+export const dynamic = 'force-dynamic'
+
 async function getStats() {
   const [totalUsers, verifiedUsers, adminUsers, recentUsers] = await Promise.all([
     prisma.user.count(),

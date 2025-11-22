@@ -3,9 +3,42 @@ import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 
+const useSecureCookies = process.env.NODE_ENV === 'production'
+const cookieDomain = process.env.NODE_ENV === 'production' ? '.nebiswera.com' : undefined
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   session: { strategy: 'jwt' },
+  cookies: {
+    sessionToken: {
+      name: useSecureCookies ? '__Secure-authjs.session-token' : 'authjs.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: cookieDomain,
+      },
+    },
+    callbackUrl: {
+      name: useSecureCookies ? '__Secure-authjs.callback-url' : 'authjs.callback-url',
+      options: {
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: cookieDomain,
+      },
+    },
+    csrfToken: {
+      name: useSecureCookies ? '__Host-authjs.csrf-token' : 'authjs.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   pages: {
     signIn: '/auth/login',
     error: '/auth/error',

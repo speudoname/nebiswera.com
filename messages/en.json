@@ -1,0 +1,168 @@
+{
+  "common": {
+    "appName": "Nebiswera",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "login": "Sign In",
+    "register": "Sign Up",
+    "logout": "Sign Out",
+    "admin": "Admin Panel"
+  },
+  "home": {
+    "title": "Welcome to Nebiswera",
+    "subtitle": "Your platform for learning and growth",
+    "getStarted": "Get Started",
+    "learnMore": "Learn More"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your account",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Start your journey with us",
+      "name": "Full Name",
+      "namePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "Confirm Password",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "passwordRequirements": "Password must be at least 8 characters"
+    },
+    "forgotPassword": {
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email and we'll send you a reset link",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send Reset Link",
+      "backToLogin": "Back to login",
+      "success": "If an account exists with that email, you will receive a password reset link."
+    },
+    "resetPassword": {
+      "title": "Reset your password",
+      "subtitle": "Enter your new password below",
+      "password": "New Password",
+      "passwordPlaceholder": "••••••••",
+      "confirmPassword": "Confirm New Password",
+      "submit": "Reset Password",
+      "success": "Your password has been reset successfully.",
+      "invalidToken": "Invalid or expired reset link. Please request a new one."
+    },
+    "verifyEmail": {
+      "title": "Verify your email",
+      "verifying": "Verifying your email...",
+      "success": "Your email has been verified!",
+      "successMessage": "You can now access all features of your account.",
+      "error": "Verification failed",
+      "errorMessage": "The verification link is invalid or has expired.",
+      "goToDashboard": "Go to Dashboard",
+      "resendLink": "Resend verification email"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailNotVerified": "Please verify your email address",
+      "emailInUse": "An account with this email already exists",
+      "weakPassword": "Password is too weak",
+      "passwordMismatch": "Passwords do not match",
+      "somethingWrong": "Something went wrong. Please try again.",
+      "sessionExpired": "Your session has expired. Please sign in again."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back, {name}!",
+    "welcomeDefault": "Welcome back!",
+    "emailVerified": "Email Verified",
+    "emailPending": "Email Pending Verification",
+    "verifyNow": "Verify Now",
+    "resendVerification": "Resend Verification Email",
+    "verificationSent": "Verification email sent!",
+    "memberSince": "Member since {date}"
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account settings",
+    "personalInfo": "Personal Information",
+    "name": "Name",
+    "email": "Email",
+    "changeEmail": "Change Email",
+    "emailChangeWarning": "Changing your email will require re-verification",
+    "security": "Security",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "preferences": "Preferences",
+    "language": "Language",
+    "languageDescription": "Choose your preferred language",
+    "accountInfo": "Account Information",
+    "createdAt": "Account Created",
+    "verificationStatus": "Verification Status",
+    "verified": "Verified",
+    "notVerified": "Not Verified",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteAccountWarning": "Once you delete your account, there is no going back. Please be certain.",
+    "deleteConfirmTitle": "Delete Account",
+    "deleteConfirmMessage": "Are you sure you want to delete your account? This action cannot be undone.",
+    "updateSuccess": "Profile updated successfully",
+    "passwordChangeSuccess": "Password changed successfully"
+  },
+  "email": {
+    "verification": {
+      "subject": "Verify your email - Nebiswera",
+      "greeting": "Welcome to Nebiswera!",
+      "message": "Thank you for signing up. Please verify your email address by clicking the button below:",
+      "button": "Verify Email",
+      "linkText": "Or copy and paste this link into your browser:",
+      "expiry": "You have 24 hours to verify your email. After that, you'll need to request a new verification link."
+    },
+    "passwordReset": {
+      "subject": "Reset your password - Nebiswera",
+      "greeting": "Password Reset Request",
+      "message": "You requested to reset your password. Click the button below to set a new password:",
+      "button": "Reset Password",
+      "linkText": "Or copy and paste this link into your browser:",
+      "expiry": "This link will expire in 1 hour. If you didn't request this, please ignore this email."
+    }
+  },
+  "languages": {
+    "en": "English",
+    "ka": "Georgian"
+  },
+  "footer": {
+    "copyright": "© {year} Nebiswera. All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact"
+  }
+}

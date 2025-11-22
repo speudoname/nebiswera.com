@@ -4,12 +4,17 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input } from '@/components/ui'
 
 function LoginContent() {
+  const t = useTranslations('auth.login')
+  const errors = useTranslations('auth.errors')
+  const common = useTranslations('common')
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const callbackUrl = searchParams.get('callbackUrl') || `/${locale}/dashboard`
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -35,13 +40,13 @@ function LoginContent() {
       })
 
       if (result?.error) {
-        setError(result.error)
+        setError(errors('invalidCredentials'))
       } else {
         router.push(callbackUrl)
         router.refresh()
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(errors('somethingWrong'))
     } finally {
       setLoading(false)
     }
@@ -50,8 +55,8 @@ function LoginContent() {
   return (
     <div className="bg-white rounded-xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-        <p className="text-gray-600 mt-2">Sign in to your account</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600 mt-2">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -65,8 +70,8 @@ function LoginContent() {
           id="email"
           name="email"
           type="email"
-          label="Email"
-          placeholder="you@example.com"
+          label={t('email')}
+          placeholder={t('emailPlaceholder')}
           value={formData.email}
           onChange={handleChange}
           required
@@ -76,8 +81,8 @@ function LoginContent() {
           id="password"
           name="password"
           type="password"
-          label="Password"
-          placeholder="••••••••"
+          label={t('password')}
+          placeholder={t('passwordPlaceholder')}
           value={formData.password}
           onChange={handleChange}
           required
@@ -85,22 +90,22 @@ function LoginContent() {
 
         <div className="flex items-center justify-end">
           <Link
-            href="/auth/forgot-password"
+            href={`/${locale}/auth/forgot-password`}
             className="text-sm text-indigo-600 hover:text-indigo-500"
           >
-            Forgot password?
+            {t('forgotPassword')}
           </Link>
         </div>
 
         <Button type="submit" className="w-full" loading={loading}>
-          Sign In
+          {t('submit')}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-600">
-        Don&apos;t have an account?{' '}
-        <Link href="/auth/register" className="text-indigo-600 hover:text-indigo-500 font-medium">
-          Sign up
+        {t('noAccount')}{' '}
+        <Link href={`/${locale}/auth/register`} className="text-indigo-600 hover:text-indigo-500 font-medium">
+          {t('signUp')}
         </Link>
       </p>
     </div>
@@ -108,11 +113,13 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
+  const common = useTranslations('common')
+
   return (
     <Suspense fallback={
       <div className="bg-white rounded-xl shadow-xl p-8 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-gray-900">Loading...</h1>
+        <h1 className="text-xl font-semibold text-gray-900">{common('loading')}</h1>
       </div>
     }>
       <LoginContent />

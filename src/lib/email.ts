@@ -1,14 +1,34 @@
 import * as postmark from 'postmark'
+import { prisma } from '@/lib/db'
+import { getSettings } from '@/lib/settings'
+import { EmailType } from '@prisma/client'
 
-const client = new postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN!)
+async function getEmailClient() {
+  const settings = await getSettings()
 
-export async function sendVerificationEmail(email: string, token: string) {
+  if (!settings.postmarkServerToken) {
+    throw new Error('Postmark server token not configured. Please configure it in Admin > Settings.')
+  }
+
+  return {
+    client: new postmark.ServerClient(settings.postmarkServerToken),
+    fromAddress: settings.emailFromAddress || 'noreply@nebiswera.com',
+    fromName: settings.emailFromName,
+    streamName: settings.postmarkStreamName,
+  }
+}
+
+export async function sendVerificationEmail(email: string, token: string, locale: string = 'en') {
   const verificationUrl = `${process.env.NEXTAUTH_URL}/auth/verify-email?token=${token}`
+  const subject = 'Verify your email - Nebiswera'
 
-  await client.sendEmail({
-    From: process.env.EMAIL_FROM!,
+  const { client, fromAddress, fromName, streamName } = await getEmailClient()
+
+  const result = await client.sendEmail({
+    From: `${fromName} <${fromAddress}>`,
     To: email,
-    Subject: 'Verify your email - Nebiswera',
+    Subject: subject,
+    MessageStream: streamName,
     HtmlBody: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #6366f1;">Welcome to Nebiswera!</h1>
@@ -37,15 +57,32 @@ export async function sendVerificationEmail(email: string, token: string) {
       You have 24 hours to verify your email.
     `,
   })
+
+  // Log the email
+  await prisma.emailLog.create({
+    data: {
+      messageId: result.MessageID,
+      to: email,
+      subject,
+      type: EmailType.VERIFICATION,
+      locale,
+    },
+  })
+
+  return result
 }
 
-export async function sendPasswordResetEmail(email: string, token: string) {
+export async function sendPasswordResetEmail(email: string, token: string, locale: string = 'en') {
   const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`
+  const subject = 'Reset your password - Nebiswera'
 
-  await client.sendEmail({
-    From: process.env.EMAIL_FROM!,
+  const { client, fromAddress, fromName, streamName } = await getEmailClient()
+
+  const result = await client.sendEmail({
+    From: `${fromName} <${fromAddress}>`,
     To: email,
-    Subject: 'Reset your password - Nebiswera',
+    Subject: subject,
+    MessageStream: streamName,
     HtmlBody: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #6366f1;">Password Reset Request</h1>
@@ -74,4 +111,17 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       This link will expire in 1 hour. If you didn't request this, please ignore this email.
     `,
   })
+
+  // Log the email
+  await prisma.emailLog.create({
+    data: {
+      messageId: result.MessageID,
+      to: email,
+      subject,
+      type: EmailType.PASSWORD_RESET,
+      locale,
+    },
+  })
+
+  return result
 }

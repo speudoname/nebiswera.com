@@ -23,6 +23,7 @@ model User {
   emailVerificationSentAt DateTime? // When verification email was sent
   image                   String?
   role                    Role      @default(USER)
+  preferredLocale         String    @default("ka") // ka = Georgian, en = English
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -86,4 +87,59 @@ enum Role {
 enum TokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+}
+
+enum EmailType {
+  VERIFICATION
+  PASSWORD_RESET
+  WELCOME
+}
+
+enum EmailStatus {
+  SENT
+  DELIVERED
+  BOUNCED
+  SPAM_COMPLAINT
+  OPENED
+}
+
+// ===========================================
+// Email Logging
+// ===========================================
+
+model EmailLog {
+  id          String      @id @default(cuid())
+  messageId   String      @unique
+  to          String
+  subject     String
+  type        EmailType
+  status      EmailStatus @default(SENT)
+  locale      String      @default("en")
+  sentAt      DateTime    @default(now())
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  bouncedAt   DateTime?
+  bounceType  String?
+  metadata    Json?
+
+  @@map("email_logs")
+}
+
+// ===========================================
+// Application Settings
+// ===========================================
+
+model Settings {
+  id        String   @id @default("app_settings")
+
+  // Postmark Configuration
+  postmarkServerToken String?
+  postmarkStreamName  String   @default("outbound")
+  emailFromAddress    String?
+  emailFromName       String   @default("Nebiswera")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }

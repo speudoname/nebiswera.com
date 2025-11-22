@@ -4,9 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input } from '@/components/ui'
 
 export default function RegisterPage() {
+  const t = useTranslations('auth.register')
+  const errors = useTranslations('auth.errors')
+  const locale = useLocale()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -27,12 +31,12 @@ export default function RegisterPage() {
     setError('')
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError(errors('passwordMismatch'))
       return
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(t('passwordRequirements'))
       return
     }
 
@@ -46,13 +50,14 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          locale,
         }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Registration failed')
+        setError(data.error === 'Email already registered' ? errors('emailInUse') : data.error || errors('somethingWrong'))
         setLoading(false)
         return
       }
@@ -65,13 +70,12 @@ export default function RegisterPage() {
       })
 
       if (result?.error) {
-        setError('Registration successful but login failed. Please try logging in.')
-        router.push('/auth/login')
+        router.push(`/${locale}/auth/login`)
       } else {
-        router.push('/dashboard')
+        router.push(`/${locale}/dashboard`)
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(errors('somethingWrong'))
     } finally {
       setLoading(false)
     }
@@ -80,8 +84,8 @@ export default function RegisterPage() {
   return (
     <div className="bg-white rounded-xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
-        <p className="text-gray-600 mt-2">Join Nebiswera today</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600 mt-2">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -95,8 +99,8 @@ export default function RegisterPage() {
           id="name"
           name="name"
           type="text"
-          label="Full Name"
-          placeholder="John Doe"
+          label={t('name')}
+          placeholder={t('namePlaceholder')}
           value={formData.name}
           onChange={handleChange}
         />
@@ -105,8 +109,8 @@ export default function RegisterPage() {
           id="email"
           name="email"
           type="email"
-          label="Email"
-          placeholder="you@example.com"
+          label={t('email')}
+          placeholder={t('emailPlaceholder')}
           value={formData.email}
           onChange={handleChange}
           required
@@ -116,8 +120,8 @@ export default function RegisterPage() {
           id="password"
           name="password"
           type="password"
-          label="Password"
-          placeholder="••••••••"
+          label={t('password')}
+          placeholder={t('passwordPlaceholder')}
           value={formData.password}
           onChange={handleChange}
           required
@@ -127,22 +131,22 @@ export default function RegisterPage() {
           id="confirmPassword"
           name="confirmPassword"
           type="password"
-          label="Confirm Password"
-          placeholder="••••••••"
+          label={t('confirmPassword')}
+          placeholder={t('passwordPlaceholder')}
           value={formData.confirmPassword}
           onChange={handleChange}
           required
         />
 
         <Button type="submit" className="w-full" loading={loading}>
-          Create Account
+          {t('submit')}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-600">
-        Already have an account?{' '}
-        <Link href="/auth/login" className="text-indigo-600 hover:text-indigo-500 font-medium">
-          Sign in
+        {t('hasAccount')}{' '}
+        <Link href={`/${locale}/auth/login`} className="text-indigo-600 hover:text-indigo-500 font-medium">
+          {t('signIn')}
         </Link>
       </p>
     </div>

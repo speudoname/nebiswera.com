@@ -1,13 +1,19 @@
 import { redirect } from 'next/navigation'
+import { getLocale, getTranslations } from 'next-intl/server'
+import Link from 'next/link'
 import { auth, signOut } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner'
+import { LanguageSwitcherDark } from '@/components/LanguageSwitcher'
 
 export default async function DashboardPage() {
+  const locale = await getLocale()
+  const t = await getTranslations('dashboard')
+  const nav = await getTranslations('nav')
   const session = await auth()
 
   if (!session?.user) {
-    redirect('/auth/login')
+    redirect(`/${locale}/auth/login`)
   }
 
   // Get full user data including verification status
@@ -18,12 +24,18 @@ export default async function DashboardPage() {
       name: true,
       emailVerified: true,
       emailVerificationSentAt: true,
+      role: true,
+      createdAt: true,
     },
   })
 
   if (!user) {
-    redirect('/auth/login')
+    redirect(`/${locale}/auth/login`)
   }
+
+  const welcomeMessage = user.name
+    ? t('welcome', { name: user.name })
+    : t('welcomeDefault')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -31,10 +43,27 @@ export default async function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <span className="text-xl font-bold text-indigo-600">Nebiswera</span>
+              <Link href={`/${locale}`} className="text-xl font-bold text-indigo-600">
+                Nebiswera
+              </Link>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-gray-700">{user.email}</span>
+              <LanguageSwitcherDark />
+              {user.role === 'ADMIN' && (
+                <Link
+                  href="/admin"
+                  className="text-gray-600 hover:text-gray-900 text-sm"
+                >
+                  {nav('admin')}
+                </Link>
+              )}
+              <Link
+                href={`/${locale}/profile`}
+                className="text-gray-600 hover:text-gray-900 text-sm"
+              >
+                {nav('profile')}
+              </Link>
+              <span className="text-gray-700 text-sm">{user.email}</span>
               <form
                 action={async () => {
                   'use server'
@@ -43,9 +72,9 @@ export default async function DashboardPage() {
               >
                 <button
                   type="submit"
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 text-sm"
                 >
-                  Sign out
+                  {nav('logout')}
                 </button>
               </form>
             </div>
@@ -64,11 +93,20 @@ export default async function DashboardPage() {
 
           <div className="bg-white shadow rounded-lg p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome{user.name ? `, ${user.name}` : ''}!
+              {welcomeMessage}
             </h1>
-            <p className="text-gray-600">
-              This is your dashboard. More features coming soon.
-            </p>
+
+            <div className="flex items-center gap-2 mb-4">
+              {user.emailVerified ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  {t('emailVerified')}
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  {t('emailPending')}
+                </span>
+              )}
+            </div>
 
             <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <div className="bg-indigo-50 overflow-hidden shadow rounded-lg">

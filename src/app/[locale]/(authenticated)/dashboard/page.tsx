@@ -36,7 +36,7 @@ export default async function DashboardPage() {
         )}
 
         <Card padding="lg">
-          <h1 className="text-2xl font-bold text-text-primary mb-4">
+          <h1 className="mb-4">
             {welcomeMessage}
           </h1>
 
@@ -59,10 +59,10 @@ export default async function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-text-secondary truncate">
+                      <dt className="text-body-sm font-medium text-secondary truncate">
                         {t('myCourses')}
                       </dt>
-                      <dd className="text-lg font-medium text-text-primary">0</dd>
+                      <dd className="text-lg font-medium">0</dd>
                     </dl>
                   </div>
                 </div>
@@ -79,10 +79,10 @@ export default async function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-text-secondary truncate">
+                      <dt className="text-body-sm font-medium text-secondary truncate">
                         {t('completed')}
                       </dt>
-                      <dd className="text-lg font-medium text-text-primary">0</dd>
+                      <dd className="text-lg font-medium">0</dd>
                     </dl>
                   </div>
                 </div>
@@ -99,10 +99,10 @@ export default async function DashboardPage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-text-secondary truncate">
+                      <dt className="text-body-sm font-medium text-secondary truncate">
                         {t('purchases')}
                       </dt>
-                      <dd className="text-lg font-medium text-text-primary">0</dd>
+                      <dd className="text-lg font-medium">0</dd>
                     </dl>
                   </div>
                 </div>

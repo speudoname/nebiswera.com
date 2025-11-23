@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-secondary-100 text-secondary-600 shadow-neu-sm mb-4">
           <Mail className="w-7 h-7" />
         </div>
-        <h1 className="text-xl font-semibold text-text-primary mb-4">{t('success')}</h1>
+        <h3 className="mb-4">{t('success')}</h3>
         <Link href={`/${locale}/auth/login`}>
           <Button variant="outline" leftIcon={ArrowLeft}>
             {t('backToLogin')}
@@ -63,12 +63,12 @@ export default function ForgotPasswordPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
           <KeyRound className="w-7 h-7" />
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
-        <p className="text-text-secondary mt-2">{t('subtitle')}</p>
+        <h2 className="no-margin">{t('title')}</h2>
+        <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-sm">
+        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-body-sm">
           {error}
         </div>
       )}
@@ -90,8 +90,8 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p className="mt-8 text-center">
-        <Link href={`/${locale}/auth/login`} className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors inline-flex items-center gap-1">
+      <p className="mt-8 text-center no-margin">
+        <Link href={`/${locale}/auth/login`} className="text-body-sm inline-flex items-center gap-1">
           <ArrowLeft className="w-4 h-4" />
           {t('backToLogin')}
         </Link>

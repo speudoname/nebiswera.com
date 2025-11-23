@@ -79,7 +79,7 @@ function ResetPasswordContent() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
           <XCircle className="w-7 h-7" />
         </div>
-        <h1 className="text-xl font-semibold text-text-primary mb-4">{t('invalidToken')}</h1>
+        <h3 className="mb-4">{t('invalidToken')}</h3>
         <Link href={`/${locale}/auth/forgot-password`}>
           <Button>{t('submit')}</Button>
         </Link>
@@ -93,12 +93,12 @@ function ResetPasswordContent() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
           <KeyRound className="w-7 h-7" />
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
-        <p className="text-text-secondary mt-2">{t('subtitle')}</p>
+        <h2 className="no-margin">{t('title')}</h2>
+        <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-sm">
+        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-body-sm">
           {error}
         </div>
       )}
@@ -143,7 +143,7 @@ export default function ResetPasswordPage() {
         <div className="flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm mx-auto mb-4">
           <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
         </div>
-        <h1 className="text-xl font-semibold text-text-primary">{common('loading')}</h1>
+        <h3 className="no-margin">{common('loading')}</h3>
       </Card>
     }>
       <ResetPasswordContent />

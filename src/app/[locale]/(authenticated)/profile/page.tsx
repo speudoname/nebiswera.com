@@ -163,8 +163,8 @@ export default function ProfilePage() {
   return (
     <main className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
-        <p className="text-text-secondary mt-1">{t('subtitle')}</p>
+        <h1 className="no-margin">{t('title')}</h1>
+        <p className="text-secondary mt-1 no-margin">{t('subtitle')}</p>
       </div>
 
       {message && (
@@ -182,7 +182,7 @@ export default function ProfilePage() {
       {/* Personal Information */}
       <Card className="mb-6">
         <div className="px-6 py-4 border-b border-neu-dark/20">
-          <h2 className="text-lg font-semibold text-text-primary">{t('personalInfo')}</h2>
+          <h3 className="no-margin">{t('personalInfo')}</h3>
         </div>
         <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
           <Input
@@ -193,7 +193,7 @@ export default function ProfilePage() {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
+            <label className="block text-body-sm font-medium mb-1">
               {t('email')}
             </label>
             <input
@@ -214,11 +214,11 @@ export default function ProfilePage() {
       {/* Language Preferences */}
       <Card className="mb-6">
         <div className="px-6 py-4 border-b border-neu-dark/20">
-          <h2 className="text-lg font-semibold text-text-primary">{t('preferences')}</h2>
+          <h3 className="no-margin">{t('preferences')}</h3>
         </div>
         <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
+            <label className="block text-body-sm font-medium mb-1">
               {t('language')}
             </label>
             <select
@@ -229,7 +229,7 @@ export default function ProfilePage() {
               <option value="ka">{languages('ka')}</option>
               <option value="en">{languages('en')}</option>
             </select>
-            <p className="text-xs text-text-muted mt-1">{t('languageDescription')}</p>
+            <p className="text-caption text-muted mt-1 no-margin">{t('languageDescription')}</p>
           </div>
           <div className="flex justify-end">
             <Button type="submit" loading={saving} loadingText={common('loading')}>
@@ -242,7 +242,7 @@ export default function ProfilePage() {
       {/* Security */}
       <Card className="mb-6">
         <div className="px-6 py-4 border-b border-neu-dark/20">
-          <h2 className="text-lg font-semibold text-text-primary">{t('security')}</h2>
+          <h3 className="no-margin">{t('security')}</h3>
         </div>
         <form onSubmit={handleChangePassword} className="px-6 py-4 space-y-4">
           <Input
@@ -280,18 +280,18 @@ export default function ProfilePage() {
       {/* Account Info */}
       <Card className="mb-6">
         <div className="px-6 py-4 border-b border-neu-dark/20">
-          <h2 className="text-lg font-semibold text-text-primary">{t('accountInfo')}</h2>
+          <h3 className="no-margin">{t('accountInfo')}</h3>
         </div>
         <div className="px-6 py-4 space-y-3">
           <div className="flex justify-between">
-            <span className="text-sm text-text-secondary">{t('createdAt')}</span>
-            <span className="text-sm text-text-primary">
+            <span className="text-body-sm text-secondary">{t('createdAt')}</span>
+            <span className="text-body-sm">
               {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-text-secondary">{t('verificationStatus')}</span>
-            <span className={`text-sm ${user?.emailVerified ? 'text-secondary-600' : 'text-primary-600'}`}>
+            <span className="text-body-sm text-secondary">{t('verificationStatus')}</span>
+            <span className={`text-body-sm ${user?.emailVerified ? 'text-secondary-600' : 'text-primary-600'}`}>
               {user?.emailVerified ? t('verified') : t('notVerified')}
             </span>
           </div>
@@ -301,10 +301,10 @@ export default function ProfilePage() {
       {/* Danger Zone */}
       <Card className="border-2 border-primary-300">
         <div className="px-6 py-4 border-b border-primary-300 bg-primary-50 rounded-t-neu">
-          <h2 className="text-lg font-semibold text-primary-700">{t('dangerZone')}</h2>
+          <h3 className="no-margin text-primary-700">{t('dangerZone')}</h3>
         </div>
         <div className="px-6 py-4">
-          <p className="text-sm text-text-secondary mb-4">{t('deleteAccountWarning')}</p>
+          <p className="text-body-sm text-secondary mb-4 no-margin">{t('deleteAccountWarning')}</p>
           <Button
             type="button"
             variant="danger"

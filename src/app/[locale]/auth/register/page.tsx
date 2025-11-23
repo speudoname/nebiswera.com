@@ -89,12 +89,12 @@ export default function RegisterPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
           <UserPlus className="w-7 h-7" />
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
-        <p className="text-text-secondary mt-2">{t('subtitle')}</p>
+        <h2 className="no-margin">{t('title')}</h2>
+        <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-sm">
+        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-body-sm">
           {error}
         </div>
       )}
@@ -148,9 +148,9 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-text-secondary">
+      <p className="mt-8 text-center text-body-sm text-secondary no-margin">
         {t('hasAccount')}{' '}
-        <Link href={`/${locale}/auth/login`} className="text-primary-600 hover:text-primary-700 font-medium transition-colors">
+        <Link href={`/${locale}/auth/login`} className="font-medium">
           {t('signIn')}
         </Link>
       </p>

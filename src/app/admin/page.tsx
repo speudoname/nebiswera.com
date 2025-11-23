@@ -37,7 +37,7 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text-primary mb-8">Dashboard</h1>
+      <h1 className="mb-8">Dashboard</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -66,21 +66,15 @@ export default async function AdminDashboard() {
       {/* Recent Users */}
       <div className="bg-white rounded-neu shadow-neu">
         <div className="px-6 py-4 border-b border-neu-dark">
-          <h2 className="text-lg font-semibold text-text-primary">Recent Users</h2>
+          <h3 className="no-margin">Recent Users</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-neu-dark">
             <thead className="bg-neu-light">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                  Joined
-                </th>
+                <th className="px-6 py-3 text-left label-sm">User</th>
+                <th className="px-6 py-3 text-left label-sm">Status</th>
+                <th className="px-6 py-3 text-left label-sm">Joined</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-neu-dark">
@@ -89,15 +83,15 @@ export default async function AdminDashboard() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-10 w-10 flex-shrink-0 bg-primary-100 rounded-full flex items-center justify-center">
-                        <span className="text-primary-600 font-medium text-sm">
+                        <span className="text-primary-600 font-medium text-body-sm">
                           {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
                         </span>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-text-primary">
+                        <p className="text-body-sm font-medium no-margin">
                           {user.name || 'No name'}
-                        </div>
-                        <div className="text-sm text-text-muted">{user.email}</div>
+                        </p>
+                        <p className="text-body-sm text-muted no-margin">{user.email}</p>
                       </div>
                     </div>
                   </td>
@@ -108,7 +102,7 @@ export default async function AdminDashboard() {
                       <Badge variant="warning">Pending</Badge>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                  <td className="px-6 py-4 whitespace-nowrap text-body-sm text-muted">
                     {new Date(user.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
@@ -138,8 +132,8 @@ function StatCard({
     <div className="bg-white rounded-neu shadow-neu p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-text-secondary">{title}</p>
-          <p className="text-3xl font-bold text-text-primary mt-1">{value}</p>
+          <p className="text-body-sm text-secondary no-margin">{title}</p>
+          <p className="display-lg mt-1 no-margin">{value}</p>
         </div>
         <div className="h-12 w-12 bg-neu-light rounded-neu shadow-neu-sm flex items-center justify-center">
           {icon}

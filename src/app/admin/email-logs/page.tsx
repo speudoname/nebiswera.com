@@ -89,7 +89,7 @@ export default function EmailLogsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">Email Logs</h1>
+        <h1 className="no-margin">Email Logs</h1>
       </div>
 
       <FilterBar
@@ -138,21 +138,11 @@ export default function EmailLogsPage() {
         <table className="min-w-full divide-y divide-neu-dark">
           <thead className="bg-neu-light">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Recipient
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Type
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Sent
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-6 py-3 text-left label-sm">Recipient</th>
+              <th className="px-6 py-3 text-left label-sm">Type</th>
+              <th className="px-6 py-3 text-left label-sm">Status</th>
+              <th className="px-6 py-3 text-left label-sm">Sent</th>
+              <th className="px-6 py-3 text-right label-sm">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-neu-dark">
@@ -184,7 +174,7 @@ export default function EmailLogsPage() {
         {pagination.totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neu-dark">
             <div className="flex-1 flex items-center justify-between">
-              <p className="text-sm text-text-secondary">
+              <p className="text-body-sm text-secondary no-margin">
                 Showing{' '}
                 <span className="font-medium">
                   {(pagination.page - 1) * pagination.limit + 1}
@@ -236,24 +226,24 @@ function EmailDetails({ email, onClose }: { email: EmailLog; onClose: () => void
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-text-muted">Recipient</label>
-        <p className="text-text-primary">{email.to}</p>
+        <label className="block label-sm mb-1">Recipient</label>
+        <p className="no-margin">{email.to}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-text-muted">Subject</label>
-        <p className="text-text-primary">{email.subject}</p>
+        <label className="block label-sm mb-1">Subject</label>
+        <p className="no-margin">{email.subject}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-text-muted">Type</label>
+          <label className="block label-sm mb-1">Type</label>
           <Badge variant={typeVariants[email.type]}>
             {email.type.replace('_', ' ')}
           </Badge>
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-muted">Status</label>
+          <label className="block label-sm mb-1">Status</label>
           <Badge variant={statusVariants[email.status]}>
             {email.status.replace('_', ' ')}
           </Badge>
@@ -261,29 +251,29 @@ function EmailDetails({ email, onClose }: { email: EmailLog; onClose: () => void
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-text-muted">Message ID</label>
-        <p className="text-text-primary text-sm font-mono break-all">{email.messageId}</p>
+        <label className="block label-sm mb-1">Message ID</label>
+        <p className="text-body-sm font-mono break-all no-margin">{email.messageId}</p>
       </div>
 
       <div className="border-t border-neu-dark pt-4">
-        <h3 className="text-sm font-medium text-text-secondary mb-3">Delivery Timeline</h3>
+        <h4 className="mb-3">Delivery Timeline</h4>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-sm text-text-muted">Sent</span>
-            <span className="text-sm text-text-primary">{formatDate(email.sentAt)}</span>
+            <span className="text-body-sm text-muted">Sent</span>
+            <span className="text-body-sm">{formatDate(email.sentAt)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-text-muted">Delivered</span>
-            <span className="text-sm text-text-primary">{formatDate(email.deliveredAt)}</span>
+            <span className="text-body-sm text-muted">Delivered</span>
+            <span className="text-body-sm">{formatDate(email.deliveredAt)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-text-muted">Opened</span>
-            <span className="text-sm text-text-primary">{formatDate(email.openedAt)}</span>
+            <span className="text-body-sm text-muted">Opened</span>
+            <span className="text-body-sm">{formatDate(email.openedAt)}</span>
           </div>
           {email.bouncedAt && (
             <div className="flex justify-between">
-              <span className="text-sm text-primary-600">Bounced</span>
-              <span className="text-sm text-primary-700">{formatDate(email.bouncedAt)}</span>
+              <span className="text-body-sm text-primary-600">Bounced</span>
+              <span className="text-body-sm text-primary-700">{formatDate(email.bouncedAt)}</span>
             </div>
           )}
         </div>
@@ -291,8 +281,8 @@ function EmailDetails({ email, onClose }: { email: EmailLog; onClose: () => void
 
       {email.bounceType && (
         <div className="bg-primary-50 p-3 rounded-neu">
-          <label className="block text-sm font-medium text-primary-700">Bounce Reason</label>
-          <p className="text-sm text-primary-600">{email.bounceType}</p>
+          <label className="block label-sm text-primary-700 mb-1">Bounce Reason</label>
+          <p className="text-body-sm text-primary-600 no-margin">{email.bounceType}</p>
         </div>
       )}
 

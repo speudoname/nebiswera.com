@@ -110,7 +110,7 @@ export default function UsersPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">Users</h1>
+        <h1 className="no-margin">Users</h1>
       </div>
 
       <FilterBar
@@ -141,21 +141,11 @@ export default function UsersPage() {
         <table className="min-w-full divide-y divide-neu-dark">
           <thead className="bg-neu-light">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                User
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
-                Joined
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="px-6 py-3 text-left label-sm">User</th>
+              <th className="px-6 py-3 text-left label-sm">Status</th>
+              <th className="px-6 py-3 text-left label-sm">Role</th>
+              <th className="px-6 py-3 text-left label-sm">Joined</th>
+              <th className="px-6 py-3 text-right label-sm">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-neu-dark">
@@ -188,7 +178,7 @@ export default function UsersPage() {
         {pagination.totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neu-dark">
             <div className="flex-1 flex items-center justify-between">
-              <p className="text-sm text-text-secondary">
+              <p className="text-body-sm text-secondary no-margin">
                 Showing{' '}
                 <span className="font-medium">
                   {(pagination.page - 1) * pagination.limit + 1}
@@ -284,7 +274,7 @@ function EditUserModal({
           required
         />
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
+          <label className="block text-body-sm font-medium text-secondary mb-1">
             Role
           </label>
           <select

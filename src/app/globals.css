@@ -1,3 +1,216 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * GLOBAL TYPOGRAPHY STYLES
+ *
+ * All typography is defined here. NO inline font sizes, weights, or margins.
+ * Just use native HTML elements: <h1>, <h2>, <p>, etc.
+ *
+ * To change any typography globally, modify this file.
+ */
+
+@layer base {
+  /* ==========================================================================
+     HEADINGS
+     ========================================================================== */
+
+  h1 {
+    @apply text-3xl font-bold leading-tight tracking-tight text-text-primary;
+    @apply mb-4;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold leading-snug tracking-tight text-text-primary;
+    @apply mb-3;
+  }
+
+  h3 {
+    @apply text-xl font-semibold leading-snug text-text-primary;
+    @apply mb-2;
+  }
+
+  h4 {
+    @apply text-lg font-semibold leading-normal text-text-primary;
+    @apply mb-2;
+  }
+
+  h5 {
+    @apply text-base font-semibold leading-normal text-text-primary;
+    @apply mb-1;
+  }
+
+  h6 {
+    @apply text-sm font-semibold leading-normal tracking-wide text-text-primary;
+    @apply mb-1;
+  }
+
+  /* ==========================================================================
+     BODY TEXT
+     ========================================================================== */
+
+  p {
+    @apply text-base leading-relaxed text-text-primary;
+    @apply mb-4;
+  }
+
+  /* Last paragraph in a container should not have margin */
+  p:last-child {
+    @apply mb-0;
+  }
+
+  /* ==========================================================================
+     INLINE TEXT ELEMENTS
+     ========================================================================== */
+
+  strong, b {
+    @apply font-semibold;
+  }
+
+  em, i {
+    @apply italic;
+  }
+
+  small {
+    @apply text-sm text-text-muted;
+  }
+
+  /* ==========================================================================
+     LINKS
+     ========================================================================== */
+
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors;
+  }
+
+  /* ==========================================================================
+     LISTS
+     ========================================================================== */
+
+  ul, ol {
+    @apply mb-4 pl-6 text-text-primary;
+  }
+
+  ul {
+    @apply list-disc;
+  }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  li {
+    @apply mb-1 leading-relaxed;
+  }
+
+  /* ==========================================================================
+     CODE
+     ========================================================================== */
+
+  code {
+    @apply text-sm font-mono bg-neu-dark/50 px-1.5 py-0.5 rounded;
+  }
+
+  pre {
+    @apply text-sm font-mono bg-neu-dark/50 p-4 rounded-neu overflow-x-auto mb-4;
+  }
+
+  pre code {
+    @apply bg-transparent p-0;
+  }
+
+  /* ==========================================================================
+     FORM LABELS
+     ========================================================================== */
+
+  label {
+    @apply text-sm font-medium text-text-primary block mb-1;
+  }
+
+  /* ==========================================================================
+     HORIZONTAL RULE
+     ========================================================================== */
+
+  hr {
+    @apply border-neu-dark my-6;
+  }
+
+  /* ==========================================================================
+     BLOCKQUOTE
+     ========================================================================== */
+
+  blockquote {
+    @apply border-l-4 border-primary-300 pl-4 italic text-text-secondary my-4;
+  }
+}
+
+/**
+ * UTILITY CLASSES FOR TYPOGRAPHY VARIANTS
+ *
+ * Use these when you need to override the default styles.
+ */
+
+@layer components {
+  /* Display headings - for hero/landing sections */
+  .display-2xl {
+    @apply text-6xl font-bold leading-none tracking-tight;
+  }
+
+  .display-xl {
+    @apply text-5xl font-bold leading-none tracking-tight;
+  }
+
+  .display-lg {
+    @apply text-4xl font-bold leading-tight tracking-tight;
+  }
+
+  /* Text color variants */
+  .text-muted {
+    @apply text-text-muted;
+  }
+
+  .text-secondary {
+    @apply text-text-secondary;
+  }
+
+  /* Text size variants (when you need to override) */
+  .text-body-lg {
+    @apply text-lg leading-relaxed;
+  }
+
+  .text-body-sm {
+    @apply text-sm leading-normal;
+  }
+
+  .text-body-xs {
+    @apply text-xs leading-normal;
+  }
+
+  /* Remove margin utility */
+  .no-margin {
+    @apply mb-0;
+  }
+
+  /* Label styles */
+  .label {
+    @apply text-sm font-medium text-text-primary;
+  }
+
+  .label-lg {
+    @apply text-base font-medium text-text-primary;
+  }
+
+  .label-sm {
+    @apply text-xs font-medium text-text-muted tracking-wide uppercase;
+  }
+
+  /* Caption/helper text */
+  .caption {
+    @apply text-xs text-text-muted leading-normal;
+  }
+
+  .caption-error {
+    @apply text-xs text-primary-600 leading-normal;
+  }
+}

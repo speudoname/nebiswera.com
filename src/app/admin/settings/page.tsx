@@ -89,7 +89,7 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
+        <h1 className="no-margin">Settings</h1>
       </div>
 
       {message && (
@@ -108,17 +108,17 @@ export default function SettingsPage() {
         {/* Postmark Settings */}
         <div className="bg-white rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
-            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <h3 className="no-margin flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary-600" />
               Postmark Email Settings
-            </h2>
-            <p className="text-sm text-text-muted mt-1">
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
               Configure your Postmark server for sending transactional emails.
             </p>
           </div>
           <div className="px-6 py-4 space-y-4">
             <div>
-              <label htmlFor="postmarkServerToken" className="block text-sm font-medium text-text-secondary mb-1">
+              <label htmlFor="postmarkServerToken" className="block text-body-sm font-medium text-secondary mb-1">
                 Server API Token
               </label>
               <div className="relative">
@@ -137,13 +137,13 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
-              <p className="text-xs text-text-muted mt-1">
+              <p className="text-caption text-muted mt-1 no-margin">
                 Find this in your Postmark account under Server &gt; API Tokens
               </p>
             </div>
 
             <div>
-              <label htmlFor="postmarkStreamName" className="block text-sm font-medium text-text-secondary mb-1">
+              <label htmlFor="postmarkStreamName" className="block text-body-sm font-medium text-secondary mb-1">
                 Message Stream
               </label>
               <select
@@ -155,7 +155,7 @@ export default function SettingsPage() {
                 <option value="outbound">outbound (Transactional)</option>
                 <option value="broadcast">broadcast (Marketing)</option>
               </select>
-              <p className="text-xs text-text-muted mt-1">
+              <p className="text-caption text-muted mt-1 no-margin">
                 Use &quot;outbound&quot; for transactional emails like verification and password reset
               </p>
             </div>
@@ -165,11 +165,11 @@ export default function SettingsPage() {
         {/* From Email Settings */}
         <div className="bg-white rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
-            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <h3 className="no-margin flex items-center gap-2">
               <User className="h-5 w-5 text-primary-600" />
               Sender Information
-            </h2>
-            <p className="text-sm text-text-muted mt-1">
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
               Configure the &quot;From&quot; address and name for outgoing emails.
             </p>
           </div>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
               value={formData.emailFromAddress}
               onChange={(e) => setFormData({ ...formData, emailFromAddress: e.target.value })}
             />
-            <p className="text-xs text-text-muted -mt-2">
+            <p className="text-caption text-muted -mt-2 no-margin">
               Must be a verified sender signature in Postmark
             </p>
 
@@ -202,21 +202,21 @@ export default function SettingsPage() {
         {/* Webhook Info (Read Only) */}
         <div className="bg-white rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
-            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <h3 className="no-margin flex items-center gap-2">
               <Link className="h-5 w-5 text-primary-600" />
               Webhook Configuration
-            </h2>
-            <p className="text-sm text-text-muted mt-1">
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
               Webhook is automatically configured to track email delivery status.
             </p>
           </div>
           <div className="px-6 py-4">
             <div className="bg-neu-light rounded-neu p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-text-secondary">Webhook URL</span>
+                <span className="text-body-sm font-medium text-secondary">Webhook URL</span>
                 <Badge variant="success">Active</Badge>
               </div>
-              <code className="text-sm text-text-secondary bg-neu-base px-2 py-1 rounded-neu block break-all">
+              <code className="text-body-sm text-secondary bg-neu-base px-2 py-1 rounded-neu block break-all">
                 https://nebiswera.com/api/webhooks/postmark
               </code>
               <div className="mt-3 flex flex-wrap gap-2">

@@ -54,12 +54,12 @@ function LoginContent() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
           <LogIn className="w-7 h-7" />
         </div>
-        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
-        <p className="text-text-secondary mt-2">{t('subtitle')}</p>
+        <h2 className="no-margin">{t('title')}</h2>
+        <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-sm">
+        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-body-sm">
           {error}
         </div>
       )}
@@ -88,10 +88,7 @@ function LoginContent() {
         />
 
         <div className="flex items-center justify-end">
-          <Link
-            href={`/${locale}/auth/forgot-password`}
-            className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
-          >
+          <Link href={`/${locale}/auth/forgot-password`} className="text-body-sm">
             {t('forgotPassword')}
           </Link>
         </div>
@@ -101,9 +98,9 @@ function LoginContent() {
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-text-secondary">
+      <p className="mt-8 text-center text-body-sm text-secondary no-margin">
         {t('noAccount')}{' '}
-        <Link href={`/${locale}/auth/register`} className="text-primary-600 hover:text-primary-700 font-medium transition-colors">
+        <Link href={`/${locale}/auth/register`} className="font-medium">
           {t('signUp')}
         </Link>
       </p>
@@ -120,7 +117,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm mx-auto mb-4">
           <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
         </div>
-        <h1 className="text-xl font-semibold text-text-primary">{common('loading')}</h1>
+        <h3 className="no-margin">{common('loading')}</h3>
       </Card>
     }>
       <LoginContent />

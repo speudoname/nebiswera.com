@@ -32,8 +32,8 @@ function AuthErrorContent() {
       <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
         <AlertTriangle className="w-7 h-7" />
       </div>
-      <h1 className="text-xl font-semibold text-text-primary mb-2">{t('authError')}</h1>
-      <p className="text-text-secondary mb-6">{getErrorMessage()}</p>
+      <h3 className="mb-2">{t('authError')}</h3>
+      <p className="text-secondary mb-6">{getErrorMessage()}</p>
       <Link href={`/${locale}/auth/login`}>
         <Button>{t('backToLogin')}</Button>
       </Link>
@@ -50,7 +50,7 @@ export default function AuthErrorPage() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm mb-4">
           <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
         </div>
-        <h1 className="text-xl font-semibold text-text-primary">{common('loading')}</h1>
+        <h3 className="no-margin">{common('loading')}</h3>
       </Card>
     }>
       <AuthErrorContent />

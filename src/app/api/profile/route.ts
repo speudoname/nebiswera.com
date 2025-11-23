@@ -4,10 +4,15 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import type { NextRequest } from 'next/server'
 
+const cookieName = process.env.NODE_ENV === 'production'
+  ? '__Secure-authjs.session-token'
+  : 'authjs.session-token'
+
 export async function GET(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName,
   })
 
   if (!token?.email) {
@@ -37,6 +42,7 @@ export async function PATCH(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName,
   })
 
   if (!token?.email) {
@@ -118,6 +124,7 @@ export async function DELETE(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    cookieName,
   })
 
   if (!token?.email) {

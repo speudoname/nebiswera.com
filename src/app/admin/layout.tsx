@@ -3,6 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import { SessionProvider } from '@/components/providers/SessionProvider'
+import { Inter } from 'next/font/google'
+
+const inter = Inter({ subsets: ['latin', 'latin-ext'] })
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: HomeIcon },
@@ -44,7 +48,7 @@ function SettingsIcon({ className }: { className?: string }) {
   )
 }
 
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode
@@ -109,5 +113,21 @@ export default function AdminLayout({
         </main>
       </div>
     </div>
+  )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <SessionProvider>
+          <AdminLayoutContent>{children}</AdminLayoutContent>
+        </SessionProvider>
+      </body>
+    </html>
   )
 }

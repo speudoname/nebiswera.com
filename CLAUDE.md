@@ -337,13 +337,13 @@ indexedPages: [
 - **`indexedPages`**: Appear in sitemap, allowed by robots.txt, indexed by Google
 - **`noIndexPages`**: Blocked in robots.txt, get `noindex` meta tag (auth, dashboard, etc.)
 
-### Available Schema Helpers
+### JSON-LD Schema (Already Implemented)
 
-For structured data (JSON-LD), use helpers from `src/lib/metadata.ts`:
-- `getOrganizationSchema()` - Brand info (use in root layout)
+The following schemas are automatically included in the root layout:
+- `getOrganizationSchema(locale)` - Brand info
 - `getWebSiteSchema(locale)` - Site info with language
-- `getWebPageSchema(pageKey, locale)` - Individual page schema
-- `getBreadcrumbSchema(items)` - Breadcrumb navigation
+
+These are already set up in `src/app/[locale]/layout.tsx` — no action needed.
 
 ## Checklist for New Features
 

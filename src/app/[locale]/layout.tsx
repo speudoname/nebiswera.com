@@ -43,7 +43,7 @@ export default async function LocaleLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(getOrganizationSchema()),
+            __html: JSON.stringify(getOrganizationSchema(locale)),
           }}
         />
         <script

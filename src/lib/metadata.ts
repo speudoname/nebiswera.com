@@ -12,9 +12,7 @@ const seoContent: Record<string, SeoContent> = {
 }
 
 interface MetadataOptions {
-  /** Set to true for pages that should not be indexed (auth, dashboard, etc.) */
-  noIndex?: boolean
-  /** Custom OG image path (overrides default pattern) */
+  /** Custom OG image path (overrides default) */
   ogImage?: string
 }
 
@@ -23,9 +21,9 @@ interface MetadataOptions {
  * - Title and description from content/seo/{locale}.json
  * - Canonical URL
  * - hreflang alternate links for all locales
- * - OpenGraph metadata with images for social sharing
- * - Twitter card metadata with images
- * - Robots directives (noindex for private pages, rich snippet settings for public)
+ * - OpenGraph metadata with images for social sharing (indexed pages only)
+ * - Twitter card metadata with images (indexed pages only)
+ * - Robots directives (noindex for private pages)
  *
  * Usage in any page.tsx:
  * ```
@@ -36,10 +34,8 @@ interface MetadataOptions {
  * ```
  *
  * OG Images:
- * - Place images in /public/og/ folder
- * - Name them by pageKey: home.png, about.png, etc.
+ * - Place default.png in /public/og/ folder (1200x630px)
  * - Or provide custom path via options.ogImage
- * - Falls back to /og/default.png if page-specific image doesn't exist
  */
 export function generatePageMetadata(
   pageKey: PageKey,
@@ -73,14 +69,10 @@ export function generatePageMetadata(
   languages['x-default'] = `${seoConfig.siteUrl}/${seoConfig.defaultLocale}${pagePath}`
 
   // Determine if this page should be noindexed
-  const shouldNoIndex = options.noIndex || !!noIndexPage
+  const shouldNoIndex = !!noIndexPage
 
-  // Build OG image URL
-  // Priority: custom option > page-specific > default
-  const ogImagePath = options.ogImage || `/og/${pageKey}.png`
-  const ogImageUrl = `${seoConfig.siteUrl}${ogImagePath}`
-
-  return {
+  // Build base metadata
+  const metadata: Metadata = {
     title: pageData.title,
     description: pageData.description,
 
@@ -90,8 +82,27 @@ export function generatePageMetadata(
       languages,
     },
 
-    // OpenGraph for social sharing (Facebook, LinkedIn, etc.)
-    openGraph: {
+    // Robots directive
+    robots: shouldNoIndex
+      ? {
+          index: false,
+          follow: false,
+        }
+      : {
+          index: true,
+          follow: true,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+          'max-video-preview': -1,
+        },
+  }
+
+  // Add OpenGraph and Twitter only for indexed pages (noIndex pages don't need social sharing)
+  if (!shouldNoIndex) {
+    const ogImagePath = options.ogImage || seoConfig.ogImage.defaultImage
+    const ogImageUrl = `${seoConfig.siteUrl}${ogImagePath}`
+
+    metadata.openGraph = {
       title: pageData.title,
       description: pageData.description,
       url: canonicalUrl,
@@ -106,42 +117,18 @@ export function generatePageMetadata(
           alt: pageData.title,
         },
       ],
-    },
+    }
 
-    // Twitter card
-    twitter: {
+    metadata.twitter = {
       card: 'summary_large_image',
       title: pageData.title,
       description: pageData.description,
       site: seoConfig.social.twitter,
       images: [ogImageUrl],
-    },
-
-    // Robots directive
-    robots: shouldNoIndex
-      ? {
-          index: false,
-          follow: false,
-          googleBot: {
-            index: false,
-            follow: false,
-          },
-        }
-      : {
-          index: true,
-          follow: true,
-          'max-image-preview': 'large',
-          'max-snippet': -1,
-          'max-video-preview': -1,
-          googleBot: {
-            index: true,
-            follow: true,
-            'max-image-preview': 'large',
-            'max-snippet': -1,
-            'max-video-preview': -1,
-          },
-        },
+    }
   }
+
+  return metadata
 }
 
 // ============================================================================
@@ -150,20 +137,14 @@ export function generatePageMetadata(
 
 /**
  * Organization schema - use in root layout for site-wide brand info
- *
- * Usage in app/[locale]/layout.tsx:
- * ```
- * <script
- *   type="application/ld+json"
- *   dangerouslySetInnerHTML={{ __html: JSON.stringify(getOrganizationSchema()) }}
- * />
- * ```
  */
-export function getOrganizationSchema() {
+export function getOrganizationSchema(locale: string = 'en') {
+  const content = seoContent[locale] || seoContent[seoConfig.defaultLocale]
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Nebiswera',
+    name: content.site.name,
     url: seoConfig.siteUrl,
     logo: `${seoConfig.siteUrl}/android-chrome-512x512.png`,
     sameAs: [
@@ -175,15 +156,7 @@ export function getOrganizationSchema() {
 }
 
 /**
- * WebSite schema with search action - enables sitelinks search box in Google
- *
- * Usage in app/[locale]/layout.tsx (alongside Organization schema):
- * ```
- * <script
- *   type="application/ld+json"
- *   dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebSiteSchema(locale)) }}
- * />
- * ```
+ * WebSite schema - enables sitelinks in Google
  */
 export function getWebSiteSchema(locale: string) {
   const content = seoContent[locale] || seoContent[seoConfig.defaultLocale]
@@ -194,78 +167,5 @@ export function getWebSiteSchema(locale: string) {
     name: content.site.name,
     url: `${seoConfig.siteUrl}/${locale}`,
     inLanguage: locale === 'ka' ? 'ka-GE' : 'en-US',
-    // Uncomment when you have search functionality:
-    // potentialAction: {
-    //   '@type': 'SearchAction',
-    //   target: `${seoConfig.siteUrl}/${locale}/search?q={search_term_string}`,
-    //   'query-input': 'required name=search_term_string',
-    // },
-  }
-}
-
-/**
- * WebPage schema - use on individual pages for page-specific structured data
- *
- * Usage in page.tsx or layout.tsx:
- * ```
- * <script
- *   type="application/ld+json"
- *   dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebPageSchema('home', 'en')) }}
- * />
- * ```
- */
-export function getWebPageSchema(pageKey: PageKey, locale: string) {
-  const content = seoContent[locale] || seoContent[seoConfig.defaultLocale]
-  const pageData = content.pages[pageKey as keyof typeof content.pages]
-
-  if (!pageData) return null
-
-  const indexedPage = seoConfig.indexedPages.find(p => p.key === pageKey)
-  const noIndexPage = seoConfig.noIndexPages.find(p => p.key === pageKey)
-  const pagePath = indexedPage?.path ?? noIndexPage?.path ?? ''
-  const canonicalUrl = `${seoConfig.siteUrl}/${locale}${pagePath}`
-
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: pageData.title,
-    description: pageData.description,
-    url: canonicalUrl,
-    inLanguage: locale === 'ka' ? 'ka-GE' : 'en-US',
-    isPartOf: {
-      '@type': 'WebSite',
-      name: content.site.name,
-      url: `${seoConfig.siteUrl}/${locale}`,
-    },
-  }
-}
-
-/**
- * Breadcrumb schema - use for pages with navigation hierarchy
- *
- * Usage:
- * ```
- * const breadcrumbs = [
- *   { name: 'Home', url: '/en' },
- *   { name: 'About', url: '/en/about' },
- * ]
- * <script
- *   type="application/ld+json"
- *   dangerouslySetInnerHTML={{ __html: JSON.stringify(getBreadcrumbSchema(breadcrumbs)) }}
- * />
- * ```
- */
-export function getBreadcrumbSchema(
-  items: Array<{ name: string; url: string }>
-) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: items.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.name,
-      item: item.url.startsWith('http') ? item.url : `${seoConfig.siteUrl}${item.url}`,
-    })),
   }
 }

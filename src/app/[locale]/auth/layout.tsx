@@ -10,7 +10,7 @@ export default function AuthLayout({
   const locale = useLocale()
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary-500 to-accent-700">
       {/* Header */}
       <header>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">

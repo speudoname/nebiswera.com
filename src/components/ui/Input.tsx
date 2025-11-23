@@ -28,7 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             text-text-primary placeholder:text-text-muted
             transition-all duration-200
             focus:outline-none focus:border-primary-400 focus:shadow-neu-inset-md
-            disabled:opacity-50 disabled:cursor-not-allowed
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-neu-dark/30
             ${error ? 'border-primary-500 focus:border-primary-500' : ''}
             ${className}
           `}

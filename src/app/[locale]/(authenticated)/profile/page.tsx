@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Button, Input, Modal, IconBadge } from '@/components/ui'
+import { Button, Input, Select, Modal, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 import { Loader2, AlertTriangle } from 'lucide-react'
 
@@ -190,17 +190,14 @@ export default function ProfilePage() {
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
-          <div>
-            <label className="block text-body-sm font-medium mb-1">
-              {t('email')}
-            </label>
-            <input
-              type="email"
-              value={user?.email || ''}
-              disabled
-              className="block w-full rounded-neu px-4 py-3 bg-neu-dark/30 shadow-neu-inset-sm text-text-muted text-sm"
-            />
-          </div>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            label={t('email')}
+            value={user?.email || ''}
+            disabled
+          />
           <div className="flex justify-end">
             <Button type="submit" loading={saving} loadingText={common('loading')}>
               {common('save')}
@@ -215,20 +212,16 @@ export default function ProfilePage() {
           <h3 className="no-margin">{t('preferences')}</h3>
         </div>
         <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
-          <div>
-            <label className="block text-body-sm font-medium mb-1">
-              {t('language')}
-            </label>
-            <select
-              value={formData.preferredLocale}
-              onChange={(e) => setFormData({ ...formData, preferredLocale: e.target.value })}
-              className="block w-full rounded-neu px-4 py-3 bg-neu-base shadow-neu-inset border-2 border-transparent text-text-primary text-sm focus:border-primary-400 focus:outline-none transition-all"
-            >
-              <option value="ka">{languages('ka')}</option>
-              <option value="en">{languages('en')}</option>
-            </select>
-            <p className="text-caption text-muted mt-1 no-margin">{t('languageDescription')}</p>
-          </div>
+          <Select
+            id="preferredLocale"
+            label={t('language')}
+            value={formData.preferredLocale}
+            onChange={(e) => setFormData({ ...formData, preferredLocale: e.target.value })}
+            hint={t('languageDescription')}
+          >
+            <option value="ka">{languages('ka')}</option>
+            <option value="en">{languages('en')}</option>
+          </Select>
           <div className="flex justify-end">
             <Button type="submit" loading={saving} loadingText={common('loading')}>
               {common('save')}

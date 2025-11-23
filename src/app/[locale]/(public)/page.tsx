@@ -10,11 +10,11 @@ export default function Home() {
 
   return (
     <div className="flex-1 flex items-center justify-center">
-      <div className="text-center text-white p-8 max-w-2xl">
-        <h1 className="display-xl md:display-2xl mb-6 text-shadow-hero">
+      <div className="text-center p-8 max-w-2xl">
+        <h1 className="display-xl md:display-2xl mb-6 text-primary-700">
           {t('title')}
         </h1>
-        <p className="text-xl md:text-2xl opacity-90 mb-8 no-margin">
+        <p className="text-xl md:text-2xl text-text-secondary mb-8 no-margin">
           {t('subtitle')}
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
@@ -24,7 +24,7 @@ export default function Home() {
             </Button>
           </Link>
           <Link href="#learn-more">
-            <Button variant="outline-light" size="lg" leftIcon={BookOpen}>
+            <Button variant="outline" size="lg" leftIcon={BookOpen}>
               {t('learnMore')}
             </Button>
           </Link>

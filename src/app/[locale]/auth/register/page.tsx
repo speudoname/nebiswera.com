@@ -83,7 +83,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card className="w-full max-w-md" padding="lg">
+    <Card className="w-full max-w-md" padding="lg" darkBg>
       <div className="text-center mb-8">
         <div className="inline-flex mb-4">
           <IconBadge icon="UserPlus" size="lg" variant="primary" />

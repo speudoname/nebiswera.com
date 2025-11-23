@@ -46,7 +46,7 @@ function VerifyEmailContent() {
   }, [token, t, errors])
 
   return (
-    <Card className="w-full max-w-md text-center" padding="lg">
+    <Card className="w-full max-w-md text-center" padding="lg" darkBg>
       {status === 'loading' && (
         <>
           <div className="inline-flex mb-4">
@@ -90,7 +90,7 @@ export default function VerifyEmailPage() {
 
   return (
     <Suspense fallback={
-      <Card className="w-full max-w-md text-center" padding="lg">
+      <Card className="w-full max-w-md text-center" padding="lg" darkBg>
         <div className="inline-flex mb-4">
           <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>

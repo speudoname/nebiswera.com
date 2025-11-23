@@ -74,7 +74,7 @@ function ResetPasswordContent() {
 
   if (!token) {
     return (
-      <Card className="w-full max-w-md text-center" padding="lg">
+      <Card className="w-full max-w-md text-center" padding="lg" darkBg>
         <div className="inline-flex mb-4">
           <IconBadge icon="XCircle" size="lg" variant="danger" />
         </div>
@@ -87,7 +87,7 @@ function ResetPasswordContent() {
   }
 
   return (
-    <Card className="w-full max-w-md" padding="lg">
+    <Card className="w-full max-w-md" padding="lg" darkBg>
       <div className="text-center mb-8">
         <div className="inline-flex mb-4">
           <IconBadge icon="KeyRound" size="lg" variant="primary" />
@@ -138,7 +138,7 @@ export default function ResetPasswordPage() {
 
   return (
     <Suspense fallback={
-      <Card className="w-full max-w-md text-center" padding="lg">
+      <Card className="w-full max-w-md text-center" padding="lg" darkBg>
         <div className="flex justify-center mb-4">
           <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>

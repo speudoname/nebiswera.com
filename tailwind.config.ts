@@ -83,6 +83,9 @@ const config: Config = {
       // SHADOWS - Neomorphic (neutral gray-based)
       // =======================================================================
       boxShadow: {
+        // =====================================================================
+        // Light background shadows (use on neu-base #F7F6F8)
+        // =====================================================================
         // Raised elements - Dark shadow #B8B4BD for better contrast
         'neu-sm': '4px 4px 8px #B8B4BD, -4px -4px 8px #FFFFFF',
         'neu': '6px 6px 12px #B8B4BD, -6px -6px 12px #FFFFFF',
@@ -98,6 +101,22 @@ const config: Config = {
         'neu-hover': '8px 8px 16px #B8B4BD, -8px -8px 16px #FFFFFF',
         // Active/pressed state
         'neu-pressed': 'inset 4px 4px 8px #B8B4BD, inset -4px -4px 8px #FFFFFF',
+
+        // =====================================================================
+        // Dark/colored background shadows (use on gradients, dark surfaces)
+        // Uses subtle opacity instead of pure white for highlight
+        // =====================================================================
+        'neu-dark-sm': '4px 4px 8px rgba(0, 0, 0, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.05)',
+        'neu-dark': '6px 6px 12px rgba(0, 0, 0, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.05)',
+        'neu-dark-md': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)',
+        'neu-dark-lg': '12px 12px 24px rgba(0, 0, 0, 0.35), -12px -12px 24px rgba(255, 255, 255, 0.05)',
+        // Pressed/inset for dark backgrounds
+        'neu-dark-inset-sm': 'inset 2px 2px 4px rgba(0, 0, 0, 0.25), inset -2px -2px 4px rgba(255, 255, 255, 0.05)',
+        'neu-dark-inset': 'inset 4px 4px 8px rgba(0, 0, 0, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
+        // Hover state for dark backgrounds
+        'neu-dark-hover': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.08)',
+        // Active/pressed state for dark backgrounds
+        'neu-dark-pressed': 'inset 4px 4px 8px rgba(0, 0, 0, 0.3), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
       },
 
       // =======================================================================

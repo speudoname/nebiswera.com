@@ -5,6 +5,8 @@ import { HTMLAttributes, forwardRef } from 'react'
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'raised' | 'flat' | 'inset'
   padding?: 'none' | 'sm' | 'md' | 'lg'
+  /** Use dark background shadow variants (for cards on gradients/dark surfaces) */
+  darkBg?: boolean
 }
 
 const paddingClasses = {
@@ -14,18 +16,27 @@ const paddingClasses = {
   lg: 'p-8',
 }
 
+// Light background shadows (default)
 const variantClasses = {
   raised: 'shadow-neu',
   flat: 'shadow-neu-flat',
   inset: 'shadow-neu-inset',
 }
 
+// Dark/colored background shadows
+const variantClassesDark = {
+  raised: 'shadow-neu-dark',
+  flat: 'shadow-neu-flat',
+  inset: 'shadow-neu-dark-inset',
+}
+
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ className = '', variant = 'raised', padding = 'md', children, ...props }, ref) => {
+  ({ className = '', variant = 'raised', padding = 'md', darkBg = false, children, ...props }, ref) => {
+    const shadowClasses = darkBg ? variantClassesDark : variantClasses
     return (
       <div
         ref={ref}
-        className={`bg-neu-base rounded-neu-md ${variantClasses[variant]} ${paddingClasses[padding]} ${className}`}
+        className={`bg-neu-base rounded-neu-md ${shadowClasses[variant]} ${paddingClasses[padding]} ${className}`}
         {...props}
       >
         {children}

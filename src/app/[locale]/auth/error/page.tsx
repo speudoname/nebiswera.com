@@ -27,7 +27,7 @@ function AuthErrorContent() {
   }
 
   return (
-    <Card className="w-full max-w-md text-center" padding="lg">
+    <Card className="w-full max-w-md text-center" padding="lg" darkBg>
       <div className="inline-flex mb-4">
         <IconBadge icon="AlertTriangle" size="lg" variant="danger" />
       </div>
@@ -45,7 +45,7 @@ export default function AuthErrorPage() {
 
   return (
     <Suspense fallback={
-      <Card className="w-full max-w-md text-center" padding="lg">
+      <Card className="w-full max-w-md text-center" padding="lg" darkBg>
         <div className="inline-flex mb-4">
           <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>

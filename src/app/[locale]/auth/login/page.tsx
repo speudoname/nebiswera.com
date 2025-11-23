@@ -48,7 +48,7 @@ function LoginContent() {
   }
 
   return (
-    <Card className="w-full max-w-md" padding="lg">
+    <Card className="w-full max-w-md" padding="lg" darkBg>
       <div className="text-center mb-8">
         <div className="inline-flex mb-4">
           <IconBadge icon="LogIn" size="lg" variant="primary" />
@@ -112,7 +112,7 @@ export default function LoginPage() {
 
   return (
     <Suspense fallback={
-      <Card className="w-full max-w-md text-center" padding="lg">
+      <Card className="w-full max-w-md text-center" padding="lg" darkBg>
         <div className="flex justify-center mb-4">
           <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>

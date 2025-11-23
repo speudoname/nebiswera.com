@@ -17,7 +17,7 @@ export default function AuthLayout({
           <Link href={`/${locale}`} className="text-white font-bold text-xl">
             {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
           </Link>
-          <LanguageSwitcher />
+          <LanguageSwitcher darkBg />
         </div>
       </header>
 

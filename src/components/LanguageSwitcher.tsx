@@ -11,7 +11,12 @@ const localeConfig: Record<Locale, { flag: string; code: string; nameKey: 'en' |
   en: { flag: '🇬🇧', code: 'EN', nameKey: 'en' },
 }
 
-export function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  /** Use dark background shadow variants (for use on gradients/dark surfaces) */
+  darkBg?: boolean
+}
+
+export function LanguageSwitcher({ darkBg = false }: LanguageSwitcherProps) {
   const locale = useLocale() as Locale
   const t = useTranslations('languages')
   const router = useRouter()
@@ -27,10 +32,15 @@ export function LanguageSwitcher() {
   const otherLocale = locales.find((l) => l !== locale) as Locale
   const other = localeConfig[otherLocale]
 
+  // Shadow classes based on background type
+  const shadowClasses = darkBg
+    ? 'shadow-neu-dark-sm hover:shadow-neu-dark active:shadow-neu-dark-pressed'
+    : 'shadow-neu-sm hover:shadow-neu hover:text-text-primary active:shadow-neu-pressed'
+
   return (
     <button
       onClick={() => switchLocale(otherLocale)}
-      className="flex items-center gap-2 px-3 py-2 rounded-neu bg-neu-base text-text-secondary shadow-neu-sm hover:shadow-neu hover:text-text-primary active:shadow-neu-pressed transition-all text-sm font-medium"
+      className={`flex items-center gap-2 px-3 py-2 rounded-neu bg-neu-base text-text-secondary ${shadowClasses} transition-all text-sm font-medium`}
       title={t('switchTo', { language: t(other.nameKey) })}
     >
       <Globe className="w-4 h-4" />

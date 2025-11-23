@@ -39,8 +39,8 @@ export function LanguageSwitcher({ variant = 'light' }: LanguageSwitcherProps) {
       className={`${baseClasses} ${variantClasses}`}
       title={`Switch to ${other.code}`}
     >
-      <span className="text-base">{current.flag}</span>
-      <span>{current.code}</span>
+      <span className="text-base">{other.flag}</span>
+      <span>{other.code}</span>
     </button>
   )
 }

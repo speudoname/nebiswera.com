@@ -3,11 +3,11 @@
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 
-interface FooterProps {
+interface PublicFooterProps {
   variant?: 'light' | 'dark'
 }
 
-export function Footer({ variant = 'dark' }: FooterProps) {
+export function PublicFooter({ variant = 'dark' }: PublicFooterProps) {
   const locale = useLocale()
   const t = useTranslations('footer')
   const nav = useTranslations('nav')
@@ -16,7 +16,7 @@ export function Footer({ variant = 'dark' }: FooterProps) {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className={isLight ? 'bg-white/10 text-white' : 'bg-gray-50 border-t border-gray-200'}>
+    <footer className={isLight ? 'bg-white/10' : 'bg-gray-50 border-t border-gray-200'}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">

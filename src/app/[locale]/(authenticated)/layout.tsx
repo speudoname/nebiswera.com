@@ -1,0 +1,44 @@
+import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
+import { auth, signOut } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { AppHeader } from '@/components/layout'
+
+export default async function AuthenticatedLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const locale = await getLocale()
+  const session = await auth()
+
+  if (!session?.user) {
+    redirect(`/${locale}/auth/login`)
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email! },
+    select: {
+      email: true,
+      role: true,
+    },
+  })
+
+  if (!user) {
+    redirect(`/${locale}/auth/login`)
+  }
+
+  const handleSignOut = async () => {
+    'use server'
+    await signOut({ redirectTo: '/' })
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader user={{ email: user.email, role: user.role }} signOutAction={handleSignOut} />
+      <main>
+        {children}
+      </main>
+    </div>
+  )
+}

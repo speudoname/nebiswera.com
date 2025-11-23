@@ -65,7 +65,8 @@ export function PublicHeader({ user }: PublicHeaderProps) {
           </div>
 
           {/* Mobile Navigation - shown only on mobile */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
+            <LanguageSwitcher compact />
             <MobileMenu user={user} />
           </div>
         </div>

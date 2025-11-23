@@ -25,6 +25,19 @@ export function HomeClient() {
         <p className="hero-subtitle mb-6 md:mb-8">
           {t('subtitle')}
         </p>
+
+        {/* Video Embed */}
+        <div className="mb-6 md:mb-8 w-full max-w-2xl mx-auto rounded-neu shadow-neu overflow-hidden">
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <iframe
+              className="absolute top-0 left-0 w-full h-full border-none"
+              src="https://streamable.com/e/79h3le?autoplay=1&loop=0&nocontrols=1"
+              allow="fullscreen;autoplay"
+              allowFullScreen
+            />
+          </div>
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
           <Link href={`/${locale}/auth/register`} className="w-full sm:w-auto">
             <Button size="lg" rightIcon={ArrowRight} className="w-full sm:w-auto">

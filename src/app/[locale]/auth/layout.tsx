@@ -9,11 +9,13 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600">
       {/* Header */}
-      <header className="p-4 flex justify-between items-center">
-        <Link href="/" className="text-white font-bold text-xl">
-          Nebiswera
-        </Link>
-        <LanguageSwitcher />
+      <header>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <Link href="/" className="text-white font-bold text-xl">
+            Nebiswera
+          </Link>
+          <LanguageSwitcher />
+        </div>
       </header>
 
       {/* Content */}

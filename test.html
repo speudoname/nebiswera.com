@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Morphic × Neobrutal Deep Pastel UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* =========================
+       THEME / TOKENS
+    ========================== */
+    :root {
+      --bg: #050714;
+      --bg-soft: #0b0f24;
+
+      /* Deep pastel accents */
+      --pink: #ff8aa4;
+      --mint: #7bdcb5;
+      --yellow: #ffd36e;
+      --lilac: #bba4ff;
+      --blue: #7fb7ff;
+
+      --text-main: #f7f5ff;
+      --text-muted: #b6b4d4;
+
+      --neu-surface: #10152b;
+      --neu-shadow-dark: #050714;
+      --neu-shadow-light: #252d4a;
+
+      --radius-soft: 24px;
+      --radius-medium: 18px;
+
+      --brut-border: #000000;
+      --brut-shadow: 6px 6px 0 #000000;
+
+      --transition: 180ms ease-out;
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font-main);
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255,138,164,0.16), transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(123,220,181,0.16), transparent 60%),
+        var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 32px 16px;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1120px;
+      background: var(--bg-soft);
+      border-radius: 32px;
+      padding: 28px 22px 32px;
+      box-shadow:
+        24px 24px 60px rgba(0, 0, 0, 0.85),
+        -14px -14px 40px rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    header {
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-end;
+    }
+
+    .title-block h1 {
+      font-size: clamp(2.1rem, 4vw, 2.8rem);
+      letter-spacing: -0.04em;
+      margin-bottom: 8px;
+    }
+
+    .title-block h1 span {
+      background: linear-gradient(120deg, var(--pink), var(--lilac), var(--mint));
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .title-block p {
+      font-size: 0.96rem;
+      color: var(--text-muted);
+      max-width: 540px;
+    }
+
+    .label-pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid #000;
+      background: #ffd36e;
+      color: #000;
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      box-shadow: var(--brut-shadow);
+    }
+
+    .sections {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    @media (max-width: 960px) {
+      .sections {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 720px) {
+      .sections {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .section {
+      padding: 16px 14px 18px;
+      border-radius: 22px;
+      background: rgba(7,10,26,0.96);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .section-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* =========================
+       NEUMORPHIC COMPONENTS
+    ========================== */
+
+    .neu-card {
+      background: radial-gradient(circle at 0% 0%, rgba(255,138,164,0.14), transparent 60%),
+                  var(--neu-surface);
+      border-radius: var(--radius-soft);
+      padding: 16px 14px;
+      box-shadow:
+        12px 12px 24px var(--neu-shadow-dark),
+        -10px -10px 20px var(--neu-shadow-light);
+      border: none;
+    }
+
+    .neu-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .neu-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .neu-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .neu-tag {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #151a33;
+      box-shadow:
+        inset 2px 2px 4px rgba(0,0,0,0.75),
+        inset -2px -2px 4px rgba(255,255,255,0.06);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .neu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: #10152b;
+      background: linear-gradient(145deg, var(--pink), var(--lilac));
+      box-shadow:
+        8px 8px 18px var(--neu-shadow-dark),
+        -6px -6px 14px var(--neu-shadow-light);
+      transition: box-shadow var(--transition), transform var(--transition);
+    }
+
+    .neu-btn:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        10px 10px 22px var(--neu-shadow-dark),
+        -7px -7px 16px var(--neu-shadow-light);
+    }
+
+    .neu-btn:active {
+      transform: translateY(1px);
+      box-shadow:
+        inset 3px 3px 8px rgba(0,0,0,0.7),
+        inset -3px -3px 8px rgba(255,255,255,0.08);
+    }
+
+    .neu-toggle {
+      margin-top: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .neu-toggle-track {
+      width: 52px;
+      height: 26px;
+      border-radius: 999px;
+      background: #10152b;
+      box-shadow:
+        inset 3px 3px 6px rgba(0,0,0,0.8),
+        inset -3px -3px 6px rgba(255,255,255,0.1);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .neu-toggle-knob {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: #f7f5ff;
+      box-shadow:
+        3px 3px 6px rgba(0,0,0,0.7),
+        -3px -3px 6px rgba(255,255,255,0.4);
+    }
+
+    /* =========================
+       NEOBRUTALIST COMPONENTS
+    ========================== */
+
+    .brut-card {
+      background: var(--mint);
+      border-radius: 12px;
+      border: 3px solid var(--brut-border);
+      padding: 14px 12px;
+      box-shadow: var(--brut-shadow);
+    }
+
+    .brut-card h3 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .brut-card p {
+      font-size: 0.82rem;
+      color: #0b1a11;
+      margin-bottom: 10px;
+    }
+
+    .brut-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .brut-badge {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 2px solid #000;
+      background: #ffd36e;
+      color: #000;
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .brut-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 3px solid #000;
+      background: #ff8aa4;
+      color: #000;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      box-shadow: 5px 5px 0 #000;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .brut-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 7px 7px 0 #000;
+    }
+
+    .brut-btn:active {
+      transform: translate(0, 0);
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .brut-input-label {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .brut-input {
+      width: 100%;
+      margin-top: 6px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      border: 3px solid #000;
+      background: #fefcf6;
+      font-family: inherit;
+      font-size: 0.84rem;
+      color: #000;
+      box-shadow: 4px 4px 0 #000;
+      outline: none;
+    }
+
+    .brut-input::placeholder {
+      color: #666;
+    }
+
+    /* =========================
+       HYBRID MORPHIC × BRUTAL
+    ========================== */
+
+    .hybrid-card {
+      background: #10152b;
+      border-radius: var(--radius-medium);
+      padding: 14px 12px 16px;
+      border: 3px solid #000;
+      box-shadow:
+        10px 10px 0 #000,
+        -8px -8px 18px rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hybrid-card::before {
+      content: "";
+      position: absolute;
+      width: 140%;
+      height: 140%;
+      top: -40%;
+      right: -50%;
+      background: radial-gradient(circle at 0 0,
+                  rgba(255,138,164,0.2),
+                  transparent 60%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .hybrid-card h3 {
+      font-size: 0.96rem;
+      margin-bottom: 4px;
+    }
+
+    .hybrid-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      max-width: 90%;
+    }
+
+    .hybrid-pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .hybrid-pill {
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #181d3a, #20284a);
+      box-shadow:
+        6px 6px 12px rgba(0,0,0,0.85),
+        -3px -3px 8px rgba(255,255,255,0.15);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border: 2px solid #000;
+    }
+
+    .hybrid-btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hybrid-btn {
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 3px solid #000;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow:
+        5px 5px 0 #000,
+        -4px -4px 14px rgba(255,255,255,0.16);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .hybrid-btn.primary {
+      color: #050714;
+      background: linear-gradient(130deg, var(--mint), var(--yellow));
+    }
+
+    .hybrid-btn.secondary {
+      color: #f7f5ff;
+      background: linear-gradient(130deg, #171e3e, #252f5b);
+    }
+
+    .hybrid-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow:
+        7px 7px 0 #000,
+        -6px -6px 16px rgba(255,255,255,0.18);
+    }
+
+    .hybrid-btn:active {
+      transform: translate(0, 0);
+      box-shadow:
+        3px 3px 0 #000,
+        -2px -2px 10px rgba(255,255,255,0.14);
+    }
+
+    .hybrid-chip {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 2px solid #000;
+      background: #ffd36e;
+      color: #000;
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    .hybrid-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #000;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="title-block">
+        <h1>
+          <span>Morphic</span> × <span>Neobrutal</span> deep pastel UI
+        </h1>
+        <p>
+          A quick component gallery that clearly shows
+          <strong>neumorphic softness</strong>, strict
+          <strong>neobrutalist blocks</strong>, and a hybrid style where they
+          meet.
+        </p>
+      </div>
+      <div class="label-pill">
+        DEEP PASTEL · DEMO KIT
+      </div>
+    </header>
+
+    <div class="sections">
+      <!-- NEUMORPHIC SECTION -->
+      <section class="section">
+        <div class="section-title">Neumorphic</div>
+        <div class="section-sub">Soft, pillowy, low-contrast components.</div>
+
+        <div class="neu-card">
+          <h3>Neumorphic card</h3>
+          <p>
+            Same-color surface as the background, dual shadows,
+            gentle gradient, and very soft edges.
+          </p>
+
+          <div class="neu-tag-row">
+            <div class="neu-tag">Soft elevation</div>
+            <div class="neu-tag">Inner shadows</div>
+            <div class="neu-tag">Low contrast</div>
+          </div>
+
+          <button class="neu-btn">Primary morphic button</button>
+
+          <div class="neu-toggle">
+            <div class="neu-toggle-track">
+              <div class="neu-toggle-knob"></div>
+            </div>
+            <span>Neumorphic toggle (ON)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- NEOBRUTALIST SECTION -->
+      <section class="section">
+        <div class="section-title">Neobrutalism</div>
+        <div class="section-sub">Bold color blocks, thick borders, harsh shadows.</div>
+
+        <div class="brut-card">
+          <h3>Brutal card</h3>
+          <p>
+            High contrast, flat color, chunky border, offset shadow, and
+            confident typography.
+          </p>
+
+          <div class="brut-badges">
+            <div class="brut-badge">BOLD</div>
+            <div class="brut-badge">FLAT</div>
+            <div class="brut-badge">LOUD</div>
+          </div>
+
+          <button class="brut-btn">
+            Brutal CT<span>A</span>
+          </button>
+
+          <div class="brut-input-label">Label</div>
+          <input
+            class="brut-input"
+            placeholder="Type in pure brutal style..."
+          />
+        </div>
+      </section>
+
+      <!-- HYBRID SECTION -->
+      <section class="section">
+        <div class="section-title">Hybrid</div>
+        <div class="section-sub">Morphic softness inside brutal frames.</div>
+
+        <div class="hybrid-card">
+          <h3>Morphic × brutal card</h3>
+          <p>
+            Soft inner gradients and glows, wrapped in a strict brutal outline
+            with offset shadow.
+          </p>
+
+          <div class="hybrid-pill-row">
+            <div class="hybrid-pill">Deep pastel night</div>
+            <div class="hybrid-pill">Glow inside, edge outside</div>
+          </div>
+
+          <div class="hybrid-btn-row">
+            <button class="hybrid-btn primary">Hybrid primary</button>
+            <button class="hybrid-btn secondary">Ghost hybrid</button>
+          </div>
+
+          <div class="hybrid-chip">
+            <div class="hybrid-dot"></div>
+            This is the “in-between” style.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

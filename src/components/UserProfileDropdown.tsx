@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { User, LayoutDashboard, UserCircle, Shield, LogOut, Globe } from 'lucide-react'
+import { DropdownItem } from '@/components/ui'
 import { locales, type Locale } from '@/i18n/config'
 import { setStoredLocale } from '@/lib/locale-storage'
 
@@ -108,31 +108,28 @@ export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdown
 
           {/* Navigation links */}
           <div className="py-1">
-            <Link
+            <DropdownItem
               href={`/${locale}/dashboard`}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
+              icon={LayoutDashboard}
             >
-              <LayoutDashboard className="w-4 h-4" />
               {nav('dashboard')}
-            </Link>
-            <Link
+            </DropdownItem>
+            <DropdownItem
               href={`/${locale}/profile`}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
+              icon={UserCircle}
             >
-              <UserCircle className="w-4 h-4" />
               {nav('profile')}
-            </Link>
+            </DropdownItem>
             {isAdmin && (
-              <Link
+              <DropdownItem
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
+                icon={Shield}
               >
-                <Shield className="w-4 h-4" />
                 {nav('admin')}
-              </Link>
+              </DropdownItem>
             )}
           </div>
 
@@ -142,13 +139,13 @@ export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdown
               const otherLocale = locales.find((l) => l !== locale) as Locale
               const otherConfig = localeConfig[otherLocale]
               return (
-                <button
+                <DropdownItem
+                  as="button"
                   onClick={() => switchLocale(otherLocale)}
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
+                  icon={Globe}
                 >
-                  <Globe className="w-4 h-4" />
-                  <span>{otherConfig.flag} {langT(otherConfig.nameKey)}</span>
-                </button>
+                  {otherConfig.flag} {langT(otherConfig.nameKey)}
+                </DropdownItem>
               )
             })()}
           </div>
@@ -157,22 +154,14 @@ export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdown
           <div className="border-t border-neu-dark/30 py-1 mt-1">
             {signOutAction ? (
               <form action={signOutAction}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
+                <DropdownItem as="button" type="submit" icon={LogOut} variant="danger">
                   {nav('logout')}
-                </button>
+                </DropdownItem>
               </form>
             ) : (
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4" />
+              <DropdownItem as="button" onClick={handleSignOut} icon={LogOut} variant="danger">
                 {nav('logout')}
-              </button>
+              </DropdownItem>
             )}
           </div>
         </div>

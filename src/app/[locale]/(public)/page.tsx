@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center text-white p-8 max-w-2xl">
-        <h1 className="display-xl md:display-2xl mb-6 [text-shadow:_2px_2px_8px_rgba(74,48,96,0.4)]">
+        <h1 className="display-xl md:display-2xl mb-6 text-shadow-hero">
           {t('title')}
         </h1>
         <p className="text-xl md:text-2xl opacity-90 mb-8 no-margin">
@@ -24,12 +24,7 @@ export default function Home() {
             </Button>
           </Link>
           <Link href="#learn-more">
-            <Button
-              variant="ghost"
-              size="lg"
-              leftIcon={BookOpen}
-              className="text-white border-2 border-white hover:bg-white/10"
-            >
+            <Button variant="outline-light" size="lg" leftIcon={BookOpen}>
               {t('learnMore')}
             </Button>
           </Link>

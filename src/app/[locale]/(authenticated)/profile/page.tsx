@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Button, Input, Modal } from '@/components/ui'
+import { Button, Input, Modal, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 import { Loader2, AlertTriangle } from 'lucide-react'
 
@@ -153,9 +153,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm flex items-center justify-center">
-          <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
-        </div>
+        <IconBadge icon={Loader2} size="lg" variant="primary" iconClassName="animate-spin" />
       </div>
     )
   }
@@ -321,8 +319,8 @@ export default function ProfilePage() {
         onClose={() => setShowDeleteConfirm(false)}
         title={t('deleteConfirmTitle')}
       >
-        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-4 bg-primary-100 rounded-neu shadow-neu-sm">
-          <AlertTriangle className="w-7 h-7 text-primary-600" />
+        <div className="flex justify-center mb-4">
+          <IconBadge icon={AlertTriangle} size="lg" variant="danger" />
         </div>
         <p className="text-text-secondary text-center mb-6">
           {t('deleteConfirmMessage')}

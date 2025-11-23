@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { LayoutDashboard } from 'lucide-react'
+import { Button } from '@/components/ui'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { UserProfileDropdown } from '@/components/UserProfileDropdown'
 
@@ -38,28 +39,24 @@ export function PublicHeader({ user }: PublicHeaderProps) {
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
               <>
-                <Link
-                  href={`/${locale}/dashboard`}
-                  className="flex items-center gap-2 bg-primary-500 text-white px-4 py-2 rounded-neu font-medium shadow-neu-sm hover:shadow-neu hover:bg-primary-600 active:shadow-neu-pressed transition-all text-sm"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  {nav('dashboard')}
+                <Link href={`/${locale}/dashboard`}>
+                  <Button size="sm" leftIcon={LayoutDashboard}>
+                    {nav('dashboard')}
+                  </Button>
                 </Link>
                 <UserProfileDropdown user={user} />
               </>
             ) : (
               <>
-                <Link
-                  href={`/${locale}/auth/login`}
-                  className="text-text-secondary hover:text-text-primary transition-colors font-medium text-sm px-3 py-2"
-                >
-                  {nav('login')}
+                <Link href={`/${locale}/auth/login`}>
+                  <Button variant="ghost" size="sm">
+                    {nav('login')}
+                  </Button>
                 </Link>
-                <Link
-                  href={`/${locale}/auth/register`}
-                  className="bg-primary-500 text-white px-4 py-2 rounded-neu font-medium shadow-neu-sm hover:shadow-neu hover:bg-primary-600 active:shadow-neu-pressed transition-all text-sm"
-                >
-                  {nav('register')}
+                <Link href={`/${locale}/auth/register`}>
+                  <Button size="sm">
+                    {nav('register')}
+                  </Button>
                 </Link>
                 <LanguageSwitcher />
               </>

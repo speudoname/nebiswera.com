@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner'
-import { Badge } from '@/components/ui'
+import { Badge, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 import { BookOpen, CheckCircle, ShoppingBag } from 'lucide-react'
 
@@ -53,9 +53,7 @@ export default async function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-neu bg-primary-100 shadow-neu-sm flex items-center justify-center">
-                      <BookOpen className="h-5 w-5 text-primary-600" />
-                    </div>
+                    <IconBadge icon={BookOpen} size="sm" variant="primary" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -73,9 +71,7 @@ export default async function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-neu bg-secondary-100 shadow-neu-sm flex items-center justify-center">
-                      <CheckCircle className="h-5 w-5 text-secondary-600" />
-                    </div>
+                    <IconBadge icon={CheckCircle} size="sm" variant="secondary" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -93,9 +89,7 @@ export default async function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-neu bg-secondary-100 shadow-neu-sm flex items-center justify-center">
-                      <ShoppingBag className="h-5 w-5 text-secondary-600" />
-                    </div>
+                    <IconBadge icon={ShoppingBag} size="sm" variant="secondary" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>

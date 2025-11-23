@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import { KeyRound, Mail, ArrowLeft } from 'lucide-react'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 
 export default function ForgotPasswordPage() {
@@ -44,8 +44,8 @@ export default function ForgotPasswordPage() {
   if (submitted) {
     return (
       <Card className="w-full max-w-md text-center" padding="lg">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-secondary-100 text-secondary-600 shadow-neu-sm mb-4">
-          <Mail className="w-7 h-7" />
+        <div className="inline-flex mb-4">
+          <IconBadge icon={Mail} size="lg" variant="secondary" />
         </div>
         <h3 className="mb-4">{t('success')}</h3>
         <Link href={`/${locale}/auth/login`}>
@@ -60,8 +60,8 @@ export default function ForgotPasswordPage() {
   return (
     <Card className="w-full max-w-md" padding="lg">
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
-          <KeyRound className="w-7 h-7" />
+        <div className="inline-flex mb-4">
+          <IconBadge icon={KeyRound} size="lg" variant="primary" />
         </div>
         <h2 className="no-margin">{t('title')}</h2>
         <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>

@@ -20,7 +20,7 @@ import { Loader2, LucideIcon } from 'lucide-react'
  */
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'danger'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'outline-light' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   /** Icon component to show on the left */
   leftIcon?: LucideIcon
@@ -87,6 +87,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         shadow-neu-sm hover:shadow-neu
         hover:border-primary-400 hover:bg-primary-50
         active:shadow-neu-inset-sm
+      `,
+      'outline-light': `
+        bg-transparent text-white
+        border-2 border-white/80
+        hover:bg-white/20 hover:border-white
+        active:bg-white/30
       `,
       danger: `
         bg-primary-700 text-white

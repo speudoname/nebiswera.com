@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import plugin from 'tailwindcss/plugin'
 
 /**
  * Tailwind Configuration
@@ -99,6 +100,15 @@ const config: Config = {
       },
 
       // =======================================================================
+      // TEXT SHADOWS
+      // =======================================================================
+      textShadow: {
+        'hero': '2px 2px 8px rgba(74, 48, 96, 0.4)',
+        'hero-lg': '3px 3px 12px rgba(74, 48, 96, 0.5)',
+        'none': 'none',
+      },
+
+      // =======================================================================
       // BORDER RADIUS - Softer for neomorphic
       // =======================================================================
       borderRadius: {
@@ -172,7 +182,19 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Text shadow plugin
+    plugin(function({ matchUtilities, theme }) {
+      matchUtilities(
+        {
+          'text-shadow': (value) => ({
+            textShadow: value,
+          }),
+        },
+        { values: theme('textShadow') }
+      )
+    }),
+  ],
 }
 
 export default config

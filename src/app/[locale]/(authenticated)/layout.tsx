@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
-import { auth, signOut } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { signOutAction } from '@/lib/actions'
 import { AppHeader } from '@/components/layout'
 
 export default async function AuthenticatedLayout({
@@ -30,14 +31,9 @@ export default async function AuthenticatedLayout({
     redirect(`/${locale}/auth/login`)
   }
 
-  const handleSignOut = async () => {
-    'use server'
-    await signOut({ redirectTo: '/' })
-  }
-
   return (
     <div className="min-h-screen bg-neu-base">
-      <AppHeader user={{ name: user.name, email: user.email, image: user.image, role: user.role }} signOutAction={handleSignOut} />
+      <AppHeader user={{ name: user.name, email: user.email, image: user.image, role: user.role }} signOutAction={signOutAction} />
       <main>
         {children}
       </main>

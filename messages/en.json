@@ -164,5 +164,23 @@
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
     "contact": "Contact"
+  },
+  "pages": {
+    "about": {
+      "title": "About Us",
+      "content": "Nebiswera is a platform that helps people learn and grow. Full information about us will be available here soon."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "content": "Your privacy is important to us. Our full privacy policy will be published here soon."
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "content": "By using Nebiswera, you agree to our terms of service. Full terms will be published here soon."
+    },
+    "contact": {
+      "title": "Contact Us",
+      "content": "Have questions? Contact us at: contact@nebiswera.ge"
+    }
   }
 }

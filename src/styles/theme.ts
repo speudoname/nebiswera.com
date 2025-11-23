@@ -5,7 +5,7 @@
  * To change any visual aspect of the app, modify this file.
  *
  * Color Palette (5 colors + black/white):
- * - Light Pink (#FFCCE5) - Background/Surface
+ * - Off-White (#F7F6F8) - Background/Surface
  * - Orchid (#CC7EB8) - Secondary/Success
  * - Deep Purple (#6B2D5C) - Accent/Info
  * - Coral (#F27059) - Primary/Warning/Error
@@ -56,12 +56,12 @@ export const colors = {
     800: '#5A274D',
     900: '#4D2342',
   },
-  // Neomorphic surface colors (Light Pink #FFCCE5)
+  // Neomorphic surface colors (Subtle off-white #F7F6F8)
   neu: {
-    base: '#FFCCE5',      // Main background
-    light: '#FFE0F0',     // Elevated elements
-    dark: '#F0B8D6',      // Sunken/border elements
-    shadow: '#D9A3C2',    // Shadow color
+    base: '#F7F6F8',      // Main background
+    light: '#FFFFFF',     // Elevated elements
+    dark: '#E8E6EB',      // Sunken/border elements
+    shadow: '#D1CED6',    // Shadow color
     highlight: '#FFFFFF', // Highlight color
   },
   // Text colors (Dark Purple #4A3060)
@@ -207,23 +207,23 @@ export const spacing = {
 export const shadows = {
   // Raised elements (buttons, cards)
   neu: {
-    sm: '4px 4px 8px #D9A3C2, -4px -4px 8px #FFFFFF',
-    DEFAULT: '6px 6px 12px #D9A3C2, -6px -6px 12px #FFFFFF',
-    md: '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
-    lg: '12px 12px 24px #D9A3C2, -12px -12px 24px #FFFFFF',
+    sm: '4px 4px 8px #D1CED6, -4px -4px 8px #FFFFFF',
+    DEFAULT: '6px 6px 12px #D1CED6, -6px -6px 12px #FFFFFF',
+    md: '8px 8px 16px #D1CED6, -8px -8px 16px #FFFFFF',
+    lg: '12px 12px 24px #D1CED6, -12px -12px 24px #FFFFFF',
   },
   // Pressed/inset elements (inputs, pressed buttons)
   neuInset: {
-    sm: 'inset 2px 2px 4px #D9A3C2, inset -2px -2px 4px #FFFFFF',
-    DEFAULT: 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
-    md: 'inset 6px 6px 12px #D9A3C2, inset -6px -6px 12px #FFFFFF',
+    sm: 'inset 2px 2px 4px #D1CED6, inset -2px -2px 4px #FFFFFF',
+    DEFAULT: 'inset 4px 4px 8px #D1CED6, inset -4px -4px 8px #FFFFFF',
+    md: 'inset 6px 6px 12px #D1CED6, inset -6px -6px 12px #FFFFFF',
   },
   // Flat subtle shadow
   flat: '0 2px 8px rgba(74, 48, 96, 0.08)',
   // Hover state
-  hover: '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
+  hover: '8px 8px 16px #D1CED6, -8px -8px 16px #FFFFFF',
   // Pressed state
-  pressed: 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
+  pressed: 'inset 4px 4px 8px #D1CED6, inset -4px -4px 8px #FFFFFF',
   // Text shadow for light text on colored backgrounds
   text: '2px 2px 8px rgba(74, 48, 96, 0.4)',
 } as const

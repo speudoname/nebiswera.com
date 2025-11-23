@@ -61,12 +61,12 @@ const config: Config = {
           800: '#5A274D',
           900: '#4D2342',
         },
-        // Neomorphic surface colors (Light Pink #FFCCE5)
+        // Neomorphic surface colors (Subtle off-white #F7F6F8)
         neu: {
-          base: '#FFCCE5',
-          light: '#FFE0F0',
-          dark: '#F0B8D6',
-          shadow: '#D9A3C2',
+          base: '#F7F6F8',
+          light: '#FFFFFF',
+          dark: '#E8E6EB',
+          shadow: '#D1CED6',
           highlight: '#FFFFFF',
         },
         // Text colors (Dark Purple #4A3060)
@@ -78,24 +78,24 @@ const config: Config = {
       },
 
       // =======================================================================
-      // SHADOWS - Neomorphic (pink-based)
+      // SHADOWS - Neomorphic (neutral gray-based)
       // =======================================================================
       boxShadow: {
         // Raised elements
-        'neu-sm': '4px 4px 8px #D9A3C2, -4px -4px 8px #FFFFFF',
-        'neu': '6px 6px 12px #D9A3C2, -6px -6px 12px #FFFFFF',
-        'neu-md': '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
-        'neu-lg': '12px 12px 24px #D9A3C2, -12px -12px 24px #FFFFFF',
+        'neu-sm': '4px 4px 8px #D1CED6, -4px -4px 8px #FFFFFF',
+        'neu': '6px 6px 12px #D1CED6, -6px -6px 12px #FFFFFF',
+        'neu-md': '8px 8px 16px #D1CED6, -8px -8px 16px #FFFFFF',
+        'neu-lg': '12px 12px 24px #D1CED6, -12px -12px 24px #FFFFFF',
         // Pressed/inset elements
-        'neu-inset-sm': 'inset 2px 2px 4px #D9A3C2, inset -2px -2px 4px #FFFFFF',
-        'neu-inset': 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
-        'neu-inset-md': 'inset 6px 6px 12px #D9A3C2, inset -6px -6px 12px #FFFFFF',
+        'neu-inset-sm': 'inset 2px 2px 4px #D1CED6, inset -2px -2px 4px #FFFFFF',
+        'neu-inset': 'inset 4px 4px 8px #D1CED6, inset -4px -4px 8px #FFFFFF',
+        'neu-inset-md': 'inset 6px 6px 12px #D1CED6, inset -6px -6px 12px #FFFFFF',
         // Flat shadow
         'neu-flat': '0 2px 8px rgba(74, 48, 96, 0.08)',
         // Hover state
-        'neu-hover': '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
+        'neu-hover': '8px 8px 16px #D1CED6, -8px -8px 16px #FFFFFF',
         // Active/pressed state
-        'neu-pressed': 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
+        'neu-pressed': 'inset 4px 4px 8px #D1CED6, inset -4px -4px 8px #FFFFFF',
       },
 
       // =======================================================================
@@ -113,8 +113,8 @@ const config: Config = {
       // BACKGROUND GRADIENTS
       // =======================================================================
       backgroundImage: {
-        'neu-gradient': 'linear-gradient(145deg, #FFE0F0, #F0C0D8)',
-        'neu-gradient-reverse': 'linear-gradient(145deg, #F0C0D8, #FFE0F0)',
+        'neu-gradient': 'linear-gradient(145deg, #FFFFFF, #EFEDF1)',
+        'neu-gradient-reverse': 'linear-gradient(145deg, #EFEDF1, #FFFFFF)',
       },
 
       // =======================================================================

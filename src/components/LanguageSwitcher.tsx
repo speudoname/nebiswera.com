@@ -33,8 +33,9 @@ export function LanguageSwitcher({ darkBg = false }: LanguageSwitcherProps) {
   const other = localeConfig[otherLocale]
 
   // Shadow classes based on background type
+  // Note: uses 'darkbg' not 'dark' to avoid conflict with neu.dark color token
   const shadowClasses = darkBg
-    ? 'shadow-neu-dark-sm hover:shadow-neu-dark active:shadow-neu-dark-pressed'
+    ? 'shadow-neu-darkbg-sm hover:shadow-neu-darkbg active:shadow-neu-darkbg-pressed'
     : 'shadow-neu-sm hover:shadow-neu hover:text-text-primary active:shadow-neu-pressed'
 
   return (

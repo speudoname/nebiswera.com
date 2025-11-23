@@ -16,24 +16,14 @@ const paddingClasses = {
   lg: 'p-8',
 }
 
-// Shadow class helper - uses direct strings for Tailwind detection
-function getShadowClass(variant: 'raised' | 'flat' | 'inset', darkBg: boolean): string {
-  if (darkBg) {
-    // Dark/colored background shadows
-    if (variant === 'raised') return 'shadow-neu-dark'
-    if (variant === 'flat') return 'shadow-neu-flat'
-    if (variant === 'inset') return 'shadow-neu-dark-inset'
-  }
-  // Light background shadows (default)
-  if (variant === 'raised') return 'shadow-neu'
-  if (variant === 'flat') return 'shadow-neu-flat'
-  if (variant === 'inset') return 'shadow-neu-inset'
-  return 'shadow-neu'
-}
-
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className = '', variant = 'raised', padding = 'md', darkBg = false, children, ...props }, ref) => {
-    const shadowClass = getShadowClass(variant, darkBg)
+    // Shadow classes - exactly like LanguageSwitcher pattern
+    // Note: uses 'darkbg' not 'dark' to avoid conflict with neu.dark color token
+    const shadowClass = darkBg
+      ? 'shadow-neu-darkbg'
+      : 'shadow-neu'
+
     return (
       <div
         ref={ref}

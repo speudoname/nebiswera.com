@@ -19,14 +19,14 @@ const config: Config = {
   ],
   // Safelist ensures these classes are always generated regardless of detection
   safelist: [
-    'shadow-neu-dark',
-    'shadow-neu-dark-sm',
-    'shadow-neu-dark-md',
-    'shadow-neu-dark-lg',
-    'shadow-neu-dark-inset',
-    'shadow-neu-dark-inset-sm',
-    'shadow-neu-dark-hover',
-    'shadow-neu-dark-pressed',
+    'shadow-neu-darkbg',
+    'shadow-neu-darkbg-sm',
+    'shadow-neu-darkbg-md',
+    'shadow-neu-darkbg-lg',
+    'shadow-neu-darkbg-inset',
+    'shadow-neu-darkbg-inset-sm',
+    'shadow-neu-darkbg-hover',
+    'shadow-neu-darkbg-pressed',
   ],
   theme: {
     extend: {
@@ -115,19 +115,20 @@ const config: Config = {
 
         // =====================================================================
         // Dark/colored background shadows (use on gradients, dark surfaces)
+        // Named 'darkbg' to avoid conflict with neu.dark color token
         // Uses subtle opacity instead of pure white for highlight
         // =====================================================================
-        'neu-dark-sm': '4px 4px 8px rgba(0, 0, 0, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.05)',
-        'neu-dark': '6px 6px 12px rgba(0, 0, 0, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.05)',
-        'neu-dark-md': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)',
-        'neu-dark-lg': '12px 12px 24px rgba(0, 0, 0, 0.35), -12px -12px 24px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg-sm': '4px 4px 8px rgba(0, 0, 0, 0.25), -4px -4px 8px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg': '6px 6px 12px rgba(0, 0, 0, 0.25), -6px -6px 12px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg-md': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg-lg': '12px 12px 24px rgba(0, 0, 0, 0.35), -12px -12px 24px rgba(255, 255, 255, 0.05)',
         // Pressed/inset for dark backgrounds
-        'neu-dark-inset-sm': 'inset 2px 2px 4px rgba(0, 0, 0, 0.25), inset -2px -2px 4px rgba(255, 255, 255, 0.05)',
-        'neu-dark-inset': 'inset 4px 4px 8px rgba(0, 0, 0, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg-inset-sm': 'inset 2px 2px 4px rgba(0, 0, 0, 0.25), inset -2px -2px 4px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg-inset': 'inset 4px 4px 8px rgba(0, 0, 0, 0.25), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
         // Hover state for dark backgrounds
-        'neu-dark-hover': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.08)',
+        'neu-darkbg-hover': '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.08)',
         // Active/pressed state for dark backgrounds
-        'neu-dark-pressed': 'inset 4px 4px 8px rgba(0, 0, 0, 0.3), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
+        'neu-darkbg-pressed': 'inset 4px 4px 8px rgba(0, 0, 0, 0.3), inset -4px -4px 8px rgba(255, 255, 255, 0.05)',
       },
 
       // =======================================================================

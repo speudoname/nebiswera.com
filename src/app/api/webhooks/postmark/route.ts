@@ -43,16 +43,41 @@ type PostmarkEvent =
   | PostmarkSpamComplaintEvent
   | PostmarkOpenEvent
 
+/**
+ * Verify Basic HTTP Authentication
+ * Postmark recommends using Basic Auth by embedding credentials in the webhook URL:
+ * https://username:password@yourdomain.com/api/webhooks/postmark
+ *
+ * The credentials are sent in the Authorization header as "Basic base64(username:password)"
+ */
+function verifyBasicAuth(request: Request): boolean {
+  const webhookUsername = process.env.POSTMARK_WEBHOOK_USERNAME
+  const webhookPassword = process.env.POSTMARK_WEBHOOK_PASSWORD
+
+  // If no credentials configured, skip authentication (not recommended for production)
+  if (!webhookUsername || !webhookPassword) {
+    return true
+  }
+
+  const authHeader = request.headers.get('Authorization')
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return false
+  }
+
+  // Decode the base64 credentials
+  const base64Credentials = authHeader.slice(6) // Remove "Basic "
+  const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8')
+  const [username, password] = credentials.split(':')
+
+  return username === webhookUsername && password === webhookPassword
+}
+
 export async function POST(request: Request) {
   try {
-    // Verify webhook signature if configured
-    const webhookToken = process.env.POSTMARK_WEBHOOK_TOKEN
-    if (webhookToken) {
-      const signature = request.headers.get('X-Postmark-Token')
-      if (signature !== webhookToken) {
-        console.warn('Invalid Postmark webhook signature')
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+    // Verify Basic HTTP Authentication
+    if (!verifyBasicAuth(request)) {
+      console.warn('Invalid webhook authentication')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const event = (await request.json()) as PostmarkEvent

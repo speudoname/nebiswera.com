@@ -43,10 +43,32 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
+    const controller = new AbortController()
+
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch('/api/profile', { signal: controller.signal })
+        if (res.ok) {
+          const data = await res.json()
+          setUser(data)
+          setFormData({
+            name: data.name || '',
+            preferredLocale: data.preferredLocale || 'ka',
+          })
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return
+        console.error('Failed to fetch profile:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchProfile()
+    return () => controller.abort()
   }, [])
 
-  const fetchProfile = async () => {
+  const refetchProfile = async () => {
     try {
       const res = await fetch('/api/profile')
       if (res.ok) {

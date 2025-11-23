@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import createIntlMiddleware from 'next-intl/middleware'
 import { locales, defaultLocale } from '@/i18n/config'
+import { AUTH_COOKIE_NAME } from '@/lib/auth-utils'
 
 // Create the internationalization middleware
 const intlMiddleware = createIntlMiddleware({
@@ -35,20 +36,15 @@ export async function middleware(request: NextRequest) {
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
-      cookieName: process.env.NODE_ENV === 'production'
-        ? '__Secure-authjs.session-token'
-        : 'authjs.session-token',
+      cookieName: AUTH_COOKIE_NAME,
     })
 
-    const isLoggedIn = !!token
-    const isAdmin = token?.role === 'ADMIN'
-
-    if (!isLoggedIn) {
+    if (!token) {
       const loginUrl = new URL(`/${defaultLocale}/auth/login`, request.url)
       loginUrl.searchParams.set('callbackUrl', pathname)
       return NextResponse.redirect(loginUrl)
     }
-    if (!isAdmin) {
+    if (token.role !== 'ADMIN') {
       return NextResponse.redirect(new URL(`/${defaultLocale}/dashboard`, request.url))
     }
     return NextResponse.next()
@@ -79,12 +75,8 @@ export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
-    cookieName: process.env.NODE_ENV === 'production'
-      ? '__Secure-authjs.session-token'
-      : 'authjs.session-token',
+    cookieName: AUTH_COOKIE_NAME,
   })
-
-  console.log('[MIDDLEWARE] Path:', pathnameWithoutLocale, 'Token:', token ? 'exists' : 'null')
 
   const isLoggedIn = !!token
 

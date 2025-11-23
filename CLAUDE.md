@@ -220,7 +220,10 @@ All user-facing routes are under `/[locale]/`:
 
 ```
 content/                    # All localized content
-├── messages/               # UI translation files
+├── messages/               # UI translation files (buttons, labels, nav)
+│   ├── en.json
+│   └── ka.json
+├── seo/                    # SEO metadata per page
 │   ├── en.json
 │   └── ka.json
 └── email-templates/        # Language-specific email templates
@@ -232,6 +235,15 @@ src/
 ├── app/
 │   ├── [locale]/           # Localized routes
 │   │   ├── (public)/       # Public pages
+│   │   │   ├── page.tsx    # Root page (imports from home/)
+│   │   │   ├── home/       # Home page components (no page.tsx = no /home route)
+│   │   │   │   ├── HomeClient.tsx
+│   │   │   │   └── content/
+│   │   │   │       └── PhilosophySection.tsx
+│   │   │   ├── about/      # About page
+│   │   │   │   ├── page.tsx
+│   │   │   │   └── content/
+│   │   │   └── contact/    # Contact page
 │   │   ├── (authenticated)/ # Protected pages
 │   │   └── auth/           # Auth pages
 │   ├── admin/              # Admin panel (English only)
@@ -247,6 +259,104 @@ src/
 ├── styles/                 # Design system tokens
 └── types/                  # TypeScript type definitions
 ```
+
+## Page Content Architecture
+
+### Bilingual Content Components
+
+For page-specific content sections (not reusable UI), use **co-located bilingual components** instead of messages JSON.
+
+**Why:**
+- Keeps page content with the page (easier to find and edit)
+- Better for longer text blocks (paragraphs, multi-step explanations)
+- Avoids bloating the messages JSON with page-specific copy
+- Content is self-contained and can have its own structure
+
+**When to use messages JSON:**
+- UI elements (buttons, labels, nav items, form fields)
+- Short strings reused across pages
+- Error/success messages
+
+**When to use bilingual components:**
+- Page sections with paragraphs of text
+- Content that won't be reused elsewhere
+- Sections with complex structure (lists, steps, cards)
+
+### Creating a Bilingual Content Component
+
+Each page folder can have a `content/` subfolder:
+
+```
+src/app/[locale]/(public)/about/
+├── page.tsx
+├── AboutClient.tsx
+└── content/
+    ├── MissionSection.tsx
+    ├── TeamSection.tsx
+    └── ValuesSection.tsx
+```
+
+**Component pattern:**
+
+```tsx
+'use client'
+
+import { useLocale } from 'next-intl'
+import type { Locale } from '@/i18n/config'
+
+const content: Record<Locale, {
+  title: string
+  description: string
+  // ... other fields
+}> = {
+  ka: {
+    title: 'Georgian title',
+    description: 'Georgian description...',
+  },
+  en: {
+    title: 'English title',
+    description: 'English description...',
+  },
+}
+
+export function MissionSection() {
+  const locale = useLocale() as Locale
+  const t = content[locale]
+
+  return (
+    <section>
+      <h2>{t.title}</h2>
+      <p>{t.description}</p>
+    </section>
+  )
+}
+```
+
+### Folder Structure by Page Type
+
+```
+src/app/[locale]/(public)/
+├── page.tsx                    # Root page (imports from home/)
+│
+├── home/                       # Home page (no page.tsx = no /home route)
+│   ├── HomeClient.tsx
+│   └── content/
+│       ├── PhilosophySection.tsx
+│       └── TestimonialsSection.tsx
+│
+├── about/
+│   ├── page.tsx
+│   ├── AboutClient.tsx
+│   └── content/
+│       ├── MissionSection.tsx
+│       └── TeamSection.tsx
+│
+├── contact/
+│   ├── page.tsx
+│   └── ContactClient.tsx       # Simple pages may not need content/
+```
+
+**Key insight:** The `home/` folder has no `page.tsx`, so Next.js doesn't create a `/home` route. It's purely organizational.
 
 ## SEO & Metadata System
 
@@ -361,3 +471,5 @@ These are already set up in `src/app/[locale]/layout.tsx` — no action needed.
 - [ ] Metadata added to `content/seo/en.json` and `content/seo/ka.json`
 - [ ] Page uses server/client component pattern with `generatePageMetadata`
 - [ ] (Optional) OG image added to `/public/og/{pageKey}.png`
+- [ ] Page content sections use bilingual components in `content/` subfolder (not messages JSON)
+- [ ] Content components follow the `Record<Locale, {...}>` pattern

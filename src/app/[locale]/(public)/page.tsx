@@ -1,6 +1,7 @@
 import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
-import { HomeClient } from './HomeClient'
+import { HomeClient } from './home/HomeClient'
+import { PhilosophySection } from './home/content/PhilosophySection'
 
 export async function generateMetadata({
   params,
@@ -12,5 +13,10 @@ export async function generateMetadata({
 }
 
 export default function HomePage() {
-  return <HomeClient />
+  return (
+    <>
+      <HomeClient />
+      <PhilosophySection />
+    </>
+  )
 }

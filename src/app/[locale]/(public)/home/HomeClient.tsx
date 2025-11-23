@@ -44,11 +44,11 @@ export function HomeClient() {
               {t('getStarted')}
             </Button>
           </Link>
-          <Link href={`/${locale}/about`} className="w-full sm:w-auto">
+          <a href="#learn-more" className="w-full sm:w-auto">
             <Button variant="outline" size="lg" leftIcon={BookOpen} className="w-full sm:w-auto">
               {t('learnMore')}
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
     </div>

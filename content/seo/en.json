@@ -1,64 +1,64 @@
 {
   "site": {
     "name": "Nebiswera",
-    "tagline": "Learn Georgian Online"
+    "tagline": "What you choose becomes"
   },
   "pages": {
     "home": {
-      "title": "Nebiswera - Learn Georgian Language Online",
-      "description": "Master the Georgian language with interactive lessons, cultural insights, and personalized learning paths. Start your journey today."
+      "title": "Nebiswera — A Framework for Inner Authorship",
+      "description": "What you choose becomes. Nebiswera helps you see how you create your reality and how to choose differently — from love instead of fear."
     },
     "about": {
-      "title": "About Us - Nebiswera",
-      "description": "Learn about Nebiswera's mission to make Georgian language accessible to learners worldwide through modern teaching methods."
+      "title": "What is Nebiswera — Philosophy and Approach",
+      "description": "Nebiswera is a framework for those ready for radical responsibility. Not a quick fix, but deep work on how we write our own lives."
     },
     "contact": {
-      "title": "Contact Us - Nebiswera",
-      "description": "Get in touch with the Nebiswera team. We're here to help with your Georgian language learning journey."
+      "title": "Contact Us — Nebiswera",
+      "description": "Have questions or ready to begin your journey? Get in touch with us."
     },
     "privacy": {
-      "title": "Privacy Policy - Nebiswera",
-      "description": "Read Nebiswera's privacy policy. Learn how we protect your data and respect your privacy."
+      "title": "Privacy Policy — Nebiswera",
+      "description": "How we protect your personal data and respect your privacy."
     },
     "terms": {
-      "title": "Terms of Service - Nebiswera",
-      "description": "Review Nebiswera's terms of service. Understand the rules and guidelines for using our platform."
+      "title": "Terms of Service — Nebiswera",
+      "description": "Rules and conditions for using the Nebiswera platform."
     },
     "login": {
-      "title": "Sign In - Nebiswera",
-      "description": "Sign in to your Nebiswera account to continue your Georgian language learning journey."
+      "title": "Sign In — Nebiswera",
+      "description": "Sign in to your account and continue your inner authorship journey."
     },
     "register": {
-      "title": "Create Account - Nebiswera",
-      "description": "Join Nebiswera and start learning Georgian today. Create your free account in seconds."
+      "title": "Create Account — Nebiswera",
+      "description": "Join Nebiswera and begin your path toward conscious choice."
     },
     "forgotPassword": {
-      "title": "Reset Password - Nebiswera",
-      "description": "Forgot your password? Reset it here to regain access to your Nebiswera account."
+      "title": "Reset Password — Nebiswera",
+      "description": "Forgot your password? Restore access to your account."
     },
     "resetPassword": {
-      "title": "Set New Password - Nebiswera",
-      "description": "Create a new password for your Nebiswera account."
+      "title": "Set New Password — Nebiswera",
+      "description": "Create a new password for your account."
     },
     "verifyEmail": {
-      "title": "Verify Email - Nebiswera",
-      "description": "Verify your email address to activate your Nebiswera account."
+      "title": "Verify Email — Nebiswera",
+      "description": "Verify your email address to activate your account."
     },
     "verifyRequired": {
-      "title": "Email Verification Required - Nebiswera",
-      "description": "Please verify your email address to continue using Nebiswera."
+      "title": "Email Verification Required — Nebiswera",
+      "description": "Please verify your email to continue."
     },
     "authError": {
-      "title": "Authentication Error - Nebiswera",
-      "description": "An error occurred during authentication. Please try again."
+      "title": "Authentication Error — Nebiswera",
+      "description": "An error occurred. Please try again."
     },
     "dashboard": {
-      "title": "Dashboard - Nebiswera",
-      "description": "Your personal Nebiswera dashboard. Track your progress and continue learning Georgian."
+      "title": "My Space — Nebiswera",
+      "description": "Your personal space for inner work and tracking your progress."
     },
     "profile": {
-      "title": "Profile Settings - Nebiswera",
-      "description": "Manage your Nebiswera account settings and preferences."
+      "title": "Profile Settings — Nebiswera",
+      "description": "Manage your account settings and preferences."
     }
   }
 }

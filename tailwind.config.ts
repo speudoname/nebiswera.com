@@ -1,5 +1,15 @@
 import type { Config } from 'tailwindcss'
 
+/**
+ * Tailwind Configuration
+ *
+ * This file extends Tailwind with our design system tokens.
+ * The source of truth for all design values is in src/styles/theme.ts
+ *
+ * DO NOT add inline colors, fonts, or sizes in components.
+ * All values should reference the tokens defined here.
+ */
+
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -8,9 +18,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Custom colors - Limited palette (5 colors only + black/white)
+      // =======================================================================
+      // COLORS - Limited palette (5 colors + black/white)
+      // =======================================================================
       colors: {
-        // Primary - Coral/Orange (#F27059)
+        // Primary - Coral/Orange (#F27059) - CTAs, buttons, links, warnings
         primary: {
           50: '#FEF3F1',
           100: '#FDE7E3',
@@ -23,7 +35,7 @@ const config: Config = {
           800: '#9B3324',
           900: '#812F24',
         },
-        // Secondary - Orchid/Magenta (#CC7EB8)
+        // Secondary - Orchid/Magenta (#CC7EB8) - Secondary actions, success
         secondary: {
           50: '#FCF5FA',
           100: '#F9EBF5',
@@ -36,7 +48,7 @@ const config: Config = {
           800: '#7C3E67',
           900: '#683757',
         },
-        // Deep Purple accent (#6B2D5C)
+        // Accent - Deep Purple (#6B2D5C) - Info states, highlights
         accent: {
           50: '#F9F3F7',
           100: '#F3E7F0',
@@ -49,7 +61,7 @@ const config: Config = {
           800: '#5A274D',
           900: '#4D2342',
         },
-        // Neomorphic surface colors (Light Pink base #FFCCE5)
+        // Neomorphic surface colors (Light Pink #FFCCE5)
         neu: {
           base: '#FFCCE5',
           light: '#FFE0F0',
@@ -57,14 +69,17 @@ const config: Config = {
           shadow: '#D9A3C2',
           highlight: '#FFFFFF',
         },
-        // Text colors (Dark Purple)
+        // Text colors (Dark Purple #4A3060)
         text: {
           primary: '#4A3060',
           secondary: '#6B2D5C',
           muted: '#9E7A92',
         },
       },
-      // Neomorphic shadows (updated to pink-based)
+
+      // =======================================================================
+      // SHADOWS - Neomorphic (pink-based)
+      // =======================================================================
       boxShadow: {
         // Raised elements
         'neu-sm': '4px 4px 8px #D9A3C2, -4px -4px 8px #FFFFFF',
@@ -77,12 +92,15 @@ const config: Config = {
         'neu-inset-md': 'inset 6px 6px 12px #D9A3C2, inset -6px -6px 12px #FFFFFF',
         // Flat shadow
         'neu-flat': '0 2px 8px rgba(74, 48, 96, 0.08)',
-        // Hover state - slightly more pronounced
+        // Hover state
         'neu-hover': '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
         // Active/pressed state
         'neu-pressed': 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
       },
-      // Border radius - softer for neomorphic
+
+      // =======================================================================
+      // BORDER RADIUS - Softer for neomorphic
+      // =======================================================================
       borderRadius: {
         'neu-sm': '8px',
         'neu': '12px',
@@ -90,18 +108,71 @@ const config: Config = {
         'neu-lg': '20px',
         'neu-xl': '24px',
       },
-      // Background gradients
+
+      // =======================================================================
+      // BACKGROUND GRADIENTS
+      // =======================================================================
       backgroundImage: {
         'neu-gradient': 'linear-gradient(145deg, #FFE0F0, #F0C0D8)',
         'neu-gradient-reverse': 'linear-gradient(145deg, #F0C0D8, #FFE0F0)',
       },
-      // Font family (using CSS variables from next/font)
+
+      // =======================================================================
+      // FONTS
+      // =======================================================================
       fontFamily: {
         sans: ['var(--font-inter)', 'var(--font-georgian)', 'system-ui', 'sans-serif'],
         georgian: ['var(--font-georgian)', 'system-ui', 'sans-serif'],
+      },
+
+      // =======================================================================
+      // TYPOGRAPHY - Line heights for better readability
+      // =======================================================================
+      lineHeight: {
+        'tight': '1.25',
+        'snug': '1.375',
+        'normal': '1.5',
+        'relaxed': '1.625',
+        'loose': '2',
+      },
+
+      // =======================================================================
+      // LETTER SPACING
+      // =======================================================================
+      letterSpacing: {
+        tighter: '-0.05em',
+        tight: '-0.025em',
+        normal: '0',
+        wide: '0.025em',
+        wider: '0.05em',
+        widest: '0.1em',
+      },
+
+      // =======================================================================
+      // Z-INDEX
+      // =======================================================================
+      zIndex: {
+        '60': '60',
+        '70': '70',
+        '80': '80',
+        '90': '90',
+        '100': '100',
+        '200': '200',
+        '300': '300',
+        '999': '999',
+      },
+
+      // =======================================================================
+      // TRANSITIONS
+      // =======================================================================
+      transitionDuration: {
+        'fast': '150ms',
+        'normal': '200ms',
+        'slow': '300ms',
       },
     },
   },
   plugins: [],
 }
+
 export default config

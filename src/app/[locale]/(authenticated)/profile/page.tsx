@@ -18,6 +18,7 @@ interface UserProfile {
 export default function ProfilePage() {
   const t = useTranslations('profile')
   const common = useTranslations('common')
+  const errors = useTranslations('auth.errors')
   const languages = useTranslations('languages')
   const locale = useLocale()
   const router = useRouter()
@@ -90,7 +91,7 @@ export default function ProfilePage() {
         setMessage({ type: 'error', text: data.error })
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to update profile' })
+      setMessage({ type: 'error', text: errors('somethingWrong') })
     } finally {
       setSaving(false)
     }
@@ -101,12 +102,12 @@ export default function ProfilePage() {
     setMessage(null)
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match' })
+      setMessage({ type: 'error', text: errors('passwordMismatch') })
       return
     }
 
     if (passwordData.newPassword.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters' })
+      setMessage({ type: 'error', text: errors('weakPassword') })
       return
     }
 
@@ -130,7 +131,7 @@ export default function ProfilePage() {
         setMessage({ type: 'error', text: data.error })
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to change password' })
+      setMessage({ type: 'error', text: errors('somethingWrong') })
     } finally {
       setSaving(false)
     }
@@ -199,7 +200,7 @@ export default function ProfilePage() {
             />
           </div>
           <div className="flex justify-end">
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={saving} loadingText={common('loading')}>
               {common('save')}
             </Button>
           </div>
@@ -227,7 +228,7 @@ export default function ProfilePage() {
             <p className="text-xs text-gray-500 mt-1">{t('languageDescription')}</p>
           </div>
           <div className="flex justify-end">
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={saving} loadingText={common('loading')}>
               {common('save')}
             </Button>
           </div>
@@ -265,7 +266,7 @@ export default function ProfilePage() {
             onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
           />
           <div className="flex justify-end">
-            <Button type="submit" loading={saving}>
+            <Button type="submit" loading={saving} loadingText={common('loading')}>
               {t('changePassword')}
             </Button>
           </div>

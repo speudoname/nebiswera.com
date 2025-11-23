@@ -6,7 +6,7 @@ import { sendVerificationEmail } from '@/lib/email'
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password } = await request.json()
+    const { name, email, password, locale = 'ka' } = await request.json()
 
     // Validate input
     if (!email || !password) {
@@ -38,12 +38,13 @@ export async function POST(request: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
+    // Create user with preferred locale
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        preferredLocale: locale,
         emailVerificationSentAt: new Date(),
       },
     })
@@ -61,8 +62,8 @@ export async function POST(request: Request) {
       },
     })
 
-    // Send verification email
-    await sendVerificationEmail(email, token)
+    // Send verification email in user's preferred language
+    await sendVerificationEmail(email, token, locale)
 
     return NextResponse.json({
       success: true,

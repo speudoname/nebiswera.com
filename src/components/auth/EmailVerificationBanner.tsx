@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui'
 
 interface EmailVerificationBannerProps {
@@ -9,6 +10,8 @@ interface EmailVerificationBannerProps {
 }
 
 export function EmailVerificationBanner({ email, verificationSentAt }: EmailVerificationBannerProps) {
+  const t = useTranslations('dashboard')
+  const common = useTranslations('common')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -33,13 +36,13 @@ export function EmailVerificationBanner({ email, verificationSentAt }: EmailVeri
       })
 
       if (res.ok) {
-        setMessage('Verification email sent! Check your inbox.')
+        setMessage(t('emailSentSuccess'))
       } else {
         const data = await res.json()
-        setMessage(data.error || 'Failed to send email')
+        setMessage(data.error || t('emailSendFailed'))
       }
     } catch {
-      setMessage('Failed to send email')
+      setMessage(t('emailSendFailed'))
     } finally {
       setLoading(false)
     }
@@ -55,14 +58,12 @@ export function EmailVerificationBanner({ email, verificationSentAt }: EmailVeri
         </div>
         <div className="ml-3 flex-1">
           <h3 className="text-sm font-medium text-amber-800">
-            Please verify your email
+            {t('verifyEmailTitle')}
           </h3>
           <div className="mt-2 text-sm text-amber-700">
             <p>
-              We sent a verification link to <strong>{email}</strong>.
-              {hoursRemaining > 0 && (
-                <> You have <strong>{hoursRemaining} hours</strong> remaining to verify.</>
-              )}
+              {t('verifyEmailMessage', { email })}{' '}
+              {hoursRemaining > 0 && t('hoursRemaining', { hours: hoursRemaining })}
             </p>
           </div>
           <div className="mt-3 flex items-center gap-4">
@@ -71,8 +72,9 @@ export function EmailVerificationBanner({ email, verificationSentAt }: EmailVeri
               variant="outline"
               onClick={handleResend}
               loading={loading}
+              loadingText={common('loading')}
             >
-              Resend Email
+              {t('resendEmail')}
             </Button>
             {message && (
               <span className="text-sm text-amber-700">{message}</span>

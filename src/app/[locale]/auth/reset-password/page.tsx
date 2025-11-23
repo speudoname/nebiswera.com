@@ -3,9 +3,14 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input } from '@/components/ui'
 
 function ResetPasswordContent() {
+  const t = useTranslations('auth.resetPassword')
+  const errors = useTranslations('auth.errors')
+  const common = useTranslations('common')
+  const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
@@ -26,17 +31,17 @@ function ResetPasswordContent() {
     setError('')
 
     if (!token) {
-      setError('Invalid reset link')
+      setError(t('invalidToken'))
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
+      setError(errors('passwordMismatch'))
       return
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
+      setError(errors('weakPassword'))
       return
     }
 
@@ -55,12 +60,12 @@ function ResetPasswordContent() {
       const data = await res.json()
 
       if (res.ok) {
-        router.push('/auth/login?message=Password reset successful. Please sign in.')
+        router.push(`/${locale}/auth/login`)
       } else {
-        setError(data.error || 'Something went wrong')
+        setError(data.error || errors('somethingWrong'))
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(errors('somethingWrong'))
     } finally {
       setLoading(false)
     }
@@ -74,10 +79,9 @@ function ResetPasswordContent() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h1>
-        <p className="text-gray-600 mb-6">This password reset link is invalid or has expired.</p>
-        <Link href="/auth/forgot-password">
-          <Button>Request New Link</Button>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('invalidToken')}</h1>
+        <Link href={`/${locale}/auth/forgot-password`}>
+          <Button>{t('submit')}</Button>
         </Link>
       </div>
     )
@@ -86,8 +90,8 @@ function ResetPasswordContent() {
   return (
     <div className="bg-white rounded-xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Reset your password</h1>
-        <p className="text-gray-600 mt-2">Enter your new password below</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600 mt-2">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -101,8 +105,8 @@ function ResetPasswordContent() {
           id="password"
           name="password"
           type="password"
-          label="New Password"
-          placeholder="••••••••"
+          label={t('password')}
+          placeholder={t('passwordPlaceholder')}
           value={formData.password}
           onChange={handleChange}
           required
@@ -112,15 +116,15 @@ function ResetPasswordContent() {
           id="confirmPassword"
           name="confirmPassword"
           type="password"
-          label="Confirm New Password"
-          placeholder="••••••••"
+          label={t('confirmPassword')}
+          placeholder={t('passwordPlaceholder')}
           value={formData.confirmPassword}
           onChange={handleChange}
           required
         />
 
-        <Button type="submit" className="w-full" loading={loading}>
-          Reset Password
+        <Button type="submit" className="w-full" loading={loading} loadingText={common('loading')}>
+          {t('submit')}
         </Button>
       </form>
     </div>
@@ -128,11 +132,13 @@ function ResetPasswordContent() {
 }
 
 export default function ResetPasswordPage() {
+  const common = useTranslations('common')
+
   return (
     <Suspense fallback={
       <div className="bg-white rounded-xl shadow-xl p-8 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-gray-900">Loading...</h1>
+        <h1 className="text-xl font-semibold text-gray-900">{common('loading')}</h1>
       </div>
     }>
       <ResetPasswordContent />

@@ -92,16 +92,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           image: user.image,
           role: user.role,
           emailVerified: user.emailVerified,
+          preferredLocale: user.preferredLocale,
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id as string
         token.role = (user as { role?: string }).role
         token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified
+        token.preferredLocale = (user as { preferredLocale?: string }).preferredLocale
+      }
+      // Refresh preferredLocale from database when session is updated
+      if (trigger === 'update' && token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { preferredLocale: true },
+        })
+        if (dbUser) {
+          token.preferredLocale = dbUser.preferredLocale
+        }
       }
       return token
     },
@@ -110,6 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string
         session.user.role = token.role as string
         session.user.emailVerified = token.emailVerified as Date | null
+        session.user.preferredLocale = token.preferredLocale as string
       }
       return session
     },

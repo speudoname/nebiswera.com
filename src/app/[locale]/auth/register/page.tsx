@@ -10,6 +10,7 @@ import { Button, Input } from '@/components/ui'
 export default function RegisterPage() {
   const t = useTranslations('auth.register')
   const errors = useTranslations('auth.errors')
+  const common = useTranslations('common')
   const locale = useLocale()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -138,7 +139,7 @@ export default function RegisterPage() {
           required
         />
 
-        <Button type="submit" className="w-full" loading={loading}>
+        <Button type="submit" className="w-full" loading={loading} loadingText={common('loading')}>
           {t('submit')}
         </Button>
       </form>

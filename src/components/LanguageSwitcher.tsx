@@ -1,12 +1,13 @@
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { locales, type Locale } from '@/i18n/config'
+import { setStoredLocale } from '@/lib/locale-storage'
 
-const localeConfig: Record<Locale, { flag: string; code: string }> = {
-  ka: { flag: '🇬🇪', code: 'KA' },
-  en: { flag: '🇬🇧', code: 'EN' },
+const localeConfig: Record<Locale, { flag: string; code: string; nameKey: 'en' | 'ka' }> = {
+  ka: { flag: '🇬🇪', code: 'KA', nameKey: 'ka' },
+  en: { flag: '🇬🇧', code: 'EN', nameKey: 'en' },
 }
 
 interface LanguageSwitcherProps {
@@ -15,17 +16,20 @@ interface LanguageSwitcherProps {
 
 export function LanguageSwitcher({ variant = 'light' }: LanguageSwitcherProps) {
   const locale = useLocale() as Locale
+  const t = useTranslations('languages')
   const router = useRouter()
   const pathname = usePathname()
 
   const switchLocale = (newLocale: Locale) => {
+    // Save to localStorage for faster subsequent loads
+    setStoredLocale(newLocale)
+
     const segments = pathname.split('/')
     segments[1] = newLocale
     router.push(segments.join('/'))
   }
 
   const otherLocale = locales.find((l) => l !== locale) as Locale
-  const current = localeConfig[locale]
   const other = localeConfig[otherLocale]
 
   const baseClasses = 'flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-medium transition-colors cursor-pointer'
@@ -37,7 +41,7 @@ export function LanguageSwitcher({ variant = 'light' }: LanguageSwitcherProps) {
     <button
       onClick={() => switchLocale(otherLocale)}
       className={`${baseClasses} ${variantClasses}`}
-      title={`Switch to ${other.code}`}
+      title={t('switchTo', { language: t(other.nameKey) })}
     >
       <span className="text-base">{other.flag}</span>
       <span>{other.code}</span>

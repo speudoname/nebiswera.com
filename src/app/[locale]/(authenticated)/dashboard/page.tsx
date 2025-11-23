@@ -58,7 +58,7 @@ export default async function DashboardPage() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        My Courses
+                        {t('myCourses')}
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">0</dd>
                     </dl>
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Completed
+                        {t('completed')}
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">0</dd>
                     </dl>
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">
-                        Purchases
+                        {t('purchases')}
                       </dt>
                       <dd className="text-lg font-medium text-gray-900">0</dd>
                     </dl>

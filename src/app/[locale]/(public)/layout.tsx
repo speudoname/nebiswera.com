@@ -1,13 +1,31 @@
 import { PublicHeader, PublicFooter } from '@/components/layout'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await auth()
+
+  let user = null
+  if (session?.user?.email) {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        role: true,
+      },
+    })
+    user = dbUser
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600">
-      <PublicHeader variant="light" />
+      <PublicHeader variant="light" user={user} />
       <main className="flex-1">
         {children}
       </main>

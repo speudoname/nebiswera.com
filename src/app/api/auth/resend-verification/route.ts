@@ -14,6 +14,7 @@ export async function POST() {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { id: true, email: true, emailVerified: true, preferredLocale: true },
     })
 
     if (!user) {
@@ -51,8 +52,8 @@ export async function POST() {
       data: { emailVerificationSentAt: new Date() },
     })
 
-    // Send verification email
-    await sendVerificationEmail(user.email, token)
+    // Send verification email in user's preferred language
+    await sendVerificationEmail(user.email, token, user.preferredLocale || 'ka')
 
     return NextResponse.json({
       success: true,

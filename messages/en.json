@@ -96,7 +96,13 @@
       "weakPassword": "Password is too weak",
       "passwordMismatch": "Passwords do not match",
       "somethingWrong": "Something went wrong. Please try again.",
-      "sessionExpired": "Your session has expired. Please sign in again."
+      "sessionExpired": "Your session has expired. Please sign in again.",
+      "authError": "Authentication Error",
+      "configuration": "There is a problem with the server configuration.",
+      "accessDenied": "Access denied. You do not have permission to sign in.",
+      "verification": "The verification link has expired or has already been used.",
+      "defaultError": "An error occurred during authentication.",
+      "backToLogin": "Back to Login"
     }
   },
   "dashboard": {
@@ -108,7 +114,16 @@
     "verifyNow": "Verify Now",
     "resendVerification": "Resend Verification Email",
     "verificationSent": "Verification email sent!",
-    "memberSince": "Member since {date}"
+    "memberSince": "Member since {date}",
+    "verifyEmailTitle": "Please verify your email",
+    "verifyEmailMessage": "We sent a verification link to {email}.",
+    "hoursRemaining": "You have {hours} hours remaining to verify.",
+    "resendEmail": "Resend Email",
+    "emailSentSuccess": "Verification email sent! Check your inbox.",
+    "emailSendFailed": "Failed to send email",
+    "myCourses": "My Courses",
+    "completed": "Completed",
+    "purchases": "Purchases"
   },
   "profile": {
     "title": "Profile",
@@ -139,27 +154,10 @@
     "updateSuccess": "Profile updated successfully",
     "passwordChangeSuccess": "Password changed successfully"
   },
-  "email": {
-    "verification": {
-      "subject": "Verify your email - Nebiswera",
-      "greeting": "Welcome to Nebiswera!",
-      "message": "Thank you for signing up. Please verify your email address by clicking the button below:",
-      "button": "Verify Email",
-      "linkText": "Or copy and paste this link into your browser:",
-      "expiry": "You have 24 hours to verify your email. After that, you'll need to request a new verification link."
-    },
-    "passwordReset": {
-      "subject": "Reset your password - Nebiswera",
-      "greeting": "Password Reset Request",
-      "message": "You requested to reset your password. Click the button below to set a new password:",
-      "button": "Reset Password",
-      "linkText": "Or copy and paste this link into your browser:",
-      "expiry": "This link will expire in 1 hour. If you didn't request this, please ignore this email."
-    }
-  },
   "languages": {
     "en": "English",
-    "ka": "Georgian"
+    "ka": "Georgian",
+    "switchTo": "Switch to {language}"
   },
   "footer": {
     "copyright": "© {year} Nebiswera. All rights reserved.",

@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import createIntlMiddleware from 'next-intl/middleware'
-import { locales, defaultLocale } from '@/i18n/config'
+import { locales, defaultLocale, type Locale } from '@/i18n/config'
 import { AUTH_COOKIE_NAME } from '@/lib/auth-utils'
+
+// Cookie name for storing user's locale preference (set by client)
+const LOCALE_COOKIE_NAME = 'NEXT_LOCALE'
 
 // Create the internationalization middleware
 const intlMiddleware = createIntlMiddleware({
@@ -50,9 +53,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle root redirect to default locale
+  // Handle root redirect - check for stored locale preference
   if (pathname === '/') {
-    return NextResponse.redirect(new URL(`/${defaultLocale}`, request.url))
+    const storedLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value as Locale | undefined
+    const targetLocale = storedLocale && locales.includes(storedLocale) ? storedLocale : defaultLocale
+    return NextResponse.redirect(new URL(`/${targetLocale}`, request.url))
   }
 
   // For API routes, skip intl middleware
@@ -79,6 +84,13 @@ export async function middleware(request: NextRequest) {
   })
 
   const isLoggedIn = !!token
+  const userPreferredLocale = token?.preferredLocale as Locale | undefined
+
+  // For anonymous users, check cookie for stored preference
+  const storedLocale = !isLoggedIn
+    ? (request.cookies.get(LOCALE_COOKIE_NAME)?.value as Locale | undefined)
+    : undefined
+  const effectivePreferredLocale = userPreferredLocale || storedLocale
 
   // Protected routes (dashboard, profile)
   const protectedPaths = ['/dashboard', '/profile']
@@ -99,7 +111,16 @@ export async function middleware(request: NextRequest) {
 
   // Redirect to dashboard if accessing auth routes while logged in
   if (isAuthPath && isLoggedIn) {
-    return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url))
+    const targetLocale = userPreferredLocale || locale
+    return NextResponse.redirect(new URL(`/${targetLocale}/dashboard`, request.url))
+  }
+
+  // Redirect users to their preferred locale if different from current URL
+  // This works for both logged-in users (from JWT) and anonymous users (from cookie)
+  if (effectivePreferredLocale && locale !== effectivePreferredLocale && locales.includes(effectivePreferredLocale)) {
+    const newUrl = new URL(request.url)
+    newUrl.pathname = pathname.replace(`/${locale}`, `/${effectivePreferredLocale}`)
+    return NextResponse.redirect(newUrl)
   }
 
   // Let intl middleware handle the response (sets locale cookie, etc.)

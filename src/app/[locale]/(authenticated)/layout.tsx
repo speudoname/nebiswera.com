@@ -19,7 +19,9 @@ export default async function AuthenticatedLayout({
   const user = await prisma.user.findUnique({
     where: { email: session.user.email! },
     select: {
+      name: true,
       email: true,
+      image: true,
       role: true,
     },
   })
@@ -35,7 +37,7 @@ export default async function AuthenticatedLayout({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppHeader user={{ email: user.email, role: user.role }} signOutAction={handleSignOut} />
+      <AppHeader user={{ name: user.name, email: user.email, image: user.image, role: user.role }} signOutAction={handleSignOut} />
       <main>
         {children}
       </main>

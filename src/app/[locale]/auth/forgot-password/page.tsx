@@ -2,9 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input } from '@/components/ui'
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth.forgotPassword')
+  const common = useTranslations('common')
+  const locale = useLocale()
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -26,10 +30,10 @@ export default function ForgotPasswordPage() {
         setSubmitted(true)
       } else {
         const data = await res.json()
-        setError(data.error || 'Something went wrong')
+        setError(data.error || t('success'))
       }
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError(t('success'))
     } finally {
       setLoading(false)
     }
@@ -43,12 +47,9 @@ export default function ForgotPasswordPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">Check your email</h1>
-        <p className="text-gray-600 mb-6">
-          If an account exists for {email}, we&apos;ve sent a password reset link.
-        </p>
-        <Link href="/auth/login">
-          <Button variant="outline">Back to Login</Button>
+        <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('success')}</h1>
+        <Link href={`/${locale}/auth/login`}>
+          <Button variant="outline">{t('backToLogin')}</Button>
         </Link>
       </div>
     )
@@ -57,8 +58,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="bg-white rounded-xl shadow-xl p-8">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Forgot password?</h1>
-        <p className="text-gray-600 mt-2">Enter your email to reset your password</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <p className="text-gray-600 mt-2">{t('subtitle')}</p>
       </div>
 
       {error && (
@@ -72,22 +73,22 @@ export default function ForgotPasswordPage() {
           id="email"
           name="email"
           type="email"
-          label="Email"
-          placeholder="you@example.com"
+          label={t('email')}
+          placeholder={t('emailPlaceholder')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
 
-        <Button type="submit" className="w-full" loading={loading}>
-          Send Reset Link
+        <Button type="submit" className="w-full" loading={loading} loadingText={common('loading')}>
+          {t('submit')}
         </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-gray-600">
-        Remember your password?{' '}
-        <Link href="/auth/login" className="text-indigo-600 hover:text-indigo-500 font-medium">
-          Sign in
+        {t('backToLogin').split(' ')[0]}?{' '}
+        <Link href={`/${locale}/auth/login`} className="text-indigo-600 hover:text-indigo-500 font-medium">
+          {t('backToLogin')}
         </Link>
       </p>
     </div>

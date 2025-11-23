@@ -31,7 +31,7 @@ export function AppHeader({ user, signOutAction }: AppHeaderProps) {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href={`/${locale}/dashboard`} className="text-xl font-bold text-indigo-600">
-              Nebiswera
+              {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
             </Link>
           </div>
           <div className="flex items-center gap-4">

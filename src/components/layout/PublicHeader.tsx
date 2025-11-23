@@ -23,7 +23,7 @@ export function PublicHeader({ variant = 'light' }: PublicHeaderProps) {
               href={`/${locale}`}
               className={`text-xl font-bold ${isLight ? 'text-white' : 'text-indigo-600'}`}
             >
-              Nebiswera
+              {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
             </Link>
           </div>
 

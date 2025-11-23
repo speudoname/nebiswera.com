@@ -21,7 +21,7 @@ export function PublicFooter({ variant = 'dark' }: PublicFooterProps) {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <span className={`font-bold ${isLight ? 'text-white' : 'text-indigo-600'}`}>
-              Nebiswera
+              {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
             </span>
             <span className={isLight ? 'text-white/70' : 'text-gray-500'}>
               © {currentYear}

@@ -49,8 +49,7 @@ export default function ForgotPasswordPage() {
         </div>
         <h1 className="text-xl font-semibold text-text-primary mb-4">{t('success')}</h1>
         <Link href={`/${locale}/auth/login`}>
-          <Button variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+          <Button variant="outline" leftIcon={ArrowLeft}>
             {t('backToLogin')}
           </Button>
         </Link>
@@ -86,7 +85,7 @@ export default function ForgotPasswordPage() {
           required
         />
 
-        <Button type="submit" className="w-full" loading={loading} loadingText={common('loading')}>
+        <Button type="submit" fullWidth loading={loading} loadingText={common('loading')}>
           {t('submit')}
         </Button>
       </form>

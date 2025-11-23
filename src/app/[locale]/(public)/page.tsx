@@ -15,16 +15,19 @@ export default function Home() {
         <p className="text-xl md:text-2xl opacity-90 mb-8">
           {t('subtitle')}
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex gap-4 justify-center flex-wrap">
           <Link href="/auth/register">
-            <Button size="lg" className="gap-2">
+            <Button size="lg" rightIcon={ArrowRight}>
               {t('getStarted')}
-              <ArrowRight className="w-5 h-5" />
             </Button>
           </Link>
           <Link href="#learn-more">
-            <Button variant="ghost" size="lg" className="text-white border-2 border-white hover:bg-white/10 gap-2">
-              <BookOpen className="w-5 h-5" />
+            <Button
+              variant="ghost"
+              size="lg"
+              leftIcon={BookOpen}
+              className="text-white border-2 border-white hover:bg-white/10"
+            >
               {t('learnMore')}
             </Button>
           </Link>

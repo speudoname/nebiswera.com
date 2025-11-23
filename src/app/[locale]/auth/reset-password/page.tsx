@@ -126,7 +126,7 @@ function ResetPasswordContent() {
           required
         />
 
-        <Button type="submit" className="w-full" loading={loading} loadingText={common('loading')}>
+        <Button type="submit" fullWidth loading={loading} loadingText={common('loading')}>
           {t('submit')}
         </Button>
       </form>

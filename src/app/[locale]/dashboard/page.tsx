@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
-import Link from 'next/link'
 import { auth, signOut } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner'
-import { LanguageSwitcherDark } from '@/components/LanguageSwitcher'
+import { ServerHeader } from '@/components/layout'
+import { Badge } from '@/components/ui'
 
 export default async function DashboardPage() {
   const locale = await getLocale()
@@ -37,50 +37,17 @@ export default async function DashboardPage() {
     ? t('welcome', { name: user.name })
     : t('welcomeDefault')
 
+  const handleSignOut = async () => {
+    'use server'
+    await signOut({ redirectTo: '/' })
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href={`/${locale}`} className="text-xl font-bold text-indigo-600">
-                Nebiswera
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageSwitcherDark />
-              {user.role === 'ADMIN' && (
-                <Link
-                  href="/admin"
-                  className="text-gray-600 hover:text-gray-900 text-sm"
-                >
-                  {nav('admin')}
-                </Link>
-              )}
-              <Link
-                href={`/${locale}/profile`}
-                className="text-gray-600 hover:text-gray-900 text-sm"
-              >
-                {nav('profile')}
-              </Link>
-              <span className="text-gray-700 text-sm">{user.email}</span>
-              <form
-                action={async () => {
-                  'use server'
-                  await signOut({ redirectTo: '/' })
-                }}
-              >
-                <button
-                  type="submit"
-                  className="text-gray-500 hover:text-gray-700 text-sm"
-                >
-                  {nav('logout')}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <ServerHeader
+        user={{ email: user.email, role: user.role }}
+        signOutAction={handleSignOut}
+      />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 sm:px-0">
@@ -98,13 +65,9 @@ export default async function DashboardPage() {
 
             <div className="flex items-center gap-2 mb-4">
               {user.emailVerified ? (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {t('emailVerified')}
-                </span>
+                <Badge variant="success">{t('emailVerified')}</Badge>
               ) : (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  {t('emailPending')}
-                </span>
+                <Badge variant="warning">{t('emailPending')}</Badge>
               )}
             </div>
 

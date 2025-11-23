@@ -1,2 +1,6 @@
 export { Button } from './Button'
 export { Input } from './Input'
+export { Modal } from './Modal'
+export { Pagination } from './Pagination'
+export { Card, CardHeader } from './Card'
+export { Badge } from './Badge'

@@ -1,32 +1,13 @@
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { Header } from '@/components/layout'
 
 export default function Home() {
   const t = useTranslations('home')
-  const nav = useTranslations('nav')
 
   return (
     <main className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600">
-      {/* Header */}
-      <header className="p-4 flex justify-between items-center">
-        <div className="text-white font-bold text-xl">Nebiswera</div>
-        <div className="flex items-center gap-4">
-          <LanguageSwitcher />
-          <Link
-            href="/auth/login"
-            className="text-white hover:text-white/80 transition-colors"
-          >
-            {nav('login')}
-          </Link>
-          <Link
-            href="/auth/register"
-            className="bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors"
-          >
-            {nav('register')}
-          </Link>
-        </div>
-      </header>
+      <Header variant="light" showAuthLinks />
 
       {/* Hero */}
       <div className="flex-1 flex items-center justify-center">

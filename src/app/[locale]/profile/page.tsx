@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Button, Input } from '@/components/ui'
-import { LanguageSwitcherDark } from '@/components/LanguageSwitcher'
+import { Button, Input, Modal } from '@/components/ui'
+import { Header } from '@/components/layout'
 
 interface UserProfile {
   id: string
@@ -19,7 +18,6 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const t = useTranslations('profile')
-  const nav = useTranslations('nav')
   const common = useTranslations('common')
   const languages = useTranslations('languages')
   const locale = useLocale()
@@ -179,33 +177,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href={`/${locale}`} className="text-xl font-bold text-indigo-600">
-                Nebiswera
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <LanguageSwitcherDark />
-              <Link
-                href={`/${locale}/dashboard`}
-                className="text-gray-600 hover:text-gray-900 text-sm"
-              >
-                {nav('dashboard')}
-              </Link>
-              <button
-                onClick={() => signOut({ callbackUrl: '/' })}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                {nav('logout')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header user={{ email: user?.email }} />
 
       {/* Main Content */}
       <main className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -363,39 +335,36 @@ export default function ProfilePage() {
         </div>
 
         {/* Delete Confirmation Modal */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                {t('deleteConfirmTitle')}
-              </h2>
-              <p className="text-gray-600 text-center mb-6">
-                {t('deleteConfirmMessage')}
-              </p>
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="bg-gray-200 text-gray-800 hover:bg-gray-300"
-                >
-                  {common('cancel')}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  {common('delete')}
-                </Button>
-              </div>
-            </div>
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title={t('deleteConfirmTitle')}
+        >
+          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
-        )}
+          <p className="text-gray-600 text-center mb-6">
+            {t('deleteConfirmMessage')}
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="bg-gray-200 text-gray-800 hover:bg-gray-300"
+            >
+              {common('cancel')}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeleteAccount}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {common('delete')}
+            </Button>
+          </div>
+        </Modal>
       </main>
     </div>
   )

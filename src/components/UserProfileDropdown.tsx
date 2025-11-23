@@ -30,7 +30,6 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
   const locale = useLocale() as Locale
   const nav = useTranslations('nav')
   const langT = useTranslations('languages')
-  const profileT = useTranslations('profile')
   const router = useRouter()
   const pathname = usePathname()
 
@@ -154,33 +153,21 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
             )}
           </div>
 
-          {/* Language switcher */}
+          {/* Language switcher - toggle to other language */}
           <div className="border-t border-gray-100 py-1">
-            <div className="px-4 py-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-                {profileT('language')}
-              </p>
-              <div className="flex gap-2">
-                {locales.map((loc) => {
-                  const config = localeConfig[loc]
-                  const isActive = loc === locale
-                  return (
-                    <button
-                      key={loc}
-                      onClick={() => switchLocale(loc)}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded text-sm transition-colors ${
-                        isActive
-                          ? 'bg-indigo-100 text-indigo-700'
-                          : 'hover:bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      <span>{config.flag}</span>
-                      <span>{langT(config.nameKey)}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            {(() => {
+              const otherLocale = locales.find((l) => l !== locale) as Locale
+              const otherConfig = localeConfig[otherLocale]
+              return (
+                <button
+                  onClick={() => switchLocale(otherLocale)}
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <span>{otherConfig.flag}</span>
+                  <span>{langT(otherConfig.nameKey)}</span>
+                </button>
+              )
+            })()}
           </div>
 
           {/* Sign out */}

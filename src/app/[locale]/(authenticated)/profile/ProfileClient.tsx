@@ -158,8 +158,8 @@ export function ProfileClient() {
   }
 
   return (
-    <main className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
+    <main className="max-w-3xl mx-auto py-4 md:py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mb-6 md:mb-8">
         <h1 className="no-margin">{t('title')}</h1>
         <p className="text-secondary mt-1 no-margin">{t('subtitle')}</p>
       </div>
@@ -177,11 +177,11 @@ export function ProfileClient() {
       )}
 
       {/* Personal Information */}
-      <Card className="mb-6">
-        <div className="px-6 py-4 border-b border-neu-dark/20">
+      <Card className="mb-4 md:mb-6">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-neu-dark/20">
           <h3 className="no-margin">{t('personalInfo')}</h3>
         </div>
-        <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleUpdateProfile} className="px-4 md:px-6 py-3 md:py-4 space-y-4">
           <Input
             id="name"
             name="name"
@@ -206,11 +206,11 @@ export function ProfileClient() {
       </Card>
 
       {/* Language Preferences */}
-      <Card className="mb-6">
-        <div className="px-6 py-4 border-b border-neu-dark/20">
+      <Card className="mb-4 md:mb-6">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-neu-dark/20">
           <h3 className="no-margin">{t('preferences')}</h3>
         </div>
-        <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleUpdateProfile} className="px-4 md:px-6 py-3 md:py-4 space-y-4">
           <Select
             id="preferredLocale"
             label={t('language')}
@@ -230,11 +230,11 @@ export function ProfileClient() {
       </Card>
 
       {/* Security */}
-      <Card className="mb-6">
-        <div className="px-6 py-4 border-b border-neu-dark/20">
+      <Card className="mb-4 md:mb-6">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-neu-dark/20">
           <h3 className="no-margin">{t('security')}</h3>
         </div>
-        <form onSubmit={handleChangePassword} className="px-6 py-4 space-y-4">
+        <form onSubmit={handleChangePassword} className="px-4 md:px-6 py-3 md:py-4 space-y-4">
           <Input
             id="currentPassword"
             name="currentPassword"
@@ -268,11 +268,11 @@ export function ProfileClient() {
       </Card>
 
       {/* Account Info */}
-      <Card className="mb-6">
-        <div className="px-6 py-4 border-b border-neu-dark/20">
+      <Card className="mb-4 md:mb-6">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-neu-dark/20">
           <h3 className="no-margin">{t('accountInfo')}</h3>
         </div>
-        <div className="px-6 py-4 space-y-3">
+        <div className="px-4 md:px-6 py-3 md:py-4 space-y-3">
           <div className="flex justify-between">
             <span className="text-body-sm text-secondary">{t('createdAt')}</span>
             <span className="text-body-sm">
@@ -290,10 +290,10 @@ export function ProfileClient() {
 
       {/* Danger Zone */}
       <Card className="border-2 border-primary-300">
-        <div className="px-6 py-4 border-b border-primary-300 bg-primary-50 rounded-t-neu">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-primary-300 bg-primary-50 rounded-t-neu">
           <h3 className="no-margin text-primary-700">{t('dangerZone')}</h3>
         </div>
-        <div className="px-6 py-4">
+        <div className="px-4 md:px-6 py-3 md:py-4">
           <p className="text-body-sm text-secondary mb-4 no-margin">{t('deleteAccountWarning')}</p>
           <Button
             type="button"

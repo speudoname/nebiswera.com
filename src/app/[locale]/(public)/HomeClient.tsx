@@ -10,29 +10,29 @@ export function HomeClient() {
   const locale = useLocale()
 
   return (
-    <div className="flex-1 flex items-center justify-center">
-      <div className="text-center p-8 max-w-3xl">
-        <p className="eyebrow mb-4">
+    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8">
+      <div className="text-center py-8 md:py-12 max-w-3xl">
+        <p className="eyebrow mb-3 md:mb-4">
           <span className="text-primary-600">{t('eyebrowStart')}</span>
           <span className="text-text-secondary"> {t('eyebrowEmphasis')} </span>
           <span className="text-primary-600">{t('eyebrowEnd')}</span>
         </p>
-        <h1 className="hero-title mb-6">
+        <h1 className="hero-title mb-4 md:mb-6">
           <span className="text-text-primary">{t('titlePart1')}</span>
           <span className="text-primary-600"> — </span>
           <span className="text-primary-600">{t('titlePart2')}</span>
         </h1>
-        <p className="text-xl md:text-2xl text-text-secondary mb-8">
+        <p className="hero-subtitle mb-6 md:mb-8">
           {t('subtitle')}
         </p>
-        <div className="flex gap-4 justify-center flex-wrap">
-          <Link href={`/${locale}/auth/register`}>
-            <Button size="lg" rightIcon={ArrowRight}>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+          <Link href={`/${locale}/auth/register`} className="w-full sm:w-auto">
+            <Button size="lg" rightIcon={ArrowRight} className="w-full sm:w-auto">
               {t('getStarted')}
             </Button>
           </Link>
-          <Link href="#learn-more">
-            <Button variant="outline" size="lg" leftIcon={BookOpen}>
+          <Link href={`/${locale}/about`} className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" leftIcon={BookOpen} className="w-full sm:w-auto">
               {t('learnMore')}
             </Button>
           </Link>

@@ -13,36 +13,36 @@
 
 @layer base {
   /* ==========================================================================
-     HEADINGS
+     HEADINGS (Mobile-first: base = mobile, then md:, lg: for larger)
      ========================================================================== */
 
   h1 {
-    @apply text-3xl font-bold leading-tight tracking-tight text-text-primary;
-    @apply mb-4;
+    @apply text-2xl md:text-3xl font-bold leading-tight tracking-tight text-text-primary;
+    @apply mb-3 md:mb-4;
   }
 
   h2 {
-    @apply text-2xl font-semibold leading-snug tracking-tight text-text-primary;
-    @apply mb-3;
+    @apply text-xl md:text-2xl font-semibold leading-snug tracking-tight text-text-primary;
+    @apply mb-2 md:mb-3;
   }
 
   h3 {
-    @apply text-xl font-semibold leading-snug text-text-primary;
+    @apply text-lg md:text-xl font-semibold leading-snug text-text-primary;
     @apply mb-2;
   }
 
   h4 {
-    @apply text-lg font-semibold leading-normal text-text-primary;
+    @apply text-base md:text-lg font-semibold leading-normal text-text-primary;
     @apply mb-2;
   }
 
   h5 {
-    @apply text-base font-semibold leading-normal text-text-primary;
+    @apply text-sm md:text-base font-semibold leading-normal text-text-primary;
     @apply mb-1;
   }
 
   h6 {
-    @apply text-sm font-semibold leading-normal tracking-wide text-text-primary;
+    @apply text-xs md:text-sm font-semibold leading-normal tracking-wide text-text-primary;
     @apply mb-1;
   }
 
@@ -152,28 +152,35 @@
  */
 
 @layer components {
-  /* Display headings - for hero/landing sections */
+  /* ==========================================================================
+     DISPLAY HEADINGS (Mobile-first: for hero/landing sections)
+     ========================================================================== */
   .display-2xl {
-    @apply text-6xl font-bold leading-none tracking-tight;
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-none tracking-tight;
   }
 
   .display-xl {
-    @apply text-5xl font-bold leading-none tracking-tight;
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold leading-none tracking-tight;
   }
 
   .display-lg {
-    @apply text-4xl font-bold leading-tight tracking-tight;
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight;
   }
 
   /* Hero title - main landing page headline */
   .hero-title {
-    @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight;
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight;
     line-height: 1.3;
   }
 
   /* Eyebrow - small text above headlines */
   .eyebrow {
-    @apply text-sm md:text-base font-medium tracking-wide uppercase;
+    @apply text-xs sm:text-sm md:text-base font-medium tracking-wide uppercase;
+  }
+
+  /* Hero subtitle */
+  .hero-subtitle {
+    @apply text-base sm:text-lg md:text-xl lg:text-2xl text-text-secondary;
   }
 
   /* Text color variants */

@@ -36,8 +36,8 @@ export default async function DashboardPage() {
     : t('welcomeDefault')
 
   return (
-    <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      <div className="px-4 sm:px-0">
+    <div className="max-w-7xl mx-auto py-4 md:py-6 px-4 sm:px-6 lg:px-8">
+      <div>
         {user && !user.emailVerified && (
           <EmailVerificationBanner
             email={user.email}
@@ -45,8 +45,8 @@ export default async function DashboardPage() {
           />
         )}
 
-        <Card padding="lg">
-          <h1 className="mb-4">
+        <Card padding="md" className="md:p-6 lg:p-8">
+          <h1 className="mb-3 md:mb-4">
             {welcomeMessage}
           </h1>
 

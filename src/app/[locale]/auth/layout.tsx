@@ -13,8 +13,8 @@ export default function AuthLayout({
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary-500 to-accent-700">
       {/* Header */}
       <header>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link href={`/${locale}`} className="text-white font-bold text-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4 flex justify-between items-center">
+          <Link href={`/${locale}`} className="text-white font-bold text-lg md:text-xl">
             {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
           </Link>
           <LanguageSwitcher darkBg />
@@ -22,7 +22,7 @@ export default function AuthLayout({
       </header>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex items-center justify-center px-4 py-6 md:py-8">
         <div className="w-full max-w-md">
           {children}
         </div>

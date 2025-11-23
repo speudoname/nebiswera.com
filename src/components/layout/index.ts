@@ -8,3 +8,4 @@ export { AppHeader } from './AppHeader'
 // Shared layout components
 export { LanguageSwitcher } from './LanguageSwitcher'
 export { UserProfileDropdown } from './UserProfileDropdown'
+export { MobileMenu } from './MobileMenu'

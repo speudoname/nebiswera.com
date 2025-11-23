@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { UserProfileDropdown } from '@/components/UserProfileDropdown'
+import { LanguageSwitcher } from './LanguageSwitcher'
+import { UserProfileDropdown } from './UserProfileDropdown'
 
 interface PublicHeaderProps {
   user?: {

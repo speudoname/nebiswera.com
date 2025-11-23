@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { SessionProvider } from '@/components/providers/SessionProvider'
+import { SessionProvider } from '@/providers/SessionProvider'
 import { Inter, Noto_Sans_Georgian } from 'next/font/google'
 import { Home, Users, Mail, Settings, Undo2, LogOut } from 'lucide-react'
 
@@ -49,7 +49,7 @@ function AdminLayoutContent({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors mb-1 ${
+                className={`flex items-center gap-3 rounded-neu px-3 py-2 text-sm font-medium transition-colors mb-1 ${
                   isActive
                     ? 'bg-accent-800 text-white'
                     : 'text-accent-300 hover:bg-accent-800 hover:text-white'
@@ -64,14 +64,14 @@ function AdminLayoutContent({
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-accent-800">
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-accent-300 hover:bg-accent-800 hover:text-white transition-colors mb-2"
+            className="flex items-center gap-3 rounded-neu px-3 py-2 text-sm font-medium text-accent-300 hover:bg-accent-800 hover:text-white transition-colors mb-2"
           >
             <Undo2 className="h-5 w-5" />
             Back to Site
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: '/auth/login' })}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-accent-300 hover:bg-accent-800 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 rounded-neu px-3 py-2 text-sm font-medium text-accent-300 hover:bg-accent-800 hover:text-white transition-colors"
           >
             <LogOut className="h-5 w-5" />
             Sign Out

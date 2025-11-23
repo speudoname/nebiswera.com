@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
-import { UserProfileDropdown } from '@/components/UserProfileDropdown'
+import { UserProfileDropdown } from './UserProfileDropdown'
 
 interface AppHeaderProps {
   user: {

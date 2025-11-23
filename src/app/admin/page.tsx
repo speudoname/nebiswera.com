@@ -64,7 +64,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Recent Users */}
-      <div className="bg-white rounded-neu shadow-neu">
+      <div className="bg-neu-light rounded-neu shadow-neu">
         <div className="px-6 py-4 border-b border-neu-dark">
           <h3 className="no-margin">Recent Users</h3>
         </div>
@@ -77,7 +77,7 @@ export default async function AdminDashboard() {
                 <th className="px-6 py-3 text-left label-sm">Joined</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-neu-dark">
+            <tbody className="bg-neu-light divide-y divide-neu-dark">
               {stats.recentUsers.map((user) => (
                 <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -129,7 +129,7 @@ function StatCard({
   icon: React.ReactNode
 }) {
   return (
-    <div className="bg-white rounded-neu shadow-neu p-6">
+    <div className="bg-neu-light rounded-neu shadow-neu p-6">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-body-sm text-secondary no-margin">{title}</p>

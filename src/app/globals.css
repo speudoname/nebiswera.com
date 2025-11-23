@@ -109,7 +109,7 @@
      ========================================================================== */
 
   code {
-    @apply text-sm font-mono bg-neu-dark/50 px-1.5 py-0.5 rounded;
+    @apply text-sm font-mono bg-neu-dark/50 px-1.5 py-0.5 rounded-neu-sm;
   }
 
   pre {

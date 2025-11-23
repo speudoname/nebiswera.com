@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { LanguageSwitcher } from '@/components/layout'
 
 export default function AuthLayout({
   children,

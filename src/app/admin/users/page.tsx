@@ -137,7 +137,7 @@ export default function UsersPage() {
       />
 
       {/* Users Table */}
-      <div className="bg-white rounded-neu shadow-neu overflow-hidden">
+      <div className="bg-neu-light rounded-neu shadow-neu overflow-hidden">
         <table className="min-w-full divide-y divide-neu-dark">
           <thead className="bg-neu-light">
             <tr>
@@ -148,7 +148,7 @@ export default function UsersPage() {
               <th className="px-6 py-3 text-right label-sm">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-neu-dark">
+          <tbody className="bg-neu-light divide-y divide-neu-dark">
             {loading ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
@@ -176,7 +176,7 @@ export default function UsersPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neu-dark">
+          <div className="bg-neu-light px-4 py-3 flex items-center justify-between border-t border-neu-dark">
             <div className="flex-1 flex items-center justify-between">
               <p className="text-body-sm text-secondary no-margin">
                 Showing{' '}

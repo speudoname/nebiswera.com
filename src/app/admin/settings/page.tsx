@@ -106,7 +106,7 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSubmit}>
         {/* Postmark Settings */}
-        <div className="bg-white rounded-neu shadow-neu mb-6">
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
             <h3 className="no-margin flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary-600" />
@@ -163,7 +163,7 @@ export default function SettingsPage() {
         </div>
 
         {/* From Email Settings */}
-        <div className="bg-white rounded-neu shadow-neu mb-6">
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
             <h3 className="no-margin flex items-center gap-2">
               <User className="h-5 w-5 text-primary-600" />
@@ -200,7 +200,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Webhook Info (Read Only) */}
-        <div className="bg-white rounded-neu shadow-neu mb-6">
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
             <h3 className="no-margin flex items-center gap-2">
               <Link className="h-5 w-5 text-primary-600" />

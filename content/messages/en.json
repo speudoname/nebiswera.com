@@ -27,8 +27,9 @@
     "contact": "Contact"
   },
   "home": {
-    "title": "Welcome to Nebiswera",
-    "subtitle": "Your platform for learning and growth",
+    "titlePart1": "If you can make your fate depend on you",
+    "titlePart2": "life will continue the way you want.",
+    "subtitle": "Nothing affects your outcome except your will.",
     "getStarted": "Get Started",
     "learnMore": "Learn More"
   },

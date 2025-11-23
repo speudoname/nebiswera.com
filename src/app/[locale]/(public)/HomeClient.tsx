@@ -11,11 +11,13 @@ export function HomeClient() {
 
   return (
     <div className="flex-1 flex items-center justify-center">
-      <div className="text-center p-8 max-w-2xl">
-        <h1 className="display-xl md:display-2xl mb-6 text-primary-700">
-          {t('title')}
+      <div className="text-center p-8 max-w-3xl">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+          <span className="text-text-primary">{t('titlePart1')}</span>
+          <span className="text-primary-600"> — </span>
+          <span className="text-primary-600">{t('titlePart2')}</span>
         </h1>
-        <p className="text-xl md:text-2xl text-text-secondary mb-8 no-margin">
+        <p className="text-xl md:text-2xl text-text-secondary mb-8">
           {t('subtitle')}
         </p>
         <div className="flex gap-4 justify-center flex-wrap">

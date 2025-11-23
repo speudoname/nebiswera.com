@@ -63,11 +63,12 @@ const config: Config = {
           900: '#4D2342',
         },
         // Neomorphic surface colors (Subtle off-white #F7F6F8)
+        // NOTE: shadow color #B8B4BD must match boxShadow definitions below
         neu: {
           base: '#F7F6F8',
           light: '#FFFFFF',
           dark: '#E8E6EB',
-          shadow: '#D1CED6',
+          shadow: '#B8B4BD',
           highlight: '#FFFFFF',
         },
         // Text colors (Dark Purple #4A3060)
@@ -82,21 +83,21 @@ const config: Config = {
       // SHADOWS - Neomorphic (neutral gray-based)
       // =======================================================================
       boxShadow: {
-        // Raised elements
-        'neu-sm': '4px 4px 8px #D1CED6, -4px -4px 8px #FFFFFF',
-        'neu': '6px 6px 12px #D1CED6, -6px -6px 12px #FFFFFF',
-        'neu-md': '8px 8px 16px #D1CED6, -8px -8px 16px #FFFFFF',
-        'neu-lg': '12px 12px 24px #D1CED6, -12px -12px 24px #FFFFFF',
+        // Raised elements - Dark shadow #B8B4BD for better contrast
+        'neu-sm': '4px 4px 8px #B8B4BD, -4px -4px 8px #FFFFFF',
+        'neu': '6px 6px 12px #B8B4BD, -6px -6px 12px #FFFFFF',
+        'neu-md': '8px 8px 16px #B8B4BD, -8px -8px 16px #FFFFFF',
+        'neu-lg': '12px 12px 24px #B8B4BD, -12px -12px 24px #FFFFFF',
         // Pressed/inset elements
-        'neu-inset-sm': 'inset 2px 2px 4px #D1CED6, inset -2px -2px 4px #FFFFFF',
-        'neu-inset': 'inset 4px 4px 8px #D1CED6, inset -4px -4px 8px #FFFFFF',
-        'neu-inset-md': 'inset 6px 6px 12px #D1CED6, inset -6px -6px 12px #FFFFFF',
+        'neu-inset-sm': 'inset 2px 2px 4px #B8B4BD, inset -2px -2px 4px #FFFFFF',
+        'neu-inset': 'inset 4px 4px 8px #B8B4BD, inset -4px -4px 8px #FFFFFF',
+        'neu-inset-md': 'inset 6px 6px 12px #B8B4BD, inset -6px -6px 12px #FFFFFF',
         // Flat shadow
-        'neu-flat': '0 2px 8px rgba(74, 48, 96, 0.08)',
+        'neu-flat': '0 2px 8px rgba(74, 48, 96, 0.12)',
         // Hover state
-        'neu-hover': '8px 8px 16px #D1CED6, -8px -8px 16px #FFFFFF',
+        'neu-hover': '8px 8px 16px #B8B4BD, -8px -8px 16px #FFFFFF',
         // Active/pressed state
-        'neu-pressed': 'inset 4px 4px 8px #D1CED6, inset -4px -4px 8px #FFFFFF',
+        'neu-pressed': 'inset 4px 4px 8px #B8B4BD, inset -4px -4px 8px #FFFFFF',
       },
 
       // =======================================================================

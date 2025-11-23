@@ -103,6 +103,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     // Sizes - include icon sizing
+    // NOTE: py values must match Input component for consistent form heights
     const sizes = {
       sm: {
         padding: iconOnly ? 'p-2' : 'px-4 py-2',
@@ -111,13 +112,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         iconSize: 'h-4 w-4',
       },
       md: {
-        padding: iconOnly ? 'p-2.5' : 'px-6 py-2.5',
+        padding: iconOnly ? 'p-3' : 'px-6 py-3',
         text: 'text-sm',
         gap: 'gap-2',
         iconSize: 'h-4 w-4',
       },
       lg: {
-        padding: iconOnly ? 'p-3' : 'px-8 py-3',
+        padding: iconOnly ? 'p-3.5' : 'px-8 py-3.5',
         text: 'text-base',
         gap: 'gap-2.5',
         iconSize: 'h-5 w-5',

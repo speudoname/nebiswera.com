@@ -1,6 +1,6 @@
 import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
-import { RegisterClient } from './RegisterClient'
+import { VerifyRequiredClient } from './VerifyRequiredClient'
 
 export async function generateMetadata({
   params,
@@ -8,9 +8,9 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>
 }): Promise<Metadata> {
   const { locale } = await params
-  return generatePageMetadata('register', locale)
+  return generatePageMetadata('verifyRequired', locale)
 }
 
-export default function RegisterPage() {
-  return <RegisterClient />
+export default function VerifyRequiredPage() {
+  return <VerifyRequiredClient />
 }

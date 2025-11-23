@@ -7,6 +7,7 @@ declare module 'next-auth' {
       id: string
       role: string
       emailVerified: Date | null
+      emailVerificationSentAt: Date | null
       preferredLocale: string
       email: string
       name?: string | null
@@ -18,6 +19,7 @@ declare module 'next-auth' {
     id: string
     role: string
     emailVerified: Date | null
+    emailVerificationSentAt: Date | null
     preferredLocale: string
     email: string
     name?: string | null
@@ -30,6 +32,7 @@ declare module 'next-auth/jwt' {
     id?: string
     role?: string
     emailVerified?: Date | null
+    emailVerificationSentAt?: Date | null
     preferredLocale?: string
   }
 }

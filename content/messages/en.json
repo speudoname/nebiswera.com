@@ -89,6 +89,14 @@
       "goToDashboard": "Go to Dashboard",
       "resendLink": "Resend verification email"
     },
+    "verifyRequired": {
+      "title": "Email verification required",
+      "description": "Your 24-hour grace period has expired. Please verify your email to continue using your account.",
+      "resendButton": "Resend Verification Email",
+      "logoutButton": "Sign out",
+      "emailSent": "Verification email sent!",
+      "redirecting": "Redirecting to dashboard..."
+    },
     "errors": {
       "invalidCredentials": "Invalid email or password",
       "emailNotVerified": "Please verify your email address",

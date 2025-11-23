@@ -1,0 +1,36 @@
+'use client'
+
+import { useTranslations, useLocale } from 'next-intl'
+import Link from 'next/link'
+import { Button } from '@/components/ui'
+import { ArrowRight, BookOpen } from 'lucide-react'
+
+export function HomeClient() {
+  const t = useTranslations('home')
+  const locale = useLocale()
+
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="text-center p-8 max-w-2xl">
+        <h1 className="display-xl md:display-2xl mb-6 text-primary-700">
+          {t('title')}
+        </h1>
+        <p className="text-xl md:text-2xl text-text-secondary mb-8 no-margin">
+          {t('subtitle')}
+        </p>
+        <div className="flex gap-4 justify-center flex-wrap">
+          <Link href={`/${locale}/auth/register`}>
+            <Button size="lg" rightIcon={ArrowRight}>
+              {t('getStarted')}
+            </Button>
+          </Link>
+          <Link href="#learn-more">
+            <Button variant="outline" size="lg" leftIcon={BookOpen}>
+              {t('learnMore')}
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

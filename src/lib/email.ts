@@ -2,7 +2,7 @@ import * as postmark from 'postmark'
 import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
 import { EmailType } from '@prisma/client'
-import { getVerificationEmail, getPasswordResetEmail } from './email-templates'
+import { getVerificationEmail, getPasswordResetEmail } from '../../content/email-templates'
 
 async function getEmailClient() {
   const settings = await getSettings()

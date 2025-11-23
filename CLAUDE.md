@@ -100,7 +100,7 @@ This applies to:
 
 ### Translation Files
 
-Located in `/messages/`:
+Located in `/content/messages/`:
 - `en.json` - English translations
 - `ka.json` - Georgian translations
 
@@ -129,7 +129,7 @@ export default async function Page() {
 
 **With Variables:**
 ```tsx
-// In messages/en.json: "welcome": "Hello, {name}!"
+// In content/messages/en.json: "welcome": "Hello, {name}!"
 t('welcome', { name: user.name })
 ```
 
@@ -151,7 +151,7 @@ t('welcome', { name: user.name })
 
 ### Adding New Translations
 
-1. Add the key to BOTH `messages/en.json` AND `messages/ka.json`
+1. Add the key to BOTH `content/messages/en.json` AND `content/messages/ka.json`
 2. Use the appropriate namespace
 3. Never leave a translation key in only one language file
 
@@ -170,7 +170,7 @@ The `Button` component accepts a `loadingText` prop for localized loading text:
 
 Emails are sent in the user's preferred language (stored in `user.preferredLocale`).
 
-**Template Location:** `/src/lib/email-templates/`
+**Template Location:** `/content/email-templates/`
 - `verification-en.ts` - English verification email
 - `verification-ka.ts` - Georgian verification email
 - `password-reset-en.ts` - English password reset email
@@ -219,6 +219,15 @@ All user-facing routes are under `/[locale]/`:
 ## File Structure
 
 ```
+content/                    # All localized content
+├── messages/               # UI translation files
+│   ├── en.json
+│   └── ka.json
+└── email-templates/        # Language-specific email templates
+    ├── verification-en.ts
+    ├── verification-ka.ts
+    └── ...
+
 src/
 ├── app/
 │   ├── [locale]/           # Localized routes
@@ -229,15 +238,14 @@ src/
 │   └── api/                # API routes
 ├── components/
 │   ├── ui/                 # Reusable UI components
-│   ├── layout/             # Header/Footer components
+│   ├── layout/             # Header/Footer/Navigation components
 │   ├── auth/               # Auth-related components
 │   └── admin/              # Admin components (no i18n)
-├── lib/
-│   ├── email.ts            # Email sending logic
-│   └── email-templates/    # Language-specific email templates
-└── messages/               # Translation files
-    ├── en.json
-    └── ka.json
+├── i18n/                   # next-intl configuration
+├── lib/                    # Utilities and business logic
+├── providers/              # React context providers
+├── styles/                 # Design system tokens
+└── types/                  # TypeScript type definitions
 ```
 
 ## Checklist for New Features

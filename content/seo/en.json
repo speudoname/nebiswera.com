@@ -1,0 +1,64 @@
+{
+  "site": {
+    "name": "Nebiswera",
+    "tagline": "Learn Georgian Online"
+  },
+  "pages": {
+    "home": {
+      "title": "Nebiswera - Learn Georgian Language Online",
+      "description": "Master the Georgian language with interactive lessons, cultural insights, and personalized learning paths. Start your journey today."
+    },
+    "about": {
+      "title": "About Us - Nebiswera",
+      "description": "Learn about Nebiswera's mission to make Georgian language accessible to learners worldwide through modern teaching methods."
+    },
+    "contact": {
+      "title": "Contact Us - Nebiswera",
+      "description": "Get in touch with the Nebiswera team. We're here to help with your Georgian language learning journey."
+    },
+    "privacy": {
+      "title": "Privacy Policy - Nebiswera",
+      "description": "Read Nebiswera's privacy policy. Learn how we protect your data and respect your privacy."
+    },
+    "terms": {
+      "title": "Terms of Service - Nebiswera",
+      "description": "Review Nebiswera's terms of service. Understand the rules and guidelines for using our platform."
+    },
+    "login": {
+      "title": "Sign In - Nebiswera",
+      "description": "Sign in to your Nebiswera account to continue your Georgian language learning journey."
+    },
+    "register": {
+      "title": "Create Account - Nebiswera",
+      "description": "Join Nebiswera and start learning Georgian today. Create your free account in seconds."
+    },
+    "forgotPassword": {
+      "title": "Reset Password - Nebiswera",
+      "description": "Forgot your password? Reset it here to regain access to your Nebiswera account."
+    },
+    "resetPassword": {
+      "title": "Set New Password - Nebiswera",
+      "description": "Create a new password for your Nebiswera account."
+    },
+    "verifyEmail": {
+      "title": "Verify Email - Nebiswera",
+      "description": "Verify your email address to activate your Nebiswera account."
+    },
+    "verifyRequired": {
+      "title": "Email Verification Required - Nebiswera",
+      "description": "Please verify your email address to continue using Nebiswera."
+    },
+    "authError": {
+      "title": "Authentication Error - Nebiswera",
+      "description": "An error occurred during authentication. Please try again."
+    },
+    "dashboard": {
+      "title": "Dashboard - Nebiswera",
+      "description": "Your personal Nebiswera dashboard. Track your progress and continue learning Georgian."
+    },
+    "profile": {
+      "title": "Profile Settings - Nebiswera",
+      "description": "Manage your Nebiswera account settings and preferences."
+    }
+  }
+}

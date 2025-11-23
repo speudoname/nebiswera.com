@@ -4,6 +4,17 @@ import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner'
 import { Badge, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
+import { generatePageMetadata } from '@/lib/metadata'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  return generatePageMetadata('dashboard', locale)
+}
 
 export default async function DashboardPage() {
   const locale = await getLocale()

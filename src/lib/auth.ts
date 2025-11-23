@@ -72,18 +72,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error('Invalid email or password')
         }
 
-        // Check if email verification grace period has expired (24 hours)
-        if (!user.emailVerified && user.emailVerificationSentAt) {
-          const hoursSinceVerificationSent =
-            (Date.now() - new Date(user.emailVerificationSentAt).getTime()) /
-            (1000 * 60 * 60)
-
-          if (hoursSinceVerificationSent > 24) {
-            throw new Error(
-              'Email not verified. Please verify your email to continue.'
-            )
-          }
-        }
+        // Note: Email verification grace period is now checked in middleware
+        // Users can always log in, but unverified users after 24h are redirected to verify-required page
 
         return {
           id: user.id,
@@ -92,6 +82,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           image: user.image,
           role: user.role,
           emailVerified: user.emailVerified,
+          emailVerificationSentAt: user.emailVerificationSentAt,
           preferredLocale: user.preferredLocale,
         }
       },
@@ -103,16 +94,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id as string
         token.role = (user as { role?: string }).role
         token.emailVerified = (user as { emailVerified?: Date | null }).emailVerified
+        token.emailVerificationSentAt = (user as { emailVerificationSentAt?: Date | null }).emailVerificationSentAt
         token.preferredLocale = (user as { preferredLocale?: string }).preferredLocale
       }
-      // Refresh preferredLocale from database when session is updated
+      // Refresh user data from database when session is updated
       if (trigger === 'update' && token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { preferredLocale: true },
+          select: {
+            preferredLocale: true,
+            emailVerified: true,
+            emailVerificationSentAt: true,
+          },
         })
         if (dbUser) {
           token.preferredLocale = dbUser.preferredLocale
+          token.emailVerified = dbUser.emailVerified
+          token.emailVerificationSentAt = dbUser.emailVerificationSentAt
         }
       }
       return token
@@ -122,6 +120,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.id = token.id as string
         session.user.role = token.role as string
         session.user.emailVerified = token.emailVerified as Date | null
+        session.user.emailVerificationSentAt = token.emailVerificationSentAt as Date | null
         session.user.preferredLocale = token.preferredLocale as string
       }
       return session

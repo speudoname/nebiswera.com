@@ -1,5 +1,16 @@
 import { getTranslations } from 'next-intl/server'
 import { Card } from '@/components/ui/Card'
+import { generatePageMetadata } from '@/lib/metadata'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>
+}): Promise<Metadata> {
+  const { locale } = await params
+  return generatePageMetadata('about', locale)
+}
 
 export default async function AboutPage() {
   const t = await getTranslations('pages.about')

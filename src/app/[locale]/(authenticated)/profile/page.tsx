@@ -6,7 +6,6 @@ import { signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input, Select, Modal, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
-import { Loader2, AlertTriangle } from 'lucide-react'
 
 interface UserProfile {
   id: string
@@ -153,7 +152,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <IconBadge icon={Loader2} size="lg" variant="primary" iconClassName="animate-spin" />
+        <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
       </div>
     )
   }
@@ -313,7 +312,7 @@ export default function ProfilePage() {
         title={t('deleteConfirmTitle')}
       >
         <div className="flex justify-center mb-4">
-          <IconBadge icon={AlertTriangle} size="lg" variant="danger" />
+          <IconBadge icon="AlertTriangle" size="lg" variant="danger" />
         </div>
         <p className="text-text-secondary text-center mb-6">
           {t('deleteConfirmMessage')}

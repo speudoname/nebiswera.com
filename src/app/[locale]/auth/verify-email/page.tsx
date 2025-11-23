@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 
@@ -51,7 +50,7 @@ function VerifyEmailContent() {
       {status === 'loading' && (
         <>
           <div className="inline-flex mb-4">
-            <IconBadge icon={Loader2} size="lg" variant="primary" iconClassName="animate-spin" />
+            <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
           </div>
           <h3 className="no-margin">{t('verifying')}</h3>
         </>
@@ -60,7 +59,7 @@ function VerifyEmailContent() {
       {status === 'success' && (
         <>
           <div className="inline-flex mb-4">
-            <IconBadge icon={CheckCircle} size="lg" variant="secondary" />
+            <IconBadge icon="CheckCircle" size="lg" variant="secondary" />
           </div>
           <h3 className="mb-2">{t('success')}</h3>
           <p className="text-secondary mb-6">{message}</p>
@@ -73,7 +72,7 @@ function VerifyEmailContent() {
       {status === 'error' && (
         <>
           <div className="inline-flex mb-4">
-            <IconBadge icon={XCircle} size="lg" variant="danger" />
+            <IconBadge icon="XCircle" size="lg" variant="danger" />
           </div>
           <h3 className="mb-2">{t('error')}</h3>
           <p className="text-secondary mb-6">{message}</p>
@@ -93,7 +92,7 @@ export default function VerifyEmailPage() {
     <Suspense fallback={
       <Card className="w-full max-w-md text-center" padding="lg">
         <div className="inline-flex mb-4">
-          <IconBadge icon={Loader2} size="lg" variant="primary" iconClassName="animate-spin" />
+          <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>
         <h3 className="no-margin">{common('loading')}</h3>
       </Card>

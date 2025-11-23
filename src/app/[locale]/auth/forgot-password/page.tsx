@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { KeyRound, Mail, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Button, Input, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
     return (
       <Card className="w-full max-w-md text-center" padding="lg">
         <div className="inline-flex mb-4">
-          <IconBadge icon={Mail} size="lg" variant="secondary" />
+          <IconBadge icon="Mail" size="lg" variant="secondary" />
         </div>
         <h3 className="mb-4">{t('success')}</h3>
         <Link href={`/${locale}/auth/login`}>
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
     <Card className="w-full max-w-md" padding="lg">
       <div className="text-center mb-8">
         <div className="inline-flex mb-4">
-          <IconBadge icon={KeyRound} size="lg" variant="primary" />
+          <IconBadge icon="KeyRound" size="lg" variant="primary" />
         </div>
         <h2 className="no-margin">{t('title')}</h2>
         <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>

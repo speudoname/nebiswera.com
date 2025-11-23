@@ -4,7 +4,6 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
-import { AlertTriangle, Loader2 } from 'lucide-react'
 import { Button, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 
@@ -30,7 +29,7 @@ function AuthErrorContent() {
   return (
     <Card className="w-full max-w-md text-center" padding="lg">
       <div className="inline-flex mb-4">
-        <IconBadge icon={AlertTriangle} size="lg" variant="danger" />
+        <IconBadge icon="AlertTriangle" size="lg" variant="danger" />
       </div>
       <h3 className="mb-2">{t('authError')}</h3>
       <p className="text-secondary mb-6">{getErrorMessage()}</p>
@@ -48,7 +47,7 @@ export default function AuthErrorPage() {
     <Suspense fallback={
       <Card className="w-full max-w-md text-center" padding="lg">
         <div className="inline-flex mb-4">
-          <IconBadge icon={Loader2} size="lg" variant="primary" iconClassName="animate-spin" />
+          <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>
         <h3 className="no-margin">{common('loading')}</h3>
       </Card>

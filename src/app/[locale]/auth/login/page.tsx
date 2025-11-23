@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
-import { LogIn, Loader2 } from 'lucide-react'
 import { Button, Input, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 
@@ -52,7 +51,7 @@ function LoginContent() {
     <Card className="w-full max-w-md" padding="lg">
       <div className="text-center mb-8">
         <div className="inline-flex mb-4">
-          <IconBadge icon={LogIn} size="lg" variant="primary" />
+          <IconBadge icon="LogIn" size="lg" variant="primary" />
         </div>
         <h2 className="no-margin">{t('title')}</h2>
         <p className="text-secondary mt-2 no-margin">{t('subtitle')}</p>
@@ -115,7 +114,7 @@ export default function LoginPage() {
     <Suspense fallback={
       <Card className="w-full max-w-md text-center" padding="lg">
         <div className="flex justify-center mb-4">
-          <IconBadge icon={Loader2} size="lg" variant="primary" iconClassName="animate-spin" />
+          <IconBadge icon="Loader2" size="lg" variant="primary" iconClassName="animate-spin" />
         </div>
         <h3 className="no-margin">{common('loading')}</h3>
       </Card>

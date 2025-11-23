@@ -4,7 +4,6 @@ import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner'
 import { Badge, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
-import { BookOpen, CheckCircle, ShoppingBag } from 'lucide-react'
 
 export default async function DashboardPage() {
   const locale = await getLocale()
@@ -53,7 +52,7 @@ export default async function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <IconBadge icon={BookOpen} size="sm" variant="primary" />
+                    <IconBadge icon="BookOpen" size="sm" variant="primary" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -71,7 +70,7 @@ export default async function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <IconBadge icon={CheckCircle} size="sm" variant="secondary" />
+                    <IconBadge icon="CheckCircle" size="sm" variant="secondary" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -89,7 +88,7 @@ export default async function DashboardPage() {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <IconBadge icon={ShoppingBag} size="sm" variant="secondary" />
+                    <IconBadge icon="ShoppingBag" size="sm" variant="secondary" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>

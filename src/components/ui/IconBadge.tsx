@@ -1,6 +1,18 @@
 'use client'
 
-import { LucideIcon } from 'lucide-react'
+import {
+  BookOpen,
+  CheckCircle,
+  ShoppingBag,
+  Loader2,
+  AlertTriangle,
+  LogIn,
+  UserPlus,
+  KeyRound,
+  Mail,
+  XCircle,
+  LucideIcon,
+} from 'lucide-react'
 
 /**
  * IconBadge Component - Standardized icon container
@@ -13,14 +25,30 @@ import { LucideIcon } from 'lucide-react'
  * - Modal headers
  *
  * USAGE:
- *   <IconBadge icon={LogIn} />
- *   <IconBadge icon={CheckCircle} size="lg" variant="secondary" />
- *   <IconBadge icon={AlertTriangle} variant="danger" />
+ *   <IconBadge icon="LogIn" />
+ *   <IconBadge icon="CheckCircle" size="lg" variant="secondary" />
+ *   <IconBadge icon="AlertTriangle" variant="danger" />
  */
 
+// Icon map for string-based icon selection (allows server -> client serialization)
+const iconMap: Record<string, LucideIcon> = {
+  BookOpen,
+  CheckCircle,
+  ShoppingBag,
+  Loader2,
+  AlertTriangle,
+  LogIn,
+  UserPlus,
+  KeyRound,
+  Mail,
+  XCircle,
+}
+
+export type IconName = keyof typeof iconMap
+
 interface IconBadgeProps {
-  /** Lucide icon component */
-  icon: LucideIcon
+  /** Icon name (string) for server component compatibility */
+  icon: IconName
   /** Size of the badge */
   size?: 'sm' | 'md' | 'lg'
   /** Color variant */
@@ -70,14 +98,20 @@ const variantClasses = {
 }
 
 export function IconBadge({
-  icon: Icon,
+  icon,
   size = 'md',
   variant = 'primary',
   className = '',
   iconClassName = '',
 }: IconBadgeProps) {
+  const Icon = iconMap[icon]
   const sizeConfig = sizeClasses[size]
   const variantConfig = variantClasses[variant]
+
+  if (!Icon) {
+    console.warn(`IconBadge: Unknown icon "${icon}"`)
+    return null
+  }
 
   return (
     <div

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getAuthToken } from '@/lib/auth-utils'
 import bcrypt from 'bcryptjs'
 import type { NextRequest } from 'next/server'
+import { profileUpdateSchema, formatZodError } from '@/lib/validations'
 
 export async function GET(request: NextRequest) {
   const token = await getAuthToken(request)
@@ -38,7 +39,17 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { name, preferredLocale, currentPassword, newPassword } = body
+
+  // Validate input with Zod
+  const result = profileUpdateSchema.safeParse(body)
+  if (!result.success) {
+    return NextResponse.json(
+      { error: formatZodError(result.error) },
+      { status: 400 }
+    )
+  }
+
+  const { name, preferredLocale, currentPassword, newPassword } = result.data
 
   const user = await prisma.user.findUnique({
     where: { email: token.email },
@@ -60,7 +71,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   // Update preferred locale if provided
-  if (preferredLocale && ['ka', 'en'].includes(preferredLocale)) {
+  if (preferredLocale) {
     updateData.preferredLocale = preferredLocale
   }
 
@@ -78,13 +89,6 @@ export async function PATCH(request: NextRequest) {
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Current password is incorrect' },
-        { status: 400 }
-      )
-    }
-
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: 'New password must be at least 8 characters' },
         { status: 400 }
       )
     }

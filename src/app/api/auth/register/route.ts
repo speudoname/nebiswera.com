@@ -3,25 +3,29 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
+import { registerSchema, formatZodError } from '@/lib/validations'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
+  // Rate limit: 5 requests per minute for auth endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'auth')
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
-    const { name, email, password, locale = 'ka' } = await request.json()
+    const body = await request.json()
 
-    // Validate input
-    if (!email || !password) {
+    // Validate input with Zod
+    const result = registerSchema.safeParse(body)
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: formatZodError(result.error) },
         { status: 400 }
       )
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      )
-    }
+    const { name, email, password, locale } = result.data
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -51,7 +55,7 @@ export async function POST(request: Request) {
 
     // Generate verification token
     const token = crypto.randomBytes(32).toString('hex')
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
     await prisma.verificationToken.create({
       data: {

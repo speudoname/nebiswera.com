@@ -31,6 +31,7 @@ model User {
   accounts                Account[]
   sessions                Session[]
 
+  @@index([createdAt])
   @@map("users")
 }
 
@@ -51,6 +52,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -62,6 +64,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -72,6 +75,9 @@ model VerificationToken {
   type       TokenType @default(EMAIL_VERIFICATION)
 
   @@unique([identifier, token])
+  @@index([identifier])
+  @@index([expires])
+  @@index([type])
   @@map("verification_tokens")
 }
 
@@ -122,6 +128,10 @@ model EmailLog {
   bounceType  String?
   metadata    Json?
 
+  @@index([status])
+  @@index([type])
+  @@index([sentAt])
+  @@index([to])
   @@map("email_logs")
 }
 

@@ -1,24 +1,29 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { resetPasswordSchema, formatZodError } from '@/lib/validations'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
+  // Rate limit: 5 requests per minute for auth endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'auth')
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
-    const { token, password } = await request.json()
+    const body = await request.json()
 
-    if (!token || !password) {
+    // Validate input with Zod
+    const result = resetPasswordSchema.safeParse(body)
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Token and password are required' },
+        { error: formatZodError(result.error) },
         { status: 400 }
       )
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters' },
-        { status: 400 }
-      )
-    }
+    const { token, password } = result.data
 
     // Find the reset token
     const verificationToken = await prisma.verificationToken.findFirst({
@@ -39,21 +44,21 @@ export async function POST(request: Request) {
     // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Update user's password
-    await prisma.user.update({
-      where: { email: verificationToken.identifier },
-      data: { password: hashedPassword },
-    })
-
-    // Delete the used token
-    await prisma.verificationToken.delete({
-      where: {
-        identifier_token: {
-          identifier: verificationToken.identifier,
-          token: verificationToken.token,
+    // Update user's password and delete token in a transaction
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: verificationToken.identifier },
+        data: { password: hashedPassword },
+      }),
+      prisma.verificationToken.delete({
+        where: {
+          identifier_token: {
+            identifier: verificationToken.identifier,
+            token: verificationToken.token,
+          },
         },
-      },
-    })
+      }),
+    ])
 
     return NextResponse.json({
       success: true,

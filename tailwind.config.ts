@@ -17,6 +17,17 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  // Safelist ensures these classes are always generated regardless of detection
+  safelist: [
+    'shadow-neu-dark',
+    'shadow-neu-dark-sm',
+    'shadow-neu-dark-md',
+    'shadow-neu-dark-lg',
+    'shadow-neu-dark-inset',
+    'shadow-neu-dark-inset-sm',
+    'shadow-neu-dark-hover',
+    'shadow-neu-dark-pressed',
+  ],
   theme: {
     extend: {
       // =======================================================================

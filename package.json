@@ -18,8 +18,10 @@
     "next-intl": "^4.5.5",
     "postmark": "^4.0.5",
     "prisma": "5",
+    "rate-limiter-flexible": "^8.3.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

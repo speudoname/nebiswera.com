@@ -2,14 +2,29 @@ import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { prisma } from '@/lib/db'
 import { sendPasswordResetEmail } from '@/lib/email'
+import { forgotPasswordSchema, formatZodError } from '@/lib/validations'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
-  try {
-    const { email } = await request.json()
+  // Rate limit: 3 requests per 5 minutes for email endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'email')
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+  try {
+    const body = await request.json()
+
+    // Validate input with Zod
+    const result = forgotPasswordSchema.safeParse(body)
+    if (!result.success) {
+      return NextResponse.json(
+        { error: formatZodError(result.error) },
+        { status: 400 }
+      )
     }
+
+    const { email } = result.data
 
     const user = await prisma.user.findUnique({
       where: { email },

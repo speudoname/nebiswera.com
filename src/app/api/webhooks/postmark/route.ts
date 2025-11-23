@@ -45,6 +45,16 @@ type PostmarkEvent =
 
 export async function POST(request: Request) {
   try {
+    // Verify webhook signature if configured
+    const webhookToken = process.env.POSTMARK_WEBHOOK_TOKEN
+    if (webhookToken) {
+      const signature = request.headers.get('X-Postmark-Token')
+      if (signature !== webhookToken) {
+        console.warn('Invalid Postmark webhook signature')
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+    }
+
     const event = (await request.json()) as PostmarkEvent
 
     // Find the email log by message ID

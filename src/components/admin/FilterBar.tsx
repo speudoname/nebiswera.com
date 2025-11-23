@@ -29,7 +29,7 @@ export function FilterBar({
   filters = [],
 }: FilterBarProps) {
   return (
-    <div className="bg-white rounded-neu shadow-neu p-4 mb-6">
+    <div className="bg-neu-light rounded-neu shadow-neu p-4 mb-6">
       <form onSubmit={onSearch} className="flex gap-4 items-end flex-wrap">
         <div className="flex-1 min-w-[200px]">
           <Input

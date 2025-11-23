@@ -1,12 +1,13 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import { ArrowRight, BookOpen } from 'lucide-react'
 
 export default function Home() {
   const t = useTranslations('home')
+  const locale = useLocale()
 
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -18,7 +19,7 @@ export default function Home() {
           {t('subtitle')}
         </p>
         <div className="flex gap-4 justify-center flex-wrap">
-          <Link href="/auth/register">
+          <Link href={`/${locale}/auth/register`}>
             <Button size="lg" rightIcon={ArrowRight}>
               {t('getStarted')}
             </Button>

@@ -3,8 +3,15 @@ import crypto from 'crypto'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
+import { checkRateLimit } from '@/lib/rate-limit'
 
-export async function POST() {
+export async function POST(request: Request) {
+  // Rate limit: 3 requests per 5 minutes for email endpoints
+  const rateLimitResponse = await checkRateLimit(request, 'email')
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     const session = await auth()
 
@@ -35,7 +42,7 @@ export async function POST() {
 
     // Generate new token
     const token = crypto.randomBytes(32).toString('hex')
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
 
     await prisma.verificationToken.create({
       data: {

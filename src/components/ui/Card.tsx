@@ -16,27 +16,28 @@ const paddingClasses = {
   lg: 'p-8',
 }
 
-// Light background shadows (default)
-const variantClasses = {
-  raised: 'shadow-neu',
-  flat: 'shadow-neu-flat',
-  inset: 'shadow-neu-inset',
-}
-
-// Dark/colored background shadows
-const variantClassesDark = {
-  raised: 'shadow-neu-dark',
-  flat: 'shadow-neu-flat',
-  inset: 'shadow-neu-dark-inset',
+// Shadow class helper - uses direct strings for Tailwind detection
+function getShadowClass(variant: 'raised' | 'flat' | 'inset', darkBg: boolean): string {
+  if (darkBg) {
+    // Dark/colored background shadows
+    if (variant === 'raised') return 'shadow-neu-dark'
+    if (variant === 'flat') return 'shadow-neu-flat'
+    if (variant === 'inset') return 'shadow-neu-dark-inset'
+  }
+  // Light background shadows (default)
+  if (variant === 'raised') return 'shadow-neu'
+  if (variant === 'flat') return 'shadow-neu-flat'
+  if (variant === 'inset') return 'shadow-neu-inset'
+  return 'shadow-neu'
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className = '', variant = 'raised', padding = 'md', darkBg = false, children, ...props }, ref) => {
-    const shadowClasses = darkBg ? variantClassesDark : variantClasses
+    const shadowClass = getShadowClass(variant, darkBg)
     return (
       <div
         ref={ref}
-        className={`bg-neu-base rounded-neu-md ${shadowClasses[variant]} ${paddingClasses[padding]} ${className}`}
+        className={`bg-neu-base rounded-neu-md ${shadowClass} ${paddingClasses[padding]} ${className}`}
         {...props}
       >
         {children}

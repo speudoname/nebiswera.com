@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button, Modal, Pagination, Badge } from '@/components/ui'
 import { FilterBar, EmailLogRow } from '@/components/admin'
+import { Loader2 } from 'lucide-react'
 
 interface EmailLog {
   id: string
@@ -26,7 +27,7 @@ interface PaginationState {
   totalPages: number
 }
 
-const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
+const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
   SENT: 'info',
   DELIVERED: 'success',
   BOUNCED: 'error',
@@ -34,7 +35,7 @@ const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 
   OPENED: 'info',
 }
 
-const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
+const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
   VERIFICATION: 'info',
   PASSWORD_RESET: 'warning',
   WELCOME: 'success',
@@ -88,7 +89,7 @@ export default function EmailLogsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Email Logs</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Email Logs</h1>
       </div>
 
       <FilterBar
@@ -133,37 +134,37 @@ export default function EmailLogsPage() {
       />
 
       {/* Email Logs Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white rounded-neu shadow-neu overflow-hidden">
+        <table className="min-w-full divide-y divide-neu-dark">
+          <thead className="bg-neu-light">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Recipient
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Type
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Sent
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-neu-dark">
             {loading ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />
+                  <Loader2 className="h-8 w-8 text-primary-600 animate-spin mx-auto" />
                 </td>
               </tr>
             ) : emails.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                   No email logs found
                 </td>
               </tr>
@@ -181,9 +182,9 @@ export default function EmailLogsPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neu-dark">
             <div className="flex-1 flex items-center justify-between">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-text-secondary">
                 Showing{' '}
                 <span className="font-medium">
                   {(pagination.page - 1) * pagination.limit + 1}
@@ -235,24 +236,24 @@ function EmailDetails({ email, onClose }: { email: EmailLog; onClose: () => void
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-500">Recipient</label>
-        <p className="text-gray-900">{email.to}</p>
+        <label className="block text-sm font-medium text-text-muted">Recipient</label>
+        <p className="text-text-primary">{email.to}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-500">Subject</label>
-        <p className="text-gray-900">{email.subject}</p>
+        <label className="block text-sm font-medium text-text-muted">Subject</label>
+        <p className="text-text-primary">{email.subject}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-500">Type</label>
+          <label className="block text-sm font-medium text-text-muted">Type</label>
           <Badge variant={typeVariants[email.type]}>
             {email.type.replace('_', ' ')}
           </Badge>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-500">Status</label>
+          <label className="block text-sm font-medium text-text-muted">Status</label>
           <Badge variant={statusVariants[email.status]}>
             {email.status.replace('_', ' ')}
           </Badge>
@@ -260,38 +261,38 @@ function EmailDetails({ email, onClose }: { email: EmailLog; onClose: () => void
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-500">Message ID</label>
-        <p className="text-gray-900 text-sm font-mono break-all">{email.messageId}</p>
+        <label className="block text-sm font-medium text-text-muted">Message ID</label>
+        <p className="text-text-primary text-sm font-mono break-all">{email.messageId}</p>
       </div>
 
-      <div className="border-t pt-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Delivery Timeline</h3>
+      <div className="border-t border-neu-dark pt-4">
+        <h3 className="text-sm font-medium text-text-secondary mb-3">Delivery Timeline</h3>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Sent</span>
-            <span className="text-sm text-gray-900">{formatDate(email.sentAt)}</span>
+            <span className="text-sm text-text-muted">Sent</span>
+            <span className="text-sm text-text-primary">{formatDate(email.sentAt)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Delivered</span>
-            <span className="text-sm text-gray-900">{formatDate(email.deliveredAt)}</span>
+            <span className="text-sm text-text-muted">Delivered</span>
+            <span className="text-sm text-text-primary">{formatDate(email.deliveredAt)}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">Opened</span>
-            <span className="text-sm text-gray-900">{formatDate(email.openedAt)}</span>
+            <span className="text-sm text-text-muted">Opened</span>
+            <span className="text-sm text-text-primary">{formatDate(email.openedAt)}</span>
           </div>
           {email.bouncedAt && (
             <div className="flex justify-between">
-              <span className="text-sm text-red-500">Bounced</span>
-              <span className="text-sm text-red-900">{formatDate(email.bouncedAt)}</span>
+              <span className="text-sm text-primary-600">Bounced</span>
+              <span className="text-sm text-primary-700">{formatDate(email.bouncedAt)}</span>
             </div>
           )}
         </div>
       </div>
 
       {email.bounceType && (
-        <div className="bg-red-50 p-3 rounded-lg">
-          <label className="block text-sm font-medium text-red-700">Bounce Reason</label>
-          <p className="text-sm text-red-600">{email.bounceType}</p>
+        <div className="bg-primary-50 p-3 rounded-neu">
+          <label className="block text-sm font-medium text-primary-700">Bounce Reason</label>
+          <p className="text-sm text-primary-600">{email.bounceType}</p>
         </div>
       )}
 

@@ -159,7 +159,7 @@ export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdown
               <form action={signOutAction}>
                 <button
                   type="submit"
-                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   {nav('logout')}
@@ -168,7 +168,7 @@ export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdown
             ) : (
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 {nav('logout')}

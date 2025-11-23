@@ -59,7 +59,7 @@ function LoginContent() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 rounded-neu shadow-neu-inset-sm text-red-600 text-sm">
+        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-sm">
           {error}
         </div>
       )}

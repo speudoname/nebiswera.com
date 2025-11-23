@@ -20,7 +20,7 @@ interface EmailLogRowProps {
   onViewDetails: () => void
 }
 
-const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
+const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
   SENT: 'info',
   DELIVERED: 'success',
   BOUNCED: 'error',
@@ -28,7 +28,7 @@ const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 
   OPENED: 'info',
 }
 
-const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
+const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
   VERIFICATION: 'info',
   PASSWORD_RESET: 'warning',
   WELCOME: 'success',
@@ -49,8 +49,8 @@ export function EmailLogRow({ email, onViewDetails }: EmailLogRowProps) {
   return (
     <tr>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-gray-900">{email.to}</div>
-        <div className="text-sm text-gray-500 truncate max-w-xs">{email.subject}</div>
+        <div className="text-sm font-medium text-text-primary">{email.to}</div>
+        <div className="text-sm text-text-muted truncate max-w-xs">{email.subject}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <Badge variant={typeVariants[email.type]}>
@@ -62,13 +62,13 @@ export function EmailLogRow({ email, onViewDetails }: EmailLogRowProps) {
           {email.status.replace('_', ' ')}
         </Badge>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
         {formatDate(email.sentAt)}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <button
           onClick={onViewDetails}
-          className="text-indigo-600 hover:text-indigo-900"
+          className="text-primary-600 hover:text-primary-700"
         >
           Details
         </button>

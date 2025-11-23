@@ -44,10 +44,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         active:shadow-neu-inset-sm
       `,
       danger: `
-        bg-red-500 text-white
+        bg-primary-700 text-white
         shadow-neu hover:shadow-neu-hover
-        hover:bg-red-600
-        active:shadow-neu-pressed active:bg-red-700
+        hover:bg-primary-800
+        active:shadow-neu-pressed active:bg-primary-900
       `,
     }
 

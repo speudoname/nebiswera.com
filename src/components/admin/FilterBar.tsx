@@ -29,7 +29,7 @@ export function FilterBar({
   filters = [],
 }: FilterBarProps) {
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-6">
+    <div className="bg-white rounded-neu shadow-neu p-4 mb-6">
       <form onSubmit={onSearch} className="flex gap-4 items-end flex-wrap">
         <div className="flex-1 min-w-[200px]">
           <Input
@@ -44,13 +44,13 @@ export function FilterBar({
         </div>
         {filters.map((filter) => (
           <div key={filter.name}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {filter.label}
             </label>
             <select
               value={filter.value}
               onChange={(e) => filter.onChange(e.target.value)}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
             >
               {filter.options.map((opt) => (
                 <option key={opt.value} value={opt.value}>

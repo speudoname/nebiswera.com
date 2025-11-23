@@ -110,7 +110,7 @@ export default function UsersPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Users</h1>
       </div>
 
       <FilterBar
@@ -137,28 +137,28 @@ export default function UsersPage() {
       />
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-white rounded-neu shadow-neu overflow-hidden">
+        <table className="min-w-full divide-y divide-neu-dark">
+          <thead className="bg-neu-light">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 User
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Role
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">
                 Joined
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-neu-dark">
             {loading ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
@@ -167,7 +167,7 @@ export default function UsersPage() {
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                   No users found
                 </td>
               </tr>
@@ -186,9 +186,9 @@ export default function UsersPage() {
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neu-dark">
             <div className="flex-1 flex items-center justify-between">
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-text-secondary">
                 Showing{' '}
                 <span className="font-medium">
                   {(pagination.page - 1) * pagination.limit + 1}
@@ -227,14 +227,14 @@ export default function UsersPage() {
         <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-primary-100 rounded-full">
           <AlertTriangle className="w-6 h-6 text-primary-600" />
         </div>
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-text-secondary text-center mb-6">
           Are you sure you want to delete this user? This action cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
-          <Button type="button" onClick={() => setDeleteConfirm(null)} className="bg-gray-200 text-gray-800 hover:bg-gray-300">
+          <Button type="button" variant="secondary" onClick={() => setDeleteConfirm(null)}>
             Cancel
           </Button>
-          <Button type="button" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} className="bg-red-600 hover:bg-red-700">
+          <Button type="button" variant="danger" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
             Delete
           </Button>
         </div>
@@ -284,20 +284,20 @@ function EditUserModal({
           required
         />
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-text-secondary mb-1">
             Role
           </label>
           <select
             value={formData.role}
             onChange={(e) => setFormData({ ...formData, role: e.target.value as 'USER' | 'ADMIN' })}
-            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
           >
             <option value="USER">User</option>
             <option value="ADMIN">Admin</option>
           </select>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <Button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 hover:bg-gray-300">
+          <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button type="submit">Save Changes</Button>

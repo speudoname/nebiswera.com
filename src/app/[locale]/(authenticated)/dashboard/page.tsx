@@ -69,12 +69,12 @@ export default async function DashboardPage() {
               </div>
             </Card>
 
-            <Card variant="flat" className="bg-green-50">
+            <Card variant="flat" className="bg-secondary-50">
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-neu bg-green-100 shadow-neu-sm flex items-center justify-center">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    <div className="w-10 h-10 rounded-neu bg-secondary-100 shadow-neu-sm flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-secondary-600" />
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">

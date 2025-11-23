@@ -32,10 +32,10 @@ function AdminLayoutContent({
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-neu-base">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-gray-900">
-        <div className="flex h-16 items-center justify-center border-b border-gray-800">
+      <div className="fixed inset-y-0 left-0 w-64 bg-accent-900">
+        <div className="flex h-16 items-center justify-center border-b border-accent-800">
           <Link href="/admin" className="text-xl font-bold text-white">
             Admin Panel
           </Link>
@@ -51,8 +51,8 @@ function AdminLayoutContent({
                 href={item.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors mb-1 ${
                   isActive
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                    ? 'bg-accent-800 text-white'
+                    : 'text-accent-300 hover:bg-accent-800 hover:text-white'
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -61,17 +61,17 @@ function AdminLayoutContent({
             )
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-accent-800">
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors mb-2"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-accent-300 hover:bg-accent-800 hover:text-white transition-colors mb-2"
           >
             <Undo2 className="h-5 w-5" />
             Back to Site
           </Link>
           <button
             onClick={() => signOut({ callbackUrl: '/auth/login' })}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-accent-300 hover:bg-accent-800 hover:text-white transition-colors"
           >
             <LogOut className="h-5 w-5" />
             Sign Out

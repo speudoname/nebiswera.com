@@ -171,8 +171,8 @@ export default function ProfilePage() {
         <div
           className={`mb-6 p-4 rounded-neu ${
             message.type === 'success'
-              ? 'bg-green-50 shadow-neu-inset-sm text-green-700'
-              : 'bg-red-50 shadow-neu-inset-sm text-red-700'
+              ? 'bg-secondary-50 shadow-neu-inset-sm text-secondary-700'
+              : 'bg-primary-100 shadow-neu-inset-sm text-primary-700'
           }`}
         >
           {message.text}
@@ -291,7 +291,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex justify-between">
             <span className="text-sm text-text-secondary">{t('verificationStatus')}</span>
-            <span className={`text-sm ${user?.emailVerified ? 'text-green-600' : 'text-amber-600'}`}>
+            <span className={`text-sm ${user?.emailVerified ? 'text-secondary-600' : 'text-primary-600'}`}>
               {user?.emailVerified ? t('verified') : t('notVerified')}
             </span>
           </div>
@@ -299,9 +299,9 @@ export default function ProfilePage() {
       </Card>
 
       {/* Danger Zone */}
-      <Card className="border-2 border-red-200">
-        <div className="px-6 py-4 border-b border-red-200 bg-red-50 rounded-t-neu">
-          <h2 className="text-lg font-semibold text-red-700">{t('dangerZone')}</h2>
+      <Card className="border-2 border-primary-300">
+        <div className="px-6 py-4 border-b border-primary-300 bg-primary-50 rounded-t-neu">
+          <h2 className="text-lg font-semibold text-primary-700">{t('dangerZone')}</h2>
         </div>
         <div className="px-6 py-4">
           <p className="text-sm text-text-secondary mb-4">{t('deleteAccountWarning')}</p>
@@ -321,8 +321,8 @@ export default function ProfilePage() {
         onClose={() => setShowDeleteConfirm(false)}
         title={t('deleteConfirmTitle')}
       >
-        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-4 bg-red-100 rounded-neu shadow-neu-sm">
-          <AlertTriangle className="w-7 h-7 text-red-600" />
+        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-4 bg-primary-100 rounded-neu shadow-neu-sm">
+          <AlertTriangle className="w-7 h-7 text-primary-600" />
         </div>
         <p className="text-text-secondary text-center mb-6">
           {t('deleteConfirmMessage')}

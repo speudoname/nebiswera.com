@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center text-white p-8 max-w-2xl">
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 drop-shadow-lg">
+        <h1 className="text-5xl md:text-6xl font-bold mb-6 [text-shadow:_2px_2px_8px_rgba(74,48,96,0.4)]">
           {t('title')}
         </h1>
         <p className="text-xl md:text-2xl opacity-90 mb-8">

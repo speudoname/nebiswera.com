@@ -59,7 +59,7 @@ function VerifyEmailContent() {
 
       {status === 'success' && (
         <>
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-green-100 text-green-600 shadow-neu-sm mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-secondary-100 text-secondary-600 shadow-neu-sm mb-4">
             <CheckCircle className="w-7 h-7" />
           </div>
           <h1 className="text-xl font-semibold text-text-primary mb-2">{t('success')}</h1>
@@ -72,7 +72,7 @@ function VerifyEmailContent() {
 
       {status === 'error' && (
         <>
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-red-100 text-red-600 shadow-neu-sm mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
             <XCircle className="w-7 h-7" />
           </div>
           <h1 className="text-xl font-semibold text-text-primary mb-2">{t('error')}</h1>

@@ -29,13 +29,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             transition-all duration-200
             focus:outline-none focus:border-primary-400 focus:shadow-neu-inset-md
             disabled:opacity-50 disabled:cursor-not-allowed
-            ${error ? 'border-red-400 focus:border-red-400' : ''}
+            ${error ? 'border-primary-500 focus:border-primary-500' : ''}
             ${className}
           `}
           {...props}
         />
         {error && (
-          <p className="mt-2 text-sm text-red-500 flex items-center gap-1.5">
+          <p className="mt-2 text-sm text-primary-600 flex items-center gap-1.5">
             <AlertCircle className="w-4 h-4" />
             {error}
           </p>

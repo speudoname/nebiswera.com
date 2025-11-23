@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button, Input } from '@/components/ui'
+import { Button, Input, Badge } from '@/components/ui'
 import { Mail, User, Link, Loader2 } from 'lucide-react'
 
 interface Settings {
@@ -89,15 +89,15 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Settings</h1>
       </div>
 
       {message && (
         <div
-          className={`mb-6 p-4 rounded-lg ${
+          className={`mb-6 p-4 rounded-neu ${
             message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-secondary-50 border border-secondary-200 text-secondary-700'
+              : 'bg-primary-100 border border-primary-300 text-primary-700'
           }`}
         >
           {message.text}
@@ -106,19 +106,19 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSubmit}>
         {/* Postmark Settings */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary-600" />
               Postmark Email Settings
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-text-muted mt-1">
               Configure your Postmark server for sending transactional emails.
             </p>
           </div>
           <div className="px-6 py-4 space-y-4">
             <div>
-              <label htmlFor="postmarkServerToken" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="postmarkServerToken" className="block text-sm font-medium text-text-secondary mb-1">
                 Server API Token
               </label>
               <div className="relative">
@@ -129,35 +129,33 @@ export default function SettingsPage() {
                   placeholder={settings?.hasPostmarkToken ? 'Token is set (enter new value to change)' : 'Enter your Postmark server token'}
                   value={formData.postmarkServerToken}
                   onChange={(e) => setFormData({ ...formData, postmarkServerToken: e.target.value })}
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
                 />
                 {settings?.hasPostmarkToken && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                      Configured
-                    </span>
+                    <Badge variant="success">Configured</Badge>
                   </div>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 Find this in your Postmark account under Server &gt; API Tokens
               </p>
             </div>
 
             <div>
-              <label htmlFor="postmarkStreamName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="postmarkStreamName" className="block text-sm font-medium text-text-secondary mb-1">
                 Message Stream
               </label>
               <select
                 id="postmarkStreamName"
                 value={formData.postmarkStreamName}
                 onChange={(e) => setFormData({ ...formData, postmarkStreamName: e.target.value })}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
               >
                 <option value="outbound">outbound (Transactional)</option>
                 <option value="broadcast">broadcast (Marketing)</option>
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-text-muted mt-1">
                 Use &quot;outbound&quot; for transactional emails like verification and password reset
               </p>
             </div>
@@ -165,13 +163,13 @@ export default function SettingsPage() {
         </div>
 
         {/* From Email Settings */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
               <User className="h-5 w-5 text-primary-600" />
               Sender Information
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-text-muted mt-1">
               Configure the &quot;From&quot; address and name for outgoing emails.
             </p>
           </div>
@@ -185,7 +183,7 @@ export default function SettingsPage() {
               value={formData.emailFromAddress}
               onChange={(e) => setFormData({ ...formData, emailFromAddress: e.target.value })}
             />
-            <p className="text-xs text-gray-500 -mt-2">
+            <p className="text-xs text-text-muted -mt-2">
               Must be a verified sender signature in Postmark
             </p>
 
@@ -202,43 +200,31 @@ export default function SettingsPage() {
         </div>
 
         {/* Webhook Info (Read Only) */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
               <Link className="h-5 w-5 text-primary-600" />
               Webhook Configuration
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-text-muted mt-1">
               Webhook is automatically configured to track email delivery status.
             </p>
           </div>
           <div className="px-6 py-4">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-neu-light rounded-neu p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Webhook URL</span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                  Active
-                </span>
+                <span className="text-sm font-medium text-text-secondary">Webhook URL</span>
+                <Badge variant="success">Active</Badge>
               </div>
-              <code className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded block break-all">
+              <code className="text-sm text-text-secondary bg-neu-base px-2 py-1 rounded-neu block break-all">
                 https://nebiswera.com/api/webhooks/postmark
               </code>
               <div className="mt-3 flex flex-wrap gap-2">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                  Delivery
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                  Bounce
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                  Open
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                  Click
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                  Spam Complaint
-                </span>
+                <Badge variant="info">Delivery</Badge>
+                <Badge variant="info">Bounce</Badge>
+                <Badge variant="info">Open</Badge>
+                <Badge variant="info">Click</Badge>
+                <Badge variant="info">Spam Complaint</Badge>
               </div>
             </div>
           </div>

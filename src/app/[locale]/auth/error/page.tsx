@@ -29,7 +29,7 @@ function AuthErrorContent() {
 
   return (
     <Card className="w-full max-w-md text-center" padding="lg">
-      <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-red-100 text-red-600 shadow-neu-sm mb-4">
+      <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
         <AlertTriangle className="w-7 h-7" />
       </div>
       <h1 className="text-xl font-semibold text-text-primary mb-2">{t('authError')}</h1>

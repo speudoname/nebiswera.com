@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   if (submitted) {
     return (
       <Card className="w-full max-w-md text-center" padding="lg">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-green-100 text-green-600 shadow-neu-sm mb-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-secondary-100 text-secondary-600 shadow-neu-sm mb-4">
           <Mail className="w-7 h-7" />
         </div>
         <h1 className="text-xl font-semibold text-text-primary mb-4">{t('success')}</h1>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 rounded-neu shadow-neu-inset-sm text-red-600 text-sm">
+        <div className="mb-6 p-4 bg-primary-100 rounded-neu shadow-neu-inset-sm text-primary-700 text-sm">
           {error}
         </div>
       )}

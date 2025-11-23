@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
+import { X } from 'lucide-react'
 
 interface ModalProps {
   isOpen: boolean
@@ -36,20 +37,18 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-text-primary/30 backdrop-blur-sm flex items-center justify-center z-50"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className={`bg-white rounded-lg shadow-xl p-6 w-full ${sizeClasses[size]} mx-4`}>
+      <div className={`bg-neu-base rounded-neu-lg shadow-neu-lg p-6 w-full ${sizeClasses[size]} mx-4`}>
         {title && (
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="w-8 h-8 rounded-neu bg-neu-base shadow-neu-sm hover:shadow-neu-pressed flex items-center justify-center text-text-muted hover:text-text-primary transition-all"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="h-4 w-4" />
             </button>
           </div>
         )}

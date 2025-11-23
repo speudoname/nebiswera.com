@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Input } from '@/components/ui'
+import { Mail, User, Link, Loader2 } from 'lucide-react'
 
 interface Settings {
   postmarkServerToken: string | null
@@ -80,7 +81,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+        <Loader2 className="h-12 w-12 text-primary-600 animate-spin" />
       </div>
     )
   }
@@ -108,9 +109,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-              </svg>
+              <Mail className="h-5 w-5 text-primary-600" />
               Postmark Email Settings
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -169,9 +168,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </svg>
+              <User className="h-5 w-5 text-primary-600" />
               Sender Information
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -208,9 +205,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <svg className="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
-              </svg>
+              <Link className="h-5 w-5 text-primary-600" />
               Webhook Configuration
             </h2>
             <p className="text-sm text-gray-500 mt-1">

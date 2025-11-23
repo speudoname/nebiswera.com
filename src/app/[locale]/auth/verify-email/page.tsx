@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
+import { CheckCircle, XCircle, Loader2, Mail } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { Card } from '@/components/ui/Card'
 
 function VerifyEmailContent() {
   const t = useTranslations('auth.verifyEmail')
@@ -45,23 +47,23 @@ function VerifyEmailContent() {
   }, [token, t, errors])
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-8 text-center">
+    <Card className="w-full max-w-md text-center" padding="lg">
       {status === 'loading' && (
         <>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-gray-900">{t('verifying')}</h1>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm mb-4">
+            <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
+          </div>
+          <h1 className="text-xl font-semibold text-text-primary">{t('verifying')}</h1>
         </>
       )}
 
       {status === 'success' && (
         <>
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-green-100 text-green-600 shadow-neu-sm mb-4">
+            <CheckCircle className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('success')}</h1>
-          <p className="text-gray-600 mb-6">{message}</p>
+          <h1 className="text-xl font-semibold text-text-primary mb-2">{t('success')}</h1>
+          <p className="text-text-secondary mb-6">{message}</p>
           <Link href={`/${locale}/dashboard`}>
             <Button>{t('goToDashboard')}</Button>
           </Link>
@@ -70,19 +72,17 @@ function VerifyEmailContent() {
 
       {status === 'error' && (
         <>
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-red-100 text-red-600 shadow-neu-sm mb-4">
+            <XCircle className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('error')}</h1>
-          <p className="text-gray-600 mb-6">{message}</p>
+          <h1 className="text-xl font-semibold text-text-primary mb-2">{t('error')}</h1>
+          <p className="text-text-secondary mb-6">{message}</p>
           <Link href={`/${locale}/auth/login`}>
             <Button variant="outline">{t('resendLink')}</Button>
           </Link>
         </>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -91,10 +91,12 @@ export default function VerifyEmailPage() {
 
   return (
     <Suspense fallback={
-      <div className="bg-white rounded-xl shadow-xl p-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-gray-900">{common('loading')}</h1>
-      </div>
+      <Card className="w-full max-w-md text-center" padding="lg">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm mb-4">
+          <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
+        </div>
+        <h1 className="text-xl font-semibold text-text-primary">{common('loading')}</h1>
+      </Card>
     }>
       <VerifyEmailContent />
     </Suspense>

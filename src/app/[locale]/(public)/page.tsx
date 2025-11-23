@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { Button } from '@/components/ui'
+import { ArrowRight, BookOpen } from 'lucide-react'
 
 export default function Home() {
   const t = useTranslations('home')
@@ -14,17 +16,17 @@ export default function Home() {
           {t('subtitle')}
         </p>
         <div className="flex gap-4 justify-center">
-          <Link
-            href="/auth/register"
-            className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-white/90 transition-colors shadow-lg"
-          >
-            {t('getStarted')}
+          <Link href="/auth/register">
+            <Button size="lg" className="gap-2">
+              {t('getStarted')}
+              <ArrowRight className="w-5 h-5" />
+            </Button>
           </Link>
-          <Link
-            href="#learn-more"
-            className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
-          >
-            {t('learnMore')}
+          <Link href="#learn-more">
+            <Button variant="ghost" size="lg" className="text-white border-2 border-white hover:bg-white/10 gap-2">
+              <BookOpen className="w-5 h-5" />
+              {t('learnMore')}
+            </Button>
           </Link>
         </div>
       </div>

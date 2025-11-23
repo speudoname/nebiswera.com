@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
+import { KeyRound, Mail, ArrowLeft } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { Card } from '@/components/ui/Card'
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('auth.forgotPassword')
@@ -41,34 +43,38 @@ export default function ForgotPasswordPage() {
 
   if (submitted) {
     return (
-      <div className="bg-white rounded-xl shadow-xl p-8 text-center">
-        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
+      <Card className="w-full max-w-md text-center" padding="lg">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-green-100 text-green-600 shadow-neu-sm mb-4">
+          <Mail className="w-7 h-7" />
         </div>
-        <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('success')}</h1>
+        <h1 className="text-xl font-semibold text-text-primary mb-4">{t('success')}</h1>
         <Link href={`/${locale}/auth/login`}>
-          <Button variant="outline">{t('backToLogin')}</Button>
+          <Button variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t('backToLogin')}
+          </Button>
         </Link>
-      </div>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-8">
+    <Card className="w-full max-w-md" padding="lg">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <p className="text-gray-600 mt-2">{t('subtitle')}</p>
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
+          <KeyRound className="w-7 h-7" />
+        </div>
+        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
+        <p className="text-text-secondary mt-2">{t('subtitle')}</p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <div className="mb-6 p-4 bg-red-50 rounded-neu shadow-neu-inset-sm text-red-600 text-sm">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           id="email"
           name="email"
@@ -85,12 +91,12 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600">
-        {t('backToLogin').split(' ')[0]}?{' '}
-        <Link href={`/${locale}/auth/login`} className="text-indigo-600 hover:text-indigo-500 font-medium">
+      <p className="mt-8 text-center">
+        <Link href={`/${locale}/auth/login`} className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors inline-flex items-center gap-1">
+          <ArrowLeft className="w-4 h-4" />
           {t('backToLogin')}
         </Link>
       </p>
-    </div>
+    </Card>
   )
 }

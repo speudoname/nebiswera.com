@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input, Modal } from '@/components/ui'
+import { Card } from '@/components/ui/Card'
+import { Loader2, AlertTriangle } from 'lucide-react'
 
 interface UserProfile {
   id: string
@@ -151,7 +153,9 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+        <div className="w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm flex items-center justify-center">
+          <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
+        </div>
       </div>
     )
   }
@@ -159,16 +163,16 @@ export default function ProfilePage() {
   return (
     <main className="max-w-3xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <p className="text-gray-600 mt-1">{t('subtitle')}</p>
+        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
+        <p className="text-text-secondary mt-1">{t('subtitle')}</p>
       </div>
 
       {message && (
         <div
-          className={`mb-6 p-4 rounded-lg ${
+          className={`mb-6 p-4 rounded-neu ${
             message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-green-50 shadow-neu-inset-sm text-green-700'
+              : 'bg-red-50 shadow-neu-inset-sm text-red-700'
           }`}
         >
           {message.text}
@@ -176,9 +180,9 @@ export default function ProfilePage() {
       )}
 
       {/* Personal Information */}
-      <div className="bg-white shadow rounded-lg mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t('personalInfo')}</h2>
+      <Card className="mb-6">
+        <div className="px-6 py-4 border-b border-neu-dark/20">
+          <h2 className="text-lg font-semibold text-text-primary">{t('personalInfo')}</h2>
         </div>
         <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
           <Input
@@ -189,14 +193,14 @@ export default function ProfilePage() {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
               {t('email')}
             </label>
             <input
               type="email"
               value={user?.email || ''}
               disabled
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-500"
+              className="block w-full rounded-neu px-4 py-3 bg-neu-dark/30 shadow-neu-inset-sm text-text-muted text-sm"
             />
           </div>
           <div className="flex justify-end">
@@ -205,27 +209,27 @@ export default function ProfilePage() {
             </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       {/* Language Preferences */}
-      <div className="bg-white shadow rounded-lg mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t('preferences')}</h2>
+      <Card className="mb-6">
+        <div className="px-6 py-4 border-b border-neu-dark/20">
+          <h2 className="text-lg font-semibold text-text-primary">{t('preferences')}</h2>
         </div>
         <form onSubmit={handleUpdateProfile} className="px-6 py-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
               {t('language')}
             </label>
             <select
               value={formData.preferredLocale}
               onChange={(e) => setFormData({ ...formData, preferredLocale: e.target.value })}
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+              className="block w-full rounded-neu px-4 py-3 bg-neu-base shadow-neu-inset border-2 border-transparent text-text-primary text-sm focus:border-primary-400 focus:outline-none transition-all"
             >
               <option value="ka">{languages('ka')}</option>
               <option value="en">{languages('en')}</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">{t('languageDescription')}</p>
+            <p className="text-xs text-text-muted mt-1">{t('languageDescription')}</p>
           </div>
           <div className="flex justify-end">
             <Button type="submit" loading={saving} loadingText={common('loading')}>
@@ -233,12 +237,12 @@ export default function ProfilePage() {
             </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       {/* Security */}
-      <div className="bg-white shadow rounded-lg mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t('security')}</h2>
+      <Card className="mb-6">
+        <div className="px-6 py-4 border-b border-neu-dark/20">
+          <h2 className="text-lg font-semibold text-text-primary">{t('security')}</h2>
         </div>
         <form onSubmit={handleChangePassword} className="px-6 py-4 space-y-4">
           <Input
@@ -271,45 +275,45 @@ export default function ProfilePage() {
             </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       {/* Account Info */}
-      <div className="bg-white shadow rounded-lg mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{t('accountInfo')}</h2>
+      <Card className="mb-6">
+        <div className="px-6 py-4 border-b border-neu-dark/20">
+          <h2 className="text-lg font-semibold text-text-primary">{t('accountInfo')}</h2>
         </div>
         <div className="px-6 py-4 space-y-3">
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">{t('createdAt')}</span>
-            <span className="text-sm text-gray-900">
+            <span className="text-sm text-text-secondary">{t('createdAt')}</span>
+            <span className="text-sm text-text-primary">
               {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500">{t('verificationStatus')}</span>
-            <span className={`text-sm ${user?.emailVerified ? 'text-green-600' : 'text-yellow-600'}`}>
+            <span className="text-sm text-text-secondary">{t('verificationStatus')}</span>
+            <span className={`text-sm ${user?.emailVerified ? 'text-green-600' : 'text-amber-600'}`}>
               {user?.emailVerified ? t('verified') : t('notVerified')}
             </span>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Danger Zone */}
-      <div className="bg-white shadow rounded-lg border border-red-200">
-        <div className="px-6 py-4 border-b border-red-200 bg-red-50">
+      <Card className="border-2 border-red-200">
+        <div className="px-6 py-4 border-b border-red-200 bg-red-50 rounded-t-neu">
           <h2 className="text-lg font-semibold text-red-700">{t('dangerZone')}</h2>
         </div>
         <div className="px-6 py-4">
-          <p className="text-sm text-gray-600 mb-4">{t('deleteAccountWarning')}</p>
+          <p className="text-sm text-text-secondary mb-4">{t('deleteAccountWarning')}</p>
           <Button
             type="button"
+            variant="danger"
             onClick={() => setShowDeleteConfirm(true)}
-            className="bg-red-600 hover:bg-red-700"
           >
             {t('deleteAccount')}
           </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -317,26 +321,24 @@ export default function ProfilePage() {
         onClose={() => setShowDeleteConfirm(false)}
         title={t('deleteConfirmTitle')}
       >
-        <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-          <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-4 bg-red-100 rounded-neu shadow-neu-sm">
+          <AlertTriangle className="w-7 h-7 text-red-600" />
         </div>
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-text-secondary text-center mb-6">
           {t('deleteConfirmMessage')}
         </p>
         <div className="flex justify-end gap-3">
           <Button
             type="button"
+            variant="secondary"
             onClick={() => setShowDeleteConfirm(false)}
-            className="bg-gray-200 text-gray-800 hover:bg-gray-300"
           >
             {common('cancel')}
           </Button>
           <Button
             type="button"
+            variant="danger"
             onClick={handleDeleteAccount}
-            className="bg-red-600 hover:bg-red-700"
           >
             {common('delete')}
           </Button>

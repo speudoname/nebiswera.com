@@ -8,66 +8,79 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Custom colors - Purple/Lavender Neomorphic Palette
+      // Custom colors - Limited palette (5 colors only + black/white)
       colors: {
-        // Primary purple
+        // Primary - Coral/Orange (#F27059)
         primary: {
-          50: '#F5F0FF',
-          100: '#EBE0FF',
-          200: '#D4C4F9',
-          300: '#B8A1E8',
-          400: '#9D7FD9',
-          500: '#8B5CF6',
-          600: '#7C3AED',
-          700: '#6D28D9',
-          800: '#5B21B6',
-          900: '#4C1D95',
+          50: '#FEF3F1',
+          100: '#FDE7E3',
+          200: '#FBCFC7',
+          300: '#F7A99B',
+          400: '#F58A78',
+          500: '#F27059',
+          600: '#E04D36',
+          700: '#BC3A26',
+          800: '#9B3324',
+          900: '#812F24',
         },
-        // Secondary lavender
+        // Secondary - Orchid/Magenta (#CC7EB8)
         secondary: {
-          50: '#FAF5FF',
-          100: '#F3E8FF',
-          200: '#E9D5FF',
-          300: '#D8B4FE',
-          400: '#C084FC',
-          500: '#A855F7',
-          600: '#9333EA',
-          700: '#7E22CE',
-          800: '#6B21A8',
-          900: '#581C87',
+          50: '#FCF5FA',
+          100: '#F9EBF5',
+          200: '#F3D7EB',
+          300: '#E9B8DA',
+          400: '#DB94C5',
+          500: '#CC7EB8',
+          600: '#B35C9A',
+          700: '#96497D',
+          800: '#7C3E67',
+          900: '#683757',
         },
-        // Neomorphic surface colors
+        // Deep Purple accent (#6B2D5C)
+        accent: {
+          50: '#F9F3F7',
+          100: '#F3E7F0',
+          200: '#E7CFE1',
+          300: '#D4AAC9',
+          400: '#BA7BA8',
+          500: '#9E5688',
+          600: '#853F71',
+          700: '#6B2D5C',
+          800: '#5A274D',
+          900: '#4D2342',
+        },
+        // Neomorphic surface colors (Light Pink base #FFCCE5)
         neu: {
-          base: '#E8E0F0',
-          light: '#F0E8F8',
-          dark: '#DED6E8',
-          shadow: '#C9C1D4',
+          base: '#FFCCE5',
+          light: '#FFE0F0',
+          dark: '#F0B8D6',
+          shadow: '#D9A3C2',
           highlight: '#FFFFFF',
         },
-        // Text colors
+        // Text colors (Dark Purple)
         text: {
-          primary: '#2D1B4E',
-          secondary: '#5B4478',
-          muted: '#8B7AA0',
+          primary: '#4A3060',
+          secondary: '#6B2D5C',
+          muted: '#9E7A92',
         },
       },
-      // Neomorphic shadows
+      // Neomorphic shadows (updated to pink-based)
       boxShadow: {
         // Raised elements
-        'neu-sm': '4px 4px 8px #C9C1D4, -4px -4px 8px #FFFFFF',
-        'neu': '6px 6px 12px #C9C1D4, -6px -6px 12px #FFFFFF',
-        'neu-md': '8px 8px 16px #C9C1D4, -8px -8px 16px #FFFFFF',
-        'neu-lg': '12px 12px 24px #C9C1D4, -12px -12px 24px #FFFFFF',
+        'neu-sm': '4px 4px 8px #D9A3C2, -4px -4px 8px #FFFFFF',
+        'neu': '6px 6px 12px #D9A3C2, -6px -6px 12px #FFFFFF',
+        'neu-md': '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
+        'neu-lg': '12px 12px 24px #D9A3C2, -12px -12px 24px #FFFFFF',
         // Pressed/inset elements
-        'neu-inset-sm': 'inset 2px 2px 4px #C9C1D4, inset -2px -2px 4px #FFFFFF',
-        'neu-inset': 'inset 4px 4px 8px #C9C1D4, inset -4px -4px 8px #FFFFFF',
-        'neu-inset-md': 'inset 6px 6px 12px #C9C1D4, inset -6px -6px 12px #FFFFFF',
+        'neu-inset-sm': 'inset 2px 2px 4px #D9A3C2, inset -2px -2px 4px #FFFFFF',
+        'neu-inset': 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
+        'neu-inset-md': 'inset 6px 6px 12px #D9A3C2, inset -6px -6px 12px #FFFFFF',
         // Flat shadow
-        'neu-flat': '0 2px 8px rgba(45, 27, 78, 0.08)',
+        'neu-flat': '0 2px 8px rgba(74, 48, 96, 0.08)',
         // Hover state - slightly more pronounced
-        'neu-hover': '8px 8px 16px #C9C1D4, -8px -8px 16px #FFFFFF',
+        'neu-hover': '8px 8px 16px #D9A3C2, -8px -8px 16px #FFFFFF',
         // Active/pressed state
-        'neu-pressed': 'inset 4px 4px 8px #C9C1D4, inset -4px -4px 8px #FFFFFF',
+        'neu-pressed': 'inset 4px 4px 8px #D9A3C2, inset -4px -4px 8px #FFFFFF',
       },
       // Border radius - softer for neomorphic
       borderRadius: {
@@ -79,12 +92,13 @@ const config: Config = {
       },
       // Background gradients
       backgroundImage: {
-        'neu-gradient': 'linear-gradient(145deg, #F0E8F8, #E0D8E8)',
-        'neu-gradient-reverse': 'linear-gradient(145deg, #E0D8E8, #F0E8F8)',
+        'neu-gradient': 'linear-gradient(145deg, #FFE0F0, #F0C0D8)',
+        'neu-gradient-reverse': 'linear-gradient(145deg, #F0C0D8, #FFE0F0)',
       },
-      // Font family
+      // Font family (using CSS variables from next/font)
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'var(--font-georgian)', 'system-ui', 'sans-serif'],
+        georgian: ['var(--font-georgian)', 'system-ui', 'sans-serif'],
       },
     },
   },

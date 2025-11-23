@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button, Input, Modal, Pagination } from '@/components/ui'
 import { FilterBar, UserRow } from '@/components/admin'
+import { AlertTriangle, Loader2 } from 'lucide-react'
 
 interface User {
   id: string
@@ -161,7 +162,7 @@ export default function UsersPage() {
             {loading ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto" />
+                  <Loader2 className="h-8 w-8 text-primary-600 animate-spin mx-auto" />
                 </td>
               </tr>
             ) : users.length === 0 ? (
@@ -223,10 +224,8 @@ export default function UsersPage() {
         onClose={() => setDeleteConfirm(null)}
         title="Delete User"
       >
-        <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-          <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+        <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-primary-100 rounded-full">
+          <AlertTriangle className="w-6 h-6 text-primary-600" />
         </div>
         <p className="text-gray-600 text-center mb-6">
           Are you sure you want to delete this user? This action cannot be undone.

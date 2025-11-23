@@ -1,5 +1,7 @@
 'use client'
 
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
 interface PaginationProps {
   page: number
   totalPages: number
@@ -32,22 +34,20 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
   }
 
   return (
-    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+    <nav className="inline-flex items-center gap-1">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
-        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-10 h-10 rounded-neu bg-neu-base shadow-neu-sm hover:shadow-neu-pressed flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-neu-sm transition-all"
       >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
+        <ChevronLeft className="h-5 w-5" />
       </button>
 
       {getPageNumbers().map((pageNum, idx) => (
         pageNum === '...' ? (
           <span
             key={`ellipsis-${idx}`}
-            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+            className="w-10 h-10 flex items-center justify-center text-text-muted"
           >
             ...
           </span>
@@ -55,10 +55,10 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
           <button
             key={pageNum}
             onClick={() => onPageChange(pageNum as number)}
-            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+            className={`w-10 h-10 rounded-neu text-sm font-medium transition-all ${
               page === pageNum
-                ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                ? 'bg-primary-500 text-white shadow-neu-sm'
+                : 'bg-neu-base shadow-neu-sm hover:shadow-neu-pressed text-text-secondary hover:text-text-primary'
             }`}
           >
             {pageNum}
@@ -69,11 +69,9 @@ export function Pagination({ page, totalPages, onPageChange }: PaginationProps) 
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
-        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-10 h-10 rounded-neu bg-neu-base shadow-neu-sm hover:shadow-neu-pressed flex items-center justify-center text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-neu-sm transition-all"
       >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+        <ChevronRight className="h-5 w-5" />
       </button>
     </nav>
   )

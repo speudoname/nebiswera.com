@@ -8,7 +8,21 @@ Nebiswera is a bilingual (Georgian/English) learning platform built with:
 - **Auth**: NextAuth.js v5
 - **i18n**: next-intl
 - **Email**: Postmark
+- **Icons**: Lucide React
 - **Deployment**: Railway (standalone output)
+
+## Icons
+
+**ALWAYS use Lucide React icons.** Never use other icon libraries or inline SVGs.
+
+```tsx
+import { User, Settings, LogOut } from 'lucide-react'
+
+<User className="w-5 h-5" />
+<Settings size={20} />
+```
+
+Browse icons at: https://lucide.dev/icons
 
 ## Internationalization Architecture
 

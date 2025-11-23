@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import { User, LayoutDashboard, UserCircle, Shield, LogOut, Globe } from 'lucide-react'
 import { locales, type Locale } from '@/i18n/config'
 import { setStoredLocale } from '@/lib/locale-storage'
 
@@ -74,21 +75,6 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
     }
   }
 
-  // Get initials from name or email
-  const getInitials = () => {
-    if (user.name) {
-      const names = user.name.split(' ')
-      if (names.length >= 2) {
-        return `${names[0][0]}${names[1][0]}`.toUpperCase()
-      }
-      return user.name.substring(0, 2).toUpperCase()
-    }
-    if (user.email) {
-      return user.email.substring(0, 2).toUpperCase()
-    }
-    return '?'
-  }
-
   const isAdmin = user.role === 'ADMIN'
   const isLight = variant === 'light'
 
@@ -112,7 +98,7 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
             className="w-9 h-9 rounded-full object-cover"
           />
         ) : (
-          getInitials()
+          <User className="w-5 h-5" />
         )}
       </button>
 
@@ -131,23 +117,26 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
             <Link
               href={`/${locale}/dashboard`}
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
             >
+              <LayoutDashboard className="w-4 h-4" />
               {nav('dashboard')}
             </Link>
             <Link
               href={`/${locale}/profile`}
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
             >
+              <UserCircle className="w-4 h-4" />
               {nav('profile')}
             </Link>
             {isAdmin && (
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
+                <Shield className="w-4 h-4" />
                 {nav('admin')}
               </Link>
             )}
@@ -161,10 +150,10 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
               return (
                 <button
                   onClick={() => switchLocale(otherLocale)}
-                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  <span>{otherConfig.flag}</span>
-                  <span>{langT(otherConfig.nameKey)}</span>
+                  <Globe className="w-4 h-4" />
+                  <span>{otherConfig.flag} {langT(otherConfig.nameKey)}</span>
                 </button>
               )
             })()}
@@ -176,16 +165,18 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
               <form action={signOutAction}>
                 <button
                   type="submit"
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                 >
+                  <LogOut className="w-4 h-4" />
                   {nav('logout')}
                 </button>
               </form>
             ) : (
               <button
                 onClick={handleSignOut}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               >
+                <LogOut className="w-4 h-4" />
                 {nav('logout')}
               </button>
             )}

@@ -1,16 +1,8 @@
 import { NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
 import { prisma } from '@/lib/db'
+import { isAdmin } from '@/lib/auth-utils'
 import type { NextRequest } from 'next/server'
 import { EmailStatus, EmailType } from '@prisma/client'
-
-async function isAdmin(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  })
-  return token?.role === 'ADMIN'
-}
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {

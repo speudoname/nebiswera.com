@@ -1,15 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
 import { prisma } from '@/lib/db'
+import { isAdmin, getAuthToken } from '@/lib/auth-utils'
 import type { NextRequest } from 'next/server'
-
-async function isAdmin(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  })
-  return token?.role === 'ADMIN'
-}
 
 export async function GET(
   request: NextRequest,
@@ -103,10 +95,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  })
+  const token = await getAuthToken(request)
 
   if (token?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

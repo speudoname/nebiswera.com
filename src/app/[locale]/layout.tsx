@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { locales, type Locale } from '@/i18n/config'
 import { SessionProvider } from '@/providers/SessionProvider'
+import { getOrganizationSchema, getWebSiteSchema } from '@/lib/metadata'
 
 const inter = Inter({
   subsets: ['latin', 'latin-ext'],
@@ -38,6 +39,20 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getOrganizationSchema()),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getWebSiteSchema(locale)),
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${notoSansGeorgian.variable} font-sans`}>
         <SessionProvider>
           <NextIntlClientProvider messages={messages}>

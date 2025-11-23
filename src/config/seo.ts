@@ -6,6 +6,31 @@ export const seoConfig = {
   defaultLocale,
 
   /**
+   * Brand colors - used for theme-color meta tag and webmanifest
+   * Should match your design system's primary color
+   */
+  themeColor: '#8B5CF6', // Primary purple from design system
+
+  /**
+   * Default OG image settings
+   * Place images in /public/og/ folder
+   * Naming convention: {pageKey}.png (e.g., home.png, about.png)
+   * Recommended size: 1200x630 pixels
+   */
+  ogImage: {
+    width: 1200,
+    height: 630,
+    defaultImage: '/og/default.png', // Fallback if page-specific image doesn't exist
+  },
+
+  /**
+   * Social media handles (optional)
+   */
+  social: {
+    twitter: '@nebiswera', // Update with your actual handle or remove
+  },
+
+  /**
    * Pages that should be indexed by search engines.
    * These appear in sitemap.xml and are allowed in robots.txt.
    *

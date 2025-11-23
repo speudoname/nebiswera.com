@@ -42,8 +42,6 @@ export function Header({ variant = 'dark', user, showAuthLinks = false, signOutA
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <LanguageSwitcher variant={isLight ? 'light' : 'dark'} />
-
             {showAuthLinks && !user && (
               <>
                 <Link
@@ -108,6 +106,8 @@ export function Header({ variant = 'dark', user, showAuthLinks = false, signOutA
                 )}
               </>
             )}
+
+            <LanguageSwitcher variant={isLight ? 'light' : 'dark'} />
           </div>
         </div>
       </div>

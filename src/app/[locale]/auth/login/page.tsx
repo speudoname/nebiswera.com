@@ -5,7 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
+import { LogIn, Loader2 } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { Card } from '@/components/ui/Card'
 
 function LoginContent() {
   const t = useTranslations('auth.login')
@@ -33,7 +35,6 @@ function LoginContent() {
     setLoading(true)
 
     try {
-      // Use redirect: true to let NextAuth handle the redirect properly
       await signIn('credentials', {
         email: formData.email,
         password: formData.password,
@@ -41,7 +42,6 @@ function LoginContent() {
         redirect: true,
       })
     } catch (err) {
-      // If we get here, there was an error (redirect didn't happen)
       console.error('SignIn exception:', err)
       setError(errors('invalidCredentials'))
       setLoading(false)
@@ -49,19 +49,22 @@ function LoginContent() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-8">
+    <Card className="w-full max-w-md" padding="lg">
       <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-        <p className="text-gray-600 mt-2">{t('subtitle')}</p>
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 text-primary-600 shadow-neu-sm mb-4">
+          <LogIn className="w-7 h-7" />
+        </div>
+        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
+        <p className="text-text-secondary mt-2">{t('subtitle')}</p>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <div className="mb-6 p-4 bg-red-50 rounded-neu shadow-neu-inset-sm text-red-600 text-sm">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           id="email"
           name="email"
@@ -87,7 +90,7 @@ function LoginContent() {
         <div className="flex items-center justify-end">
           <Link
             href={`/${locale}/auth/forgot-password`}
-            className="text-sm text-indigo-600 hover:text-indigo-500"
+            className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
           >
             {t('forgotPassword')}
           </Link>
@@ -98,13 +101,13 @@ function LoginContent() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600">
+      <p className="mt-8 text-center text-sm text-text-secondary">
         {t('noAccount')}{' '}
-        <Link href={`/${locale}/auth/register`} className="text-indigo-600 hover:text-indigo-500 font-medium">
+        <Link href={`/${locale}/auth/register`} className="text-primary-600 hover:text-primary-700 font-medium transition-colors">
           {t('signUp')}
         </Link>
       </p>
-    </div>
+    </Card>
   )
 }
 
@@ -113,10 +116,12 @@ export default function LoginPage() {
 
   return (
     <Suspense fallback={
-      <div className="bg-white rounded-xl shadow-xl p-8 text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-        <h1 className="text-xl font-semibold text-gray-900">{common('loading')}</h1>
-      </div>
+      <Card className="w-full max-w-md text-center" padding="lg">
+        <div className="flex items-center justify-center w-14 h-14 rounded-neu bg-primary-100 shadow-neu-sm mx-auto mb-4">
+          <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
+        </div>
+        <h1 className="text-xl font-semibold text-text-primary">{common('loading')}</h1>
+      </Card>
     }>
       <LoginContent />
     </Suspense>

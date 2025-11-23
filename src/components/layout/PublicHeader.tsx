@@ -2,11 +2,11 @@
 
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
+import { LayoutDashboard } from 'lucide-react'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { UserProfileDropdown } from '@/components/UserProfileDropdown'
 
 interface PublicHeaderProps {
-  variant?: 'light' | 'dark'
   user?: {
     name?: string | null
     email?: string | null
@@ -15,61 +15,53 @@ interface PublicHeaderProps {
   } | null
 }
 
-export function PublicHeader({ variant = 'light', user }: PublicHeaderProps) {
+export function PublicHeader({ user }: PublicHeaderProps) {
   const locale = useLocale()
   const nav = useTranslations('nav')
-
-  const isLight = variant === 'light'
   const isLoggedIn = !!user
 
   return (
-    <header className={isLight ? '' : 'bg-white shadow'}>
+    <header className="bg-neu-base shadow-neu-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex justify-between items-center ${isLight ? 'py-4' : 'h-16'}`}>
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <div className="flex items-center">
             <Link
               href={`/${locale}`}
-              className={`text-xl font-bold ${isLight ? 'text-white' : 'text-indigo-600'}`}
+              className="text-xl font-bold text-primary-600 hover:text-primary-700 transition-colors"
             >
               {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Navigation */}
+          <div className="flex items-center gap-3">
             {isLoggedIn ? (
               <>
                 <Link
                   href={`/${locale}/dashboard`}
-                  className={isLight
-                    ? 'bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors'
-                    : 'bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm'
-                  }
+                  className="flex items-center gap-2 bg-primary-500 text-white px-4 py-2 rounded-neu font-medium shadow-neu-sm hover:shadow-neu hover:bg-primary-600 active:shadow-neu-pressed transition-all text-sm"
                 >
+                  <LayoutDashboard className="w-4 h-4" />
                   {nav('dashboard')}
                 </Link>
-                <UserProfileDropdown user={user} variant={isLight ? 'light' : 'dark'} />
+                <UserProfileDropdown user={user} />
               </>
             ) : (
               <>
                 <Link
                   href={`/${locale}/auth/login`}
-                  className={isLight
-                    ? 'text-white hover:text-white/80 transition-colors'
-                    : 'text-gray-600 hover:text-gray-900 text-sm'
-                  }
+                  className="text-text-secondary hover:text-text-primary transition-colors font-medium text-sm px-3 py-2"
                 >
                   {nav('login')}
                 </Link>
                 <Link
                   href={`/${locale}/auth/register`}
-                  className={isLight
-                    ? 'bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors'
-                    : 'bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm'
-                  }
+                  className="bg-primary-500 text-white px-4 py-2 rounded-neu font-medium shadow-neu-sm hover:shadow-neu hover:bg-primary-600 active:shadow-neu-pressed transition-all text-sm"
                 >
                   {nav('register')}
                 </Link>
-                <LanguageSwitcher variant={isLight ? 'light' : 'dark'} />
+                <LanguageSwitcher />
               </>
             )}
           </div>

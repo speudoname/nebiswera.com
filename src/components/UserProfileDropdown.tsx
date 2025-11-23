@@ -22,10 +22,9 @@ interface UserProfileDropdownProps {
     role?: string
   }
   signOutAction?: () => Promise<void>
-  variant?: 'light' | 'dark'
 }
 
-export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: UserProfileDropdownProps) {
+export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const locale = useLocale() as Locale
@@ -76,18 +75,13 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
   }
 
   const isAdmin = user.role === 'ADMIN'
-  const isLight = variant === 'light'
-
-  const avatarClasses = isLight
-    ? 'flex items-center justify-center w-9 h-9 rounded-full bg-white/20 text-white text-sm font-medium hover:bg-white/30 border border-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors'
-    : 'flex items-center justify-center w-9 h-9 rounded-full bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors'
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Avatar button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={avatarClasses}
+        className="flex items-center justify-center w-10 h-10 rounded-neu bg-neu-base text-primary-600 shadow-neu-sm hover:shadow-neu active:shadow-neu-pressed transition-all"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
@@ -95,7 +89,7 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
           <img
             src={user.image}
             alt=""
-            className="w-9 h-9 rounded-full object-cover"
+            className="w-10 h-10 rounded-neu object-cover"
           />
         ) : (
           <User className="w-5 h-5" />
@@ -104,11 +98,11 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
+        <div className="absolute right-0 mt-3 w-52 bg-neu-base rounded-neu-md shadow-neu-md py-2 z-50">
           {/* User info section */}
           {user.name && (
-            <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+            <div className="px-4 py-2 border-b border-neu-dark/30 mb-1">
+              <p className="text-sm font-medium text-text-primary truncate">{user.name}</p>
             </div>
           )}
 
@@ -117,7 +111,7 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
             <Link
               href={`/${locale}/dashboard`}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
             >
               <LayoutDashboard className="w-4 h-4" />
               {nav('dashboard')}
@@ -125,7 +119,7 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
             <Link
               href={`/${locale}/profile`}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
             >
               <UserCircle className="w-4 h-4" />
               {nav('profile')}
@@ -134,7 +128,7 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
               <Link
                 href="/admin"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
               >
                 <Shield className="w-4 h-4" />
                 {nav('admin')}
@@ -143,14 +137,14 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
           </div>
 
           {/* Language switcher - toggle to other language */}
-          <div className="border-t border-gray-100 py-1">
+          <div className="border-t border-neu-dark/30 py-1 mt-1">
             {(() => {
               const otherLocale = locales.find((l) => l !== locale) as Locale
               const otherConfig = localeConfig[otherLocale]
               return (
                 <button
                   onClick={() => switchLocale(otherLocale)}
-                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-neu-dark/30 transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   <span>{otherConfig.flag} {langT(otherConfig.nameKey)}</span>
@@ -160,12 +154,12 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
           </div>
 
           {/* Sign out */}
-          <div className="border-t border-gray-100 py-1">
+          <div className="border-t border-neu-dark/30 py-1 mt-1">
             {signOutAction ? (
               <form action={signOutAction}>
                 <button
                   type="submit"
-                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   {nav('logout')}
@@ -174,7 +168,7 @@ export function UserProfileDropdown({ user, signOutAction, variant = 'dark' }: U
             ) : (
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 {nav('logout')}

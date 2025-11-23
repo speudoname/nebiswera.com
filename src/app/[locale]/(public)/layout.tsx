@@ -24,12 +24,12 @@ export default async function PublicLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-500 to-purple-600">
-      <PublicHeader variant="light" user={user} />
+    <div className="min-h-screen flex flex-col bg-neu-base">
+      <PublicHeader user={user} />
       <main className="flex-1">
         {children}
       </main>
-      <PublicFooter variant="light" />
+      <PublicFooter />
     </div>
   )
 }

@@ -18,14 +18,20 @@ export function AppHeader({ user, signOutAction }: AppHeaderProps) {
   const locale = useLocale()
 
   return (
-    <header className="bg-white shadow">
+    <header className="bg-neu-base shadow-neu-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
           <div className="flex items-center">
-            <Link href={`/${locale}`} className="text-xl font-bold text-indigo-600">
+            <Link
+              href={`/${locale}`}
+              className="text-xl font-bold text-primary-600 hover:text-primary-700 transition-colors"
+            >
               {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
             </Link>
           </div>
+
+          {/* User Profile */}
           <div className="flex items-center">
             <UserProfileDropdown user={user} signOutAction={signOutAction} />
           </div>

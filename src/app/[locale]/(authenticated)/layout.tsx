@@ -36,7 +36,7 @@ export default async function AuthenticatedLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neu-base">
       <AppHeader user={{ name: user.name, email: user.email, image: user.image, role: user.role }} signOutAction={handleSignOut} />
       <main>
         {children}

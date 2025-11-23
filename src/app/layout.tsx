@@ -17,6 +17,7 @@ export const metadata: Metadata = {
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
     ],
   },
+  metadataBase: new URL('https://www.nebiswera.com'),
   manifest: '/site.webmanifest',
 }
 

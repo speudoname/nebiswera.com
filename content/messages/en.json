@@ -27,6 +27,9 @@
     "contact": "Contact"
   },
   "home": {
+    "eyebrowStart": "Learn to Write Your Fate —",
+    "eyebrowEmphasis": "by Your Will",
+    "eyebrowEnd": "",
     "titlePart1": "If you can make your fate depend on you",
     "titlePart2": "life will continue the way you want.",
     "subtitle": "What you choose becomes.",

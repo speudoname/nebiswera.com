@@ -171,6 +171,11 @@
     line-height: 1.3;
   }
 
+  /* Eyebrow - small text above headlines */
+  .eyebrow {
+    @apply text-sm md:text-base font-medium tracking-wide uppercase;
+  }
+
   /* Text color variants */
   .text-muted {
     @apply text-text-muted;

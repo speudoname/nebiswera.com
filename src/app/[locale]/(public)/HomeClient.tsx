@@ -12,6 +12,11 @@ export function HomeClient() {
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center p-8 max-w-3xl">
+        <p className="eyebrow mb-4">
+          <span className="text-primary-600">{t('eyebrowStart')}</span>
+          <span className="text-text-secondary"> {t('eyebrowEmphasis')} </span>
+          <span className="text-primary-600">{t('eyebrowEnd')}</span>
+        </p>
         <h1 className="hero-title mb-6">
           <span className="text-text-primary">{t('titlePart1')}</span>
           <span className="text-primary-600"> — </span>

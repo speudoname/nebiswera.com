@@ -33,8 +33,10 @@ function generatePresignedUrl(
   const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
 
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
-  const host = `${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
-  const canonicalUri = `/${BUCKET_NAME}/${key}`
+  // Use custom domain for CORS compatibility
+  const customDomain = PUBLIC_URL.replace('https://', '')
+  const host = customDomain
+  const canonicalUri = `/${key}`
 
   // Canonical query string
   const queryParams = new URLSearchParams({

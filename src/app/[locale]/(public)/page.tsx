@@ -9,9 +9,7 @@ import { SocialProofSection } from './home/content/SocialProofSection'
 import { CTASection } from './home/content/CTASection'
 import { TestimonialShowcase } from './home/content/TestimonialShowcase'
 import { WorkshopOfferSection } from './home/content/WorkshopOfferSection'
-import { NotTherapySection } from './home/content/NotTherapySection'
-import { NotCoachingSection } from './home/content/NotCoachingSection'
-import { NotMagicSection } from './home/content/NotMagicSection'
+import { WhatItIsNotSection } from './home/content/WhatItIsNotSection'
 import { ChoiceParadoxSection } from './home/content/ChoiceParadoxSection'
 import { getTranslations } from 'next-intl/server'
 
@@ -33,7 +31,7 @@ export default async function HomePage({
   const t = await getTranslations('home')
 
   return (
-    <>
+    <div className="overflow-x-hidden">
       {/* Hero Section */}
       <HomeClient />
 
@@ -43,8 +41,8 @@ export default async function HomePage({
       {/* Secret Reveal */}
       <SecretRevealSection />
 
-      {/* What Nebiswera is NOT: Therapy */}
-      <NotTherapySection />
+      {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
+      <WhatItIsNotSection />
 
       {/* Problem Awareness */}
       <ProblemAwarenessSection />
@@ -55,9 +53,6 @@ export default async function HomePage({
       {/* Transformation Promise */}
       <TransformationPromiseSection />
 
-      {/* What Nebiswera is NOT: Coaching */}
-      <NotCoachingSection />
-
       {/* 3-Day Workshop Offer */}
       <WorkshopOfferSection />
 
@@ -67,9 +62,6 @@ export default async function HomePage({
       {/* Testimonials #3 - Videos preferred */}
       <TestimonialShowcase count={3} type="VIDEO" />
 
-      {/* What Nebiswera is NOT: Magic */}
-      <NotMagicSection />
-
       {/* Choice Paradox + Contrast Callout */}
       <ChoiceParadoxSection />
 
@@ -78,6 +70,6 @@ export default async function HomePage({
 
       {/* Final CTA */}
       <CTASection />
-    </>
+    </div>
   )
 }

@@ -39,22 +39,22 @@ const content: Record<Locale, {
     followUp: 'ოთხშაბათს შემაჯამებელი შეხვედრა',
     transformationTitle: 'შედეგი',
     transformationText: 'პარასკევს შემოდიხართ ერთი სამყაროდან, ორშაბათს უკვე სხვაში ხართ. თქვენი ცნობიერება ირთვება, ყურადღება მაღლა არის, სავსე ხართ ინსაიტებით, თვითრწმენით და ძალით შეცვალოთ თქვენი ცხოვრება.',
-    pillarsTitle: 'სამი მთავარი კომპონენტი',
+    pillarsTitle: 'სამი რამ რაც ხდება ვორქშოფის დროს',
     pillars: [
       {
         icon: 'brain',
-        title: 'ნებისწერის თეორემა და კონცეფციები',
-        description: '81 კონცეფტი, რომელიც სრულიად ცვლის შენი ცხოვრების ხედვას და გაგებას',
+        title: 'ნებისწერის თეორემის შესწავლა',
+        description: 'სწავლობთ ნებისწერის თეორემას, ყველა ფორმულას და ინსტრუმენტს. 81 კონცეფტი და 18+ ვარჯიში რომლებიც პრაქტიკულად გამოიყენებ.',
       },
       {
         icon: 'target',
-        title: 'ყველა ფორმულა და ინსტრუმენტი',
-        description: '18+ ვარჯიში და ტექნიკა, რომლებიც პრაქტიკულად გამოიყენებ',
+        title: 'საკუთარ თავში ჩაღრმავება და გამორკვევა',
+        description: 'ღრმად იმუშავებთ საკუთარ თავზე, აღმოაჩენთ 45 რამეს საკუთარ თავთან დაკავშირებით, გაიგებთ რა გაკავებთ და რა გაძლიერებთ.',
       },
       {
         icon: 'heart',
-        title: 'შინაგანი მუშაობა',
-        description: 'მედიტაციები, ტრანსი, თვითშემეცნების პროცესები - გამოცდილებითი სწავლება',
+        title: 'გამოცდილებითი პროცესები',
+        description: 'მედიტაციები, ტრანსი, თვითშემეცნების პროცესები და სხვა გამოცდილებითი პრაქტიკები რომლებიც ცვლის შენს ცნობიერებას.',
       },
     ],
     stats: [
@@ -71,7 +71,7 @@ const content: Record<Locale, {
       'თვითრწმენა და ძალა შეგძენია',
       'ცხოვრების შეცვლის რეალური უნარი მოიპოვებ',
     ],
-    cta: 'მომდევნო ვორქშოპზე გამოცხადება',
+    cta: 'გამოცხადება',
   },
   en: {
     eyebrow: '3-Day Workshop',
@@ -86,22 +86,22 @@ const content: Record<Locale, {
     followUp: 'Follow-up meeting on Wednesday',
     transformationTitle: 'The Transformation',
     transformationText: 'You enter Friday from one world, by Monday you\'re in another. Your consciousness turns on, attention sharpens, you\'re full of insights, self-confidence, and power to change your life.',
-    pillarsTitle: 'Three Core Components',
+    pillarsTitle: 'Three Things That Happen During the Workshop',
     pillars: [
       {
         icon: 'brain',
-        title: 'Nebiswera Theorem & Concepts',
-        description: '81 concepts that completely transform your vision and understanding of life',
+        title: 'Learning Nebiswera Theorem',
+        description: 'You learn the Nebiswera theorem, all formulas and tools. 81 concepts and 18+ exercises you\'ll use practically.',
       },
       {
         icon: 'target',
-        title: 'All Formulas & Tools',
-        description: '18+ exercises and techniques you\'ll use practically',
+        title: 'Deep Dive Into Yourself',
+        description: 'You work deeply on yourself, discover 45 things about yourself, understand what holds you back and what empowers you.',
       },
       {
         icon: 'heart',
-        title: 'Inner Work',
-        description: 'Meditations, trance, self-exploration processes - experiential learning',
+        title: 'Experiential Processes',
+        description: 'Meditations, trance, self-exploration processes and other experiential practices that transform your consciousness.',
       },
     ],
     stats: [

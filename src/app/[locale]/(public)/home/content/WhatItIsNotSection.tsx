@@ -25,38 +25,38 @@ const content: Record<Locale, {
 }> = {
   ka: {
     eyebrow: 'რა არ არის ნებისწერა',
-    title: 'ნებისწერა არის სწავლება, არა თერაპია, კოუჩინგი ან ჯადო',
-    subtitle: 'ჩვენ ვასწავლით როგორ გამოიყენოთ თქვენი შინაგანი ძალა',
+    title: 'არ არის თერაპია, არც ქოუჩინგია და არც ზებუნებრივი იდეა',
+    subtitle: 'ნებისწერა არის სწავლება — როგორც ხელობის შესწავლა',
     notItems: [
       {
         icon: 'xCircle',
         title: 'არა თერაპია',
-        description: 'არ ვკურნავთ ტრავმებს, არ გვჯერა რომ ტრავმები არსებობს. თქვენ ჯანმრთელი ხართ.',
+        description: 'არ ვკურნავთ ტრავმებს და არ გვჯერა რომ ტრავმები არსებობს. ჩვენ არ გეპყრობით როგორც დაზიანებულს ან ავადმყოფს. თქვენ ჯანმრთელი ხართ და არ გჭირდებათ "განკურნება" — უბრალოდ ინსტრუმენტები გჭირდებათ.',
       },
       {
         icon: 'xCircle',
         title: 'არა კოუჩინგი',
-        description: 'არ გეუბნებით როგორ იცხოვროთ, არ გიზავთ, არ გიდგენთ გეგმას.',
+        description: 'არ გეუბნებით როგორ უნდა იცხოვროთ, არ გიზავთ, არ გადაგიზავთ და არ გიდგენთ გეგმას. ჩვენ ვასწავლით პრინციპებს და ფორმულებს — თქვენ თავად წყვეტთ როგორ გამოიყენოთ ისინი.',
       },
       {
         icon: 'xCircle',
-        title: 'არა ჯადო',
-        description: 'არა მანტრები, არა ვიბრაციები, არა ეზოთერული პრაქტიკები.',
+        title: 'არა ზებუნებრივი',
+        description: 'არა მანტრები, არა ვიბრაციები, არა ეზოთერული პრაქტიკები. ნებისწერა არის ლოგიკური და რაციონალური მიდგომა — თქვენ აძლევთ ძალას საკუთარ თავს, არა გარეგანი "ჯადოსნური" პროცედურები.',
       },
     ],
     isItem: {
       icon: 'brain',
-      title: 'რა არის მაშინ?',
-      description: 'ნებისწერა არის ლოგიკური და რაციონალური სწავლება. როგორც ხატვის გაკვეთილზე გასწავლით პერსპექტივას და ჩრდილებს — ჩვენც ვასწავლით როგორ დაწეროთ ბედი ნებით.',
+      title: 'რა არის მაშინ ნებისწერა?',
+      description: 'ნებისწერა არის სწავლება — როგორც ხატვის გაკვეთილი. როგორც ხატვის მასწავლებელი გასწავლით პერსპექტივის წესებს, ჩრდილებსა და შუქს, როგორ გამოიყენოთ ფანქარი და როგორ შეუხამოთ ფერები — ასევე ჩვენც ვასწავლით როგორ დაწეროთ ბედი ნებით. თქვენზეა დამოკიდებული რას აკეთებთ ამ ცოდნით.',
     },
     analogies: [
       {
         icon: 'wrench',
-        text: 'თუ კაცს არ შეუძლია ხის მოჭრა ხერხის გარეშე, ეს არ ნიშნავს რომ ავადაა. მას ინსტრუმენტი სჭირდება.',
+        text: 'თუ კაცს არ შეუძლია ხის მოჭრა იმიტომ რომ არ აქვს ხერხი, ეს არ ნიშნავს რომ ავადაა და მკურნალობა სჭირდება — უბრალოდ ინსტრუმენტი სჭირდება.',
       },
       {
         icon: 'book',
-        text: 'როგორც ხატვის მასწავლებელი გასწავლით წესებს — ჩვენც ვასწავლით ფორმულებს და მეთოდებს. რას აირჩევთ მათთან — თქვენზეა.',
+        text: 'ჩვენ ვასწავლით კანონებს, ფორმულებს და მეთოდებს. რას აირჩევთ მათთან — მხოლოდ თქვენზეა დამოკიდებული. ყველაფერი თქვენს ხელშია.',
       },
     ],
   },
@@ -126,22 +126,26 @@ export function WhatItIsNotSection() {
           </p>
         </div>
 
-        {/* What it's NOT - Compact Grid */}
-        <div className="grid sm:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10">
+        {/* What it's NOT - Detailed Cards */}
+        <div className="space-y-4 md:space-y-5 mb-10 md:mb-12">
           {t.notItems.map((item, index) => (
             <div
               key={index}
-              className="bg-neu-light rounded-neu p-4 md:p-5 shadow-neu-inset"
+              className="bg-neu-light rounded-neu-md p-5 md:p-6 shadow-neu-inset"
             >
-              <div className="flex items-center gap-2 mb-2">
-                <XCircle className="w-5 h-5 text-primary-600 flex-shrink-0" />
-                <h3 className="text-base md:text-lg font-semibold text-text-primary">
-                  {item.title}
-                </h3>
+              <div className="flex items-start gap-3 mb-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <XCircle className="w-6 h-6 text-primary-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg md:text-xl font-bold text-text-primary mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm md:text-base text-text-secondary leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                {item.description}
-              </p>
             </div>
           ))}
         </div>

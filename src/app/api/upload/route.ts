@@ -1,22 +1,19 @@
-// API endpoint for generating presigned upload URLs
+// API endpoint for server-side file uploads to R2
 import { NextRequest, NextResponse } from 'next/server'
-import { generateUploadUrl, generateTestimonialKey } from '@/lib/r2'
+import { uploadToR2, generateTestimonialKey } from '@/lib/r2'
 import { nanoid } from 'nanoid'
 
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { type, contentType, filename } = body as {
-      type: 'audio' | 'video' | 'image'
-      contentType: string
-      filename: string
-    }
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const type = formData.get('type') as 'audio' | 'video' | 'image'
 
-    if (!type || !contentType) {
+    if (!file || !type) {
       return NextResponse.json(
-        { error: 'Missing required fields: type, contentType' },
+        { error: 'Missing required fields: file, type' },
         { status: 400 }
       )
     }
@@ -24,27 +21,30 @@ export async function POST(request: NextRequest) {
     // Generate unique ID for this upload
     const uploadId = nanoid()
 
-    // Get file extension from filename or default based on type
-    const ext = filename?.split('.').pop() ||
+    // Get file extension
+    const ext = file.name.split('.').pop() ||
                 (type === 'audio' ? 'webm' : type === 'video' ? 'webm' : 'jpg')
 
     // Generate unique filename
     const uniqueFilename = `${type}-${Date.now()}.${ext}`
     const key = generateTestimonialKey(uploadId, uniqueFilename)
 
-    // Generate presigned URL
-    const { uploadUrl, publicUrl } = generateUploadUrl(key, contentType)
+    // Convert file to buffer
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    // Upload to R2
+    const url = await uploadToR2(buffer, key, file.type)
 
     return NextResponse.json({
       success: true,
-      uploadUrl,
-      publicUrl,
+      url,
       key,
     })
   } catch (error: any) {
-    console.error('Error generating upload URL:', error)
+    console.error('Error uploading file:', error)
     return NextResponse.json(
-      { error: 'Failed to generate upload URL' },
+      { error: 'Failed to upload file' },
       { status: 500 }
     )
   }

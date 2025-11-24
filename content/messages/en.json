@@ -229,12 +229,13 @@
       "title": "Want to make your testimonial even more powerful?",
       "motivation": "Audio or video testimonials are incredibly impactful!",
       "motivationSub": "They help others feel the genuine emotion and authenticity of your experience. It only takes a minute!",
-      "recordAudio": "Record Audio",
-      "recordVideo": "Record Video",
-      "audioTitle": "Record Audio Testimonial",
-      "videoTitle": "Record Video Testimonial",
+      "recordAudio": "Leave an Audio Review",
+      "recordVideo": "Leave a Video Review",
+      "audioTitle": "Audio Review",
+      "videoTitle": "Video Review",
       "skip": "Skip",
       "back": "Back",
+      "upload": "Upload File",
       "uploading": "Uploading..."
     },
     "step4": {

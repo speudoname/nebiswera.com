@@ -20,6 +20,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [flash, setFlash] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -98,6 +99,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
       if (blob) {
         const imageUrl = URL.createObjectURL(blob)
         setCapturedImage(imageUrl)
+        setCapturedBlob(blob)
         stopCamera()
       }
     }, 'image/jpeg', 0.9)
@@ -105,17 +107,14 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
 
   function handleRetake() {
     setCapturedImage(null)
+    setCapturedBlob(null)
     startCamera()
   }
 
   function handleUsePhoto() {
-    if (!canvasRef.current) return
-
-    canvasRef.current.toBlob((blob) => {
-      if (blob) {
-        onCapture(blob)
-      }
-    }, 'image/jpeg', 0.9)
+    if (capturedBlob) {
+      onCapture(capturedBlob)
+    }
   }
 
   if (error) {

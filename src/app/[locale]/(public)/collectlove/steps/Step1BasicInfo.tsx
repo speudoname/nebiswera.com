@@ -21,7 +21,7 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [text, setText] = useState('')
-  const [rating, setRating] = useState(0)
+  const [rating, setRating] = useState(5) // Preselect 5 stars
   const [hoveredRating, setHoveredRating] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

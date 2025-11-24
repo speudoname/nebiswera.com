@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import { Mic, Video, Upload, Star, Send } from 'lucide-react'
+import { Star, Send } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { AudioRecorder } from '@/components/testimonials/AudioRecorder'
+import { VideoRecorder } from '@/components/testimonials/VideoRecorder'
 
 export function CollectLoveForm() {
   const router = useRouter()
@@ -20,6 +22,10 @@ export function CollectLoveForm() {
     text: '',
     rating: 5,
   })
+
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
+  const [mediaType, setMediaType] = useState<'TEXT' | 'AUDIO' | 'VIDEO'>('TEXT')
 
   const t = {
     ka: {
@@ -37,8 +43,9 @@ export function CollectLoveForm() {
       successTitle: 'მადლობა!',
       successMessage: 'შენი გამოცდილება მიღებულია. დაუმტკიცდება ადმინისტრატორს და მალე გამოჩნდება.',
       backBtn: 'უკან დაბრუნება',
-      audioNote: '(აუდიო ჩაწერა - მალე)',
-      videoNote: '(ვიდეო ჩაწერა - მალე)',
+      audioLabel: 'აუდიო ჩაწერა/ატვირთვა',
+      videoLabel: 'ვიდეო ჩაწერა/ატვირთვა',
+      optionalMedia: '(არასავალდებულო)',
     },
     en: {
       title: 'Share Your Experience',
@@ -55,8 +62,9 @@ export function CollectLoveForm() {
       successTitle: 'Thank You!',
       successMessage: 'Your testimonial has been received. It will be reviewed by an administrator and published soon.',
       backBtn: 'Go Back',
-      audioNote: '(Audio recording - coming soon)',
-      videoNote: '(Video recording - coming soon)',
+      audioLabel: 'Record/Upload Audio',
+      videoLabel: 'Record/Upload Video',
+      optionalMedia: '(Optional)',
     },
   }[locale as 'ka' | 'en']
 
@@ -71,13 +79,19 @@ export function CollectLoveForm() {
     setLoading(true)
 
     try {
+      // TODO: Upload audio/video files to R2 and get URLs
+      // For now, we just submit the text testimonial
+      // Audio/video support will be added when R2 is configured
+
       const res = await fetch('/api/testimonials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           locale,
-          type: 'TEXT',
+          type: mediaType,
+          // audioUrl: audioBlob ? 'TODO: Upload to R2' : null,
+          // videoUrl: videoBlob ? 'TODO: Upload to R2' : null,
         }),
       })
 
@@ -189,29 +203,40 @@ export function CollectLoveForm() {
                 </div>
               </div>
 
-              {/* Media Options (Coming Soon) */}
+              {/* Audio Recording */}
               <div className="pt-4 border-t border-neu-dark">
-                <p className="text-sm font-medium text-text-primary mb-4">
-                  {locale === 'ka' ? 'სხვა ფორმატები' : 'Other Formats'}
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    disabled
-                    className="flex items-center gap-2 px-4 py-3 rounded-neu bg-neu-base shadow-neu text-text-secondary opacity-50 cursor-not-allowed"
-                  >
-                    <Mic className="w-5 h-5" />
-                    {t.audioNote}
-                  </button>
-                  <button
-                    type="button"
-                    disabled
-                    className="flex items-center gap-2 px-4 py-3 rounded-neu bg-neu-base shadow-neu text-text-secondary opacity-50 cursor-not-allowed"
-                  >
-                    <Video className="w-5 h-5" />
-                    {t.videoNote}
-                  </button>
-                </div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  {t.audioLabel} <span className="text-text-secondary text-xs">{t.optionalMedia}</span>
+                </label>
+                <AudioRecorder
+                  onRecordingComplete={(blob) => {
+                    setAudioBlob(blob)
+                    setMediaType('AUDIO')
+                  }}
+                  onUploadAudio={(file) => {
+                    setAudioBlob(file)
+                    setMediaType('AUDIO')
+                  }}
+                  locale={locale}
+                />
+              </div>
+
+              {/* Video Recording */}
+              <div className="pt-4">
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  {t.videoLabel} <span className="text-text-secondary text-xs">{t.optionalMedia}</span>
+                </label>
+                <VideoRecorder
+                  onRecordingComplete={(blob) => {
+                    setVideoBlob(blob)
+                    setMediaType('VIDEO')
+                  }}
+                  onUploadVideo={(file) => {
+                    setVideoBlob(file)
+                    setMediaType('VIDEO')
+                  }}
+                  locale={locale}
+                />
               </div>
 
               {/* Submit */}

@@ -23,8 +23,6 @@ const nextConfig = {
   experimental: {
     // Optimize package imports
     optimizePackageImports: ['next-intl'],
-    // Inline critical CSS to reduce render blocking
-    optimizeCss: true,
   },
 
   // Security headers

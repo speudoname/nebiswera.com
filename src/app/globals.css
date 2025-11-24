@@ -174,18 +174,18 @@
 
   /* Hero title - main landing page headline */
   .hero-title {
-    @apply text-3xl md:text-5xl font-bold tracking-tight;
+    @apply text-5xl md:text-5xl font-bold tracking-tight;
     line-height: 1.25;
   }
 
   /* Eyebrow - small text above headlines */
   .eyebrow {
-    @apply text-sm md:text-base font-medium tracking-wide uppercase;
+    @apply text-sm md:text-base font-medium tracking-tight uppercase;
   }
 
   /* Hero subtitle */
   .hero-subtitle {
-    @apply text-xl md:text-xl lg:text-2xl text-text-secondary;
+    @apply text-xl md:text-xl lg:text-3xl text-text-secondary;
   }
 
   /* Text color variants */

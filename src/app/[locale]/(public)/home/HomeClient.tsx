@@ -12,7 +12,7 @@ export function HomeClient() {
   return (
     <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8">
       <div className="text-center py-8 md:py-12 max-w-3xl">
-        <p className="eyebrow mb-3 md:mb-4">
+        <p className="eyebrow mb-4 md:mb-4">
           <span className="text-primary-600">{t('eyebrowStart')}</span>
           <span className="text-text-secondary"> {t('eyebrowEmphasis')} </span>
           <span className="text-primary-600">{t('eyebrowEnd')}</span>
@@ -22,9 +22,9 @@ export function HomeClient() {
           <span className="text-primary-600"> — </span>
           <span className="text-primary-600">{t('titlePart2')}</span>
         </h1>
-        <p className="hero-subtitle mb-6 md:mb-8">
+        <h2 className="hero-subtitle mb-6 md:mb-8">
           {t('subtitle')}
-        </p>
+        </h2>
 
         {/* Video */}
         <div className="mb-6 md:mb-8 w-full max-w-2xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video">

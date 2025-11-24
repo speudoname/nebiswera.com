@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Download all testimonial images and videos
+# This script extracts URLs from the JSON and downloads them
+
+cd "$(dirname "$0")"
+
+echo "Downloading profile photos..."
+curl -o images/ddfb73f1-profile.png "https://cdn.shapo.io/testimonials/profile/ddfb73f1-f81c-4cec-a15a-f8f0c6924d2d.png"
+curl -o images/25060543-profile.jpeg "https://cdn.shapo.io/testimonials/profile/25060543-f2ff-4878-a8a5-a58c57e79231.jpeg"
+curl -o images/251b283c-profile.jpeg "https://cdn.shapo.io/testimonials/profile/251b283c-857d-4006-b7c2-a6226ec9c0e7.jpeg"
+curl -o images/ee39bc02-profile.jpeg "https://cdn.shapo.io/testimonials/profile/ee39bc02-2e7c-4b30-a107-2850fc20537c.jpeg"
+curl -o images/bb33a624-profile.png "https://cdn.shapo.io/testimonials/profile/bb33a624-3200-425b-9687-ef552bbeef2f.png"
+curl -o images/04a7a067-profile.jpeg "https://cdn.shapo.io/testimonials/profile/04a7a067-0826-4ed1-8b38-8504c317146d.jpeg"
+curl -o images/3d4247fa-profile.png "https://cdn.shapo.io/testimonials/profile/3d4247fa-8b3e-4065-95fa-18c0b4ec65be.png"
+curl -o images/06c6ea16-profile.png "https://cdn.shapo.io/testimonials/profile/06c6ea16-ba49-47df-b362-8782657d40ed.png"
+curl -o images/4dab2943-profile.jpeg "https://cdn.shapo.io/testimonials/profile/4dab2943-dd67-4865-929c-c01d43d1f917.jpeg"
+curl -o images/9d917c8c-profile.jpeg "https://cdn.shapo.io/testimonials/profile/9d917c8c-6c53-49c9-af87-a7bd1ca7c668.jpeg"
+curl -o images/503523a3-profile.jpeg "https://cdn.shapo.io/testimonials/profile/503523a3-5439-4a8e-b38e-61de5e16f908.jpeg"
+curl -o images/401849e7-profile.jpeg "https://cdn.shapo.io/testimonials/profile/401849e7-3a20-4144-9bc4-c443b243b74f.jpeg"
+curl -o images/7b180ce5-profile.png "https://cdn.shapo.io/testimonials/profile/7b180ce5-345f-4938-89e8-8aa93342066e.png"
+curl -o images/7341706c-profile.jpeg "https://cdn.shapo.io/testimonials/profile/7341706c-efcf-4cf3-bfae-31110ea0da76.jpeg"
+curl -o images/14bd44cd-profile.png "https://cdn.shapo.io/testimonials/profile/14bd44cd-50e3-4d31-87c5-9d01c873bc3e.png"
+curl -o images/8991630e-profile.jpeg "https://cdn.shapo.io/testimonials/profile/8991630e-2af1-406a-b7bc-4e5ca1a1f35d.jpeg"
+curl -o images/06208e4f-profile.jpeg "https://cdn.shapo.io/testimonials/profile/06208e4f-9e40-45be-ba00-22f0f8f5ed28.jpeg"
+curl -o images/bc23355c-profile.jpeg "https://cdn.shapo.io/testimonials/profile/bc23355c-15e8-4ee4-a491-4e37cf9161b6.jpeg"
+
+echo "Downloading additional images..."
+curl -o images/cdf1bc03-upload.jpeg "https://cdn.shapo.io/testimonials/upload/cdf1bc03-80ee-45b6-b9b6-79b42de3c1fb-original.jpeg"
+curl -o images/f9dfaf30-upload.jpeg "https://cdn.shapo.io/testimonials/upload/f9dfaf30-4dac-470e-857c-f4e58b0e84a9-original.jpeg"
+curl -o images/f72096e0-upload.jpeg "https://cdn.shapo.io/testimonials/upload/f72096e0-36e3-45d7-8bfd-d4e1f1ef337a-original.jpeg"
+curl -o images/fdf2bb8d-upload-1.jpeg "https://cdn.shapo.io/testimonials/upload/fdf2bb8d-a2d7-497e-947d-726021704c1c-original.jpeg"
+curl -o images/9cbe5628-upload-2.jpeg "https://cdn.shapo.io/testimonials/upload/9cbe5628-251e-4721-a953-b3736eb42a09-original.jpeg"
+curl -o images/1925985b-upload.jpeg "https://cdn.shapo.io/testimonials/upload/1925985b-417c-40fc-9751-a2bcfaba3983.jpeg"
+curl -o images/6daa8a67-upload.jpeg "https://cdn.shapo.io/testimonials/upload/6daa8a67-5d99-4ef3-96a3-679f77dd3a02.jpeg"
+curl -o images/e2a47b84-upload.jpeg "https://cdn.shapo.io/testimonials/upload/e2a47b84-a6cc-44d5-9c44-3be4f8fdd7f3.jpeg"
+curl -o images/9c5be777-upload.jpeg "https://cdn.shapo.io/testimonials/upload/9c5be777-25b6-4179-9f16-8ca62905b4b2.jpeg"
+curl -o images/62afb39e-upload-1.jpeg "https://cdn.shapo.io/testimonials/upload/62afb39e-ea7f-4bbe-8020-3c7712b2201b.jpeg"
+curl -o images/6a759a29-upload-2.jpeg "https://cdn.shapo.io/testimonials/upload/6a759a29-cd36-4e25-8a68-d24b300df593.jpeg"
+curl -o images/725a29fa-upload-3.jpeg "https://cdn.shapo.io/testimonials/upload/725a29fa-2469-432b-bc9d-5f832c206fd5.jpeg"
+curl -o images/7cdfcfe1-upload-1.jpeg "https://cdn.shapo.io/testimonials/upload/7cdfcfe1-849e-43c6-beb2-b12fdd24904f.jpeg"
+curl -o images/ea5cf4c6-upload-2.jpeg "https://cdn.shapo.io/testimonials/upload/ea5cf4c6-8142-4a15-9596-90d1005db685.jpeg"
+curl -o images/05f7c8c6-upload.jpeg "https://cdn.shapo.io/testimonials/upload/05f7c8c6-b341-4706-bc6e-e2303b142f90.jpeg"
+curl -o images/4f3869a4-upload.jpeg "https://cdn.shapo.io/testimonials/upload/4f3869a4-6811-4899-858a-7afc10308c64.jpeg"
+curl -o images/8d57550f-upload.jpeg "https://cdn.shapo.io/testimonials/upload/8d57550f-b6b4-4d2a-ba87-4ccf60c23900.jpeg"
+
+echo "Note: Videos are hosted on Mux CDN and can be played via playbackId"
+echo "Video 1 playbackId: J7Kn7006ho00Idluty01n24EI1XHYxdxXaIJo6mQRUPudg"
+echo "Video 2 playbackId: L00mDP8t6qAtagfVgWmu7eV017q4bDsFBaTMQkR7xCywg"
+echo "Mux player URL format: https://stream.mux.com/{playbackId}.m3u8"
+
+echo "Download complete!"

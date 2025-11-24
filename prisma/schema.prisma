@@ -153,3 +153,51 @@ model Settings {
 
   @@map("settings")
 }
+
+// ===========================================
+// Testimonials
+// ===========================================
+
+model Testimonial {
+  id           String            @id @default(cuid())
+  name         String
+  email        String?
+  role         String?
+  company      String?
+  text         String            @db.Text
+  rating       Int               @default(5)
+  submittedAt  DateTime          @default(now())
+  locale       String            @default("ka") // ka or en
+
+  // Media
+  profilePhoto String?
+  images       String[] // Array of R2 URLs
+  audioUrl     String?
+  videoUrl     String?
+
+  // Metadata
+  status       TestimonialStatus @default(PENDING)
+  type         TestimonialType   @default(TEXT)
+  source       String?           // "shapo_import" or "website_form"
+
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([submittedAt])
+  @@index([locale])
+  @@map("testimonials")
+}
+
+enum TestimonialStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TestimonialType {
+  TEXT
+  AUDIO
+  VIDEO
+}

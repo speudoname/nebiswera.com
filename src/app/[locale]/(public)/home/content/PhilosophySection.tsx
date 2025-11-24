@@ -13,8 +13,8 @@ const content: Record<Locale, {
   }>
 }> = {
   ka: {
-    title: 'როგორ მუშაობს',
-    subtitle: 'სამი ნაბიჯი შენი ბედის შესაცვლელად',
+    title: 'შენი ცხოვრება შენზე უნდა იყოს დამოკიდებული',
+    subtitle: 'და შენი მომავალი ზუსტად ისეთი იქნება როგორიც მოგეწონებოდა',
     steps: [
       {
         title: 'გაიცანი შენი თავი',
@@ -31,8 +31,8 @@ const content: Record<Locale, {
     ],
   },
   en: {
-    title: 'How It Works',
-    subtitle: 'Three steps to transform your fate',
+    title: 'Your Life Should Depend on You',
+    subtitle: 'And your future will be exactly as you would like it',
     steps: [
       {
         title: 'Know Yourself',

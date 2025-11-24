@@ -42,6 +42,8 @@ export const seoConfig = {
   indexedPages: [
     { path: '', key: 'home', priority: 1.0, changefreq: 'weekly' },
     { path: '/about', key: 'about', priority: 0.8, changefreq: 'monthly' },
+    { path: '/love', key: 'love', priority: 0.9, changefreq: 'weekly' },
+    { path: '/collectlove', key: 'collectlove', priority: 0.6, changefreq: 'monthly' },
     { path: '/contact', key: 'contact', priority: 0.7, changefreq: 'monthly' },
     { path: '/privacy', key: 'privacy', priority: 0.3, changefreq: 'yearly' },
     { path: '/terms', key: 'terms', priority: 0.3, changefreq: 'yearly' },

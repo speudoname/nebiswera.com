@@ -59,6 +59,14 @@
     "profile": {
       "title": "Profile Settings — Nebiswera",
       "description": "Manage your account settings and preferences."
+    },
+    "love": {
+      "title": "What They Say About Us — Nebiswera",
+      "description": "Read experiences and shared thoughts from Nebiswera participants. See how this course has changed people's lives."
+    },
+    "collectlove": {
+      "title": "Share Your Experience — Nebiswera",
+      "description": "Had an experience with Nebiswera? Share your thoughts through text, audio, or video."
     }
   }
 }

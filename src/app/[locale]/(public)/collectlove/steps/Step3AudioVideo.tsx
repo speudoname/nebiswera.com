@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Mic, Video, Upload, Play, Pause, Trash2, Square } from 'lucide-react'
+import { Mic, Video, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { AudioRecorder } from '../components/AudioRecorder'
+import { VideoRecorder } from '../components/VideoRecorder'
 
 interface Step3AudioVideoProps {
   testimonialId: string
@@ -19,7 +21,7 @@ export function Step3AudioVideo({
   const t = useTranslations('collectLove.step3')
   const locale = useLocale()
   const [expandedType, setExpandedType] = useState<'audio' | 'video' | null>(null)
-  const [isRecording, setIsRecording] = useState(false)
+  const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -73,11 +75,33 @@ export function Step3AudioVideo({
     uploadMedia(file, type)
   }
 
-  function startRecording(type: 'audio' | 'video') {
-    // TODO: Implement actual recording
-    setIsRecording(true)
-    alert(`${type} recording will be implemented soon`)
-    setIsRecording(false)
+  function handleRecordingComplete(blob: Blob, type: 'audio' | 'video') {
+    setRecordingMode(null)
+    setExpandedType(null)
+    uploadMedia(blob, type)
+  }
+
+  // Show recorder interface
+  if (recordingMode === 'audio') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <AudioRecorder
+          onRecordingComplete={(blob) => handleRecordingComplete(blob, 'audio')}
+          onCancel={() => setRecordingMode(null)}
+        />
+      </div>
+    )
+  }
+
+  if (recordingMode === 'video') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <VideoRecorder
+          onRecordingComplete={(blob) => handleRecordingComplete(blob, 'video')}
+          onCancel={() => setRecordingMode(null)}
+        />
+      </div>
+    )
   }
 
   return (
@@ -122,8 +146,7 @@ export function Step3AudioVideo({
                   variant="secondary"
                   size="md"
                   fullWidth
-                  onClick={() => startRecording('audio')}
-                  disabled={isRecording}
+                  onClick={() => setRecordingMode('audio')}
                 >
                   <Mic className="w-4 h-4 mr-2" />
                   Record
@@ -163,8 +186,7 @@ export function Step3AudioVideo({
                   variant="secondary"
                   size="md"
                   fullWidth
-                  onClick={() => startRecording('video')}
-                  disabled={isRecording}
+                  onClick={() => setRecordingMode('video')}
                 >
                   <Video className="w-4 h-4 mr-2" />
                   Record

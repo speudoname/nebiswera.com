@@ -74,7 +74,7 @@ export async function uploadToR2(
   const response = await fetch(url, {
     method: 'PUT',
     headers,
-    body: buffer,
+    body: new Uint8Array(buffer),
   })
 
   if (!response.ok) {

@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadToR2, generateTestimonialKey } from '@/lib/r2'
 import { nanoid } from 'nanoid'
 
+// Increase body size limit for video uploads (50MB)
+export const maxDuration = 60 // 60 seconds for serverless function timeout
+export const runtime = 'nodejs' // Use Node.js runtime
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -38,13 +42,4 @@ export async function POST(request: NextRequest) {
     console.error('Error uploading file:', error)
     return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
   }
-}
-
-// Increase body size limit for video uploads (50MB)
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
 }

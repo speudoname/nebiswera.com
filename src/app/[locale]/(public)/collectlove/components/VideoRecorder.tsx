@@ -178,6 +178,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
             ref={playbackRef}
             src={videoUrl}
             controls
+            autoPlay
             className="w-full h-full object-cover"
           />
         )}
@@ -218,7 +219,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
               )}
               <Button variant="primary" fullWidth onClick={stopRecording}>
                 <Square className="w-5 h-5 mr-2" />
-                Stop
+                Finish Recording
               </Button>
             </div>
           )}

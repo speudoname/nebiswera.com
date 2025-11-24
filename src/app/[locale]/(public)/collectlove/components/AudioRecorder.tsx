@@ -177,7 +177,7 @@ export function AudioRecorder({ onRecordingComplete, onCancel }: AudioRecorderPr
               )}
               <Button variant="primary" fullWidth onClick={stopRecording}>
                 <Square className="w-5 h-5 mr-2" />
-                Stop
+                Finish Recording
               </Button>
             </div>
           )}

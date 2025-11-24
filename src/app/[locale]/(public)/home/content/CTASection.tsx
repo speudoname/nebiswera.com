@@ -64,7 +64,7 @@ export function CTASection() {
               size="lg"
               variant="outline-light"
               rightIcon={ArrowRight}
-              className="w-full sm:w-auto bg-white text-text-primary hover:bg-white/90 shadow-neu-darkbg-hover"
+              className="w-full sm:w-auto bg-white !text-text-primary hover:bg-white/90 shadow-neu-darkbg-hover"
             >
               {t.primaryCTA}
             </Button>

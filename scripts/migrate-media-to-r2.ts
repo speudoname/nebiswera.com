@@ -1,8 +1,10 @@
 // Migrate all media from Shapo CDN to R2
-// Run with: npx tsx scripts/migrate-media-to-r2.ts
+// NOTE: This script is deprecated and not compatible with the new presigned URL upload system
+// It was used for a one-time migration from the old Shapo CDN to R2
+// Kept for reference only
 
 import { PrismaClient } from '@prisma/client'
-import { uploadToR2, generateTestimonialKey } from '../src/lib/r2'
+import { generateTestimonialKey } from '../src/lib/r2'
 import { nanoid } from 'nanoid'
 
 const prisma = new PrismaClient()
@@ -77,7 +79,8 @@ async function main() {
           const key = generateTestimonialKey(testimonial.id, filename)
           const contentType = getContentType(ext)
 
-          const r2Url = await uploadToR2(buffer, key, contentType)
+          // NOTE: uploadToR2 function no longer exists - migration already completed
+          const r2Url = '' // await uploadToR2(buffer, key, contentType)
 
           // Update database with new R2 URL
           await prisma.testimonial.update({
@@ -118,7 +121,8 @@ async function main() {
                 const key = generateTestimonialKey(testimonial.id, filename)
                 const contentType = getContentType(ext)
 
-                const r2Url = await uploadToR2(buffer, key, contentType)
+                // NOTE: uploadToR2 function no longer exists - migration already completed
+                const r2Url = '' // await uploadToR2(buffer, key, contentType)
                 newImageUrls.push(r2Url)
                 imagesUploaded++
                 console.log(`  ✓ Uploaded: ${r2Url}`)

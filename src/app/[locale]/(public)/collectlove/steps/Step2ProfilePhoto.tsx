@@ -27,18 +27,8 @@ export function Step2ProfilePhoto({
     setIsUploading(true)
 
     try {
-      const formData = new FormData()
-      formData.append('file', blob, 'profile-photo.jpg')
-      formData.append('type', 'image')
-
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!uploadRes.ok) throw new Error('Upload failed')
-
-      const { url } = await uploadRes.json()
+      const { uploadFileToR2 } = await import('@/lib/upload-helpers')
+      const url = await uploadFileToR2(blob, 'image')
 
       const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {
         method: 'PATCH',

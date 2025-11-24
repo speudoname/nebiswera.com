@@ -1,45 +1,51 @@
-// API endpoint for uploading files to R2
+// API endpoint for generating presigned upload URLs
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToR2, generateTestimonialKey } from '@/lib/r2'
+import { generateUploadUrl, generateTestimonialKey } from '@/lib/r2'
 import { nanoid } from 'nanoid'
 
-// Increase body size limit for video uploads (50MB)
-export const maxDuration = 60 // 60 seconds for serverless function timeout
-export const runtime = 'nodejs' // Use Node.js runtime
+export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData()
-    const file = formData.get('file') as File
-    const type = formData.get('type') as 'audio' | 'video' | 'image'
+    const body = await request.json()
+    const { type, contentType, filename } = body as {
+      type: 'audio' | 'video' | 'image'
+      contentType: string
+      filename: string
+    }
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    if (!type || !contentType) {
+      return NextResponse.json(
+        { error: 'Missing required fields: type, contentType' },
+        { status: 400 }
+      )
     }
 
     // Generate unique ID for this upload
     const uploadId = nanoid()
 
-    // Get file extension
-    const ext = file.name.split('.').pop() || (type === 'audio' ? 'webm' : type === 'video' ? 'webm' : 'jpg')
+    // Get file extension from filename or default based on type
+    const ext = filename?.split('.').pop() ||
+                (type === 'audio' ? 'webm' : type === 'video' ? 'webm' : 'jpg')
 
-    // Generate filename
-    const filename = `${type}-${Date.now()}.${ext}`
-    const key = generateTestimonialKey(uploadId, filename)
+    // Generate unique filename
+    const uniqueFilename = `${type}-${Date.now()}.${ext}`
+    const key = generateTestimonialKey(uploadId, uniqueFilename)
 
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer())
-
-    // Upload to R2
-    const url = await uploadToR2(buffer, key, file.type)
+    // Generate presigned URL
+    const { uploadUrl, publicUrl } = generateUploadUrl(key, contentType)
 
     return NextResponse.json({
       success: true,
-      url,
+      uploadUrl,
+      publicUrl,
       key,
     })
   } catch (error: any) {
-    console.error('Error uploading file:', error)
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
+    console.error('Error generating upload URL:', error)
+    return NextResponse.json(
+      { error: 'Failed to generate upload URL' },
+      { status: 500 }
+    )
   }
 }

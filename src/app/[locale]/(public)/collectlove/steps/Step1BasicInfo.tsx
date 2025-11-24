@@ -90,21 +90,11 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
 
       // Upload images if any
       if (images.length > 0) {
+        const { uploadFileToR2 } = await import('@/lib/upload-helpers')
         const imageUrls: string[] = []
 
         for (const image of images) {
-          const formData = new FormData()
-          formData.append('file', image)
-          formData.append('type', 'image')
-
-          const uploadRes = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-          })
-
-          if (!uploadRes.ok) throw new Error('Image upload failed')
-
-          const { url } = await uploadRes.json()
+          const url = await uploadFileToR2(image, 'image')
           imageUrls.push(url)
         }
 

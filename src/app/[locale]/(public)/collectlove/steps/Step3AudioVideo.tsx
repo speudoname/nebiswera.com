@@ -30,18 +30,8 @@ export function Step3AudioVideo({
     setUploadProgress(0)
 
     try {
-      const formData = new FormData()
-      formData.append('file', blob, `testimonial.${type === 'audio' ? 'webm' : 'webm'}`)
-      formData.append('type', type)
-
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!uploadRes.ok) throw new Error('Upload failed')
-
-      const { url } = await uploadRes.json()
+      const { uploadFileToR2 } = await import('@/lib/upload-helpers')
+      const url = await uploadFileToR2(blob, type)
 
       const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {
         method: 'PATCH',

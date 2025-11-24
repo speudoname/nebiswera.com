@@ -1,6 +1,6 @@
 // Testimonial Submission Form Page
 import { generatePageMetadata } from '@/lib/metadata'
-import { CollectLoveForm } from './CollectLoveForm'
+import { CollectLoveMultiStepForm } from './CollectLoveMultiStepForm'
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -8,5 +8,5 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 }
 
 export default function CollectLovePage() {
-  return <CollectLoveForm />
+  return <CollectLoveMultiStepForm />
 }

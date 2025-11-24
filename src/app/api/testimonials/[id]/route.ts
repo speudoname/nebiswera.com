@@ -68,6 +68,36 @@ export async function PUT(
   }
 }
 
+// PATCH /api/testimonials/[id] - Partial update testimonial (public for multi-step form)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    // Allow partial updates for any field
+    const updateData: any = {}
+
+    if (body.profilePhoto !== undefined) updateData.profilePhoto = body.profilePhoto
+    if (body.images !== undefined) updateData.images = body.images
+    if (body.audioUrl !== undefined) updateData.audioUrl = body.audioUrl
+    if (body.videoUrl !== undefined) updateData.videoUrl = body.videoUrl
+    if (body.type !== undefined) updateData.type = body.type
+
+    const testimonial = await prisma.testimonial.update({
+      where: { id },
+      data: updateData,
+    })
+
+    return NextResponse.json({ success: true, testimonial })
+  } catch (error: any) {
+    console.error('Error updating testimonial:', error)
+    return NextResponse.json({ error: 'Failed to update testimonial' }, { status: 500 })
+  }
+}
+
 // DELETE /api/testimonials/[id] - Delete testimonial (admin only)
 export async function DELETE(
   request: NextRequest,

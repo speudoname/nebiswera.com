@@ -194,5 +194,65 @@
       "title": "Contact Us",
       "content": "Have questions? Contact us at: contact@nebiswera.ge"
     }
+  },
+  "collectLove": {
+    "step1": {
+      "title": "Share Your Experience",
+      "description": "Tell us about your experience with Nebiswera",
+      "nameLabel": "Your Name",
+      "namePlaceholder": "Enter your name",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "your@email.com",
+      "reviewLabel": "Your Review",
+      "reviewPlaceholder": "Share your thoughts and experience...",
+      "ratingLabel": "Rate Your Experience",
+      "submitting": "Saving...",
+      "nextButton": "Next"
+    },
+    "step2": {
+      "title": "Add Your Photo",
+      "description": "Add a profile photo to make your testimonial more personal",
+      "example": "Your photo will appear here",
+      "exampleDesc": "Small circular photo in your testimonial",
+      "takePhoto": "Take Photo",
+      "uploadPhoto": "Upload Photo",
+      "skip": "Skip",
+      "uploading": "Uploading...",
+      "camera": {
+        "takePhoto": "Take Photo",
+        "retake": "Retake",
+        "usePhoto": "Use This Photo",
+        "cancel": "Cancel"
+      }
+    },
+    "step3": {
+      "title": "Want to make your testimonial even more powerful?",
+      "motivation": "Audio or video testimonials are incredibly impactful!",
+      "motivationSub": "They help others feel the genuine emotion and authenticity of your experience. It only takes a minute!",
+      "recordAudio": "Record Audio",
+      "recordVideo": "Record Video",
+      "audioTitle": "Record Audio Testimonial",
+      "videoTitle": "Record Video Testimonial",
+      "skip": "Skip",
+      "back": "Back",
+      "uploading": "Uploading..."
+    },
+    "step4": {
+      "title": "Add Additional Images",
+      "description": "Have any photos that relate to your experience? Add up to 3 images!",
+      "uploadLabel": "Click or drag images here",
+      "uploadHint": "You can add {count} more image(s)",
+      "continue": "Continue",
+      "continueWithout": "Continue Without Images",
+      "skip": "Skip",
+      "uploading": "Uploading images..."
+    },
+    "step5": {
+      "title": "Thank You So Much!",
+      "message": "Your testimonial means the world to us.",
+      "messageDetails": "It will be reviewed by our team and published soon. We appreciate you taking the time to share your experience!",
+      "viewTestimonials": "View All Testimonials",
+      "backHome": "Back to Home"
+    }
   }
 }

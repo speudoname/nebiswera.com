@@ -18,7 +18,8 @@ export function Step3AudioVideo({
 }: Step3AudioVideoProps) {
   const t = useTranslations('collectLove.step3')
   const locale = useLocale()
-  const [selectedType, setSelectedType] = useState<'audio' | 'video' | null>(null)
+  const [expandedType, setExpandedType] = useState<'audio' | 'video' | null>(null)
+  const [isRecording, setIsRecording] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
@@ -72,55 +73,118 @@ export function Step3AudioVideo({
     uploadMedia(file, type)
   }
 
-  if (isUploading) {
-    return (
-      <div className="max-w-2xl mx-auto text-center py-12">
-        <div className="mb-4">
+  function startRecording(type: 'audio' | 'video') {
+    // TODO: Implement actual recording
+    setIsRecording(true)
+    alert(`${type} recording will be implemented soon`)
+    setIsRecording(false)
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-text-primary mb-4">
+          {t('title')}
+        </h2>
+        <p className="text-lg text-text-secondary mb-2">
+          {t('motivation')}
+        </p>
+        <p className="text-text-muted">
+          {t('motivationSub')}
+        </p>
+      </div>
+
+      {isUploading ? (
+        <div className="text-center py-12">
           <div className="w-16 h-16 mx-auto mb-4 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-text-secondary">{t('uploading')}</p>
           {uploadProgress > 0 && (
             <p className="text-sm text-text-muted mt-2">{uploadProgress}%</p>
           )}
         </div>
-      </div>
-    )
-  }
-
-  if (!selectedType) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-text-primary mb-4">
-            {t('title')}
-          </h2>
-          <p className="text-lg text-text-secondary mb-2">
-            {t('motivation')}
-          </p>
-          <p className="text-text-muted">
-            {t('motivationSub')}
-          </p>
-        </div>
-
+      ) : (
         <div className="space-y-4">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={() => setSelectedType('audio')}
-          >
-            <Mic className="w-5 h-5 mr-2" />
-            {t('recordAudio')}
-          </Button>
+          {/* Audio Button - Expands to show Record/Upload */}
+          <div>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => setExpandedType(expandedType === 'audio' ? null : 'audio')}
+            >
+              <Mic className="w-5 h-5 mr-2" />
+              {t('recordAudio')}
+            </Button>
 
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            onClick={() => setSelectedType('video')}
-          >
-            <Video className="w-5 h-5 mr-2" />
-            {t('recordVideo')}
-          </Button>
+            {expandedType === 'audio' && (
+              <div className="mt-3 flex gap-3 pl-4">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  onClick={() => startRecording('audio')}
+                  disabled={isRecording}
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  Record
+                </Button>
+
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={(e) => handleFileUpload(e, 'audio')}
+                    className="hidden"
+                  />
+                  <span className="inline-flex w-full items-center justify-center whitespace-nowrap font-medium rounded-neu transition-all duration-200 px-6 py-3 text-sm gap-2 bg-neu-base text-text-primary shadow-neu hover:shadow-neu-hover hover:bg-neu-light active:shadow-neu-pressed cursor-pointer">
+                    <Upload className="w-4 h-4" />
+                    {t('upload')}
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Video Button - Expands to show Record/Upload */}
+          <div>
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => setExpandedType(expandedType === 'video' ? null : 'video')}
+            >
+              <Video className="w-5 h-5 mr-2" />
+              {t('recordVideo')}
+            </Button>
+
+            {expandedType === 'video' && (
+              <div className="mt-3 flex gap-3 pl-4">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  fullWidth
+                  onClick={() => startRecording('video')}
+                  disabled={isRecording}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  Record
+                </Button>
+
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => handleFileUpload(e, 'video')}
+                    className="hidden"
+                  />
+                  <span className="inline-flex w-full items-center justify-center whitespace-nowrap font-medium rounded-neu transition-all duration-200 px-6 py-3 text-sm gap-2 bg-neu-base text-text-primary shadow-neu hover:shadow-neu-hover hover:bg-neu-light active:shadow-neu-pressed cursor-pointer">
+                    <Upload className="w-4 h-4" />
+                    {t('upload')}
+                  </span>
+                </label>
+              </div>
+            )}
+          </div>
 
           <Button
             variant="ghost"
@@ -131,48 +195,7 @@ export function Step3AudioVideo({
             {t('skip')}
           </Button>
         </div>
-      </div>
-    )
-  }
-
-  // Show audio/video recorder with record and upload options
-  return (
-    <div className="max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-text-primary mb-2">
-          {selectedType === 'audio' ? t('audioTitle') : t('videoTitle')}
-        </h2>
-      </div>
-
-      <div className="space-y-4">
-        {/* Record or Upload section will be added here */}
-        <p className="text-center text-text-secondary">
-          Recording feature will be implemented with record/upload options
-        </p>
-
-        <div className="flex gap-3">
-          <Button
-            variant="secondary"
-            fullWidth
-            onClick={() => setSelectedType(null)}
-          >
-            {t('back')}
-          </Button>
-
-          <label className="flex-1">
-            <input
-              type="file"
-              accept={selectedType === 'audio' ? 'audio/*' : 'video/*'}
-              onChange={(e) => handleFileUpload(e, selectedType)}
-              className="hidden"
-            />
-            <span className="inline-flex w-full items-center justify-center whitespace-nowrap font-medium rounded-neu transition-all duration-200 px-8 py-4 text-base gap-2 bg-neu-base text-text-primary shadow-neu hover:shadow-neu-hover hover:bg-neu-light active:shadow-neu-pressed cursor-pointer">
-              <Upload className="w-5 h-5" />
-              {t('upload')}
-            </span>
-          </label>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -2,12 +2,22 @@
 // Direct R2 API calls using native fetch (no SDK needed)
 
 import crypto from 'crypto'
+import https from 'https'
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID!
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!
 const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'nebiswera'
 const PUBLIC_URL = process.env.R2_PUBLIC_URL!
+
+// Create HTTPS agent with proper TLS configuration for R2
+const httpsAgent = new https.Agent({
+  keepAlive: true,
+  // Set minimum TLS version to 1.2 (Cloudflare R2 requirement)
+  minVersion: 'TLSv1.2',
+  // Allow legacy renegotiation for compatibility
+  secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT,
+})
 
 /**
  * Generate AWS Signature V4 for authentication
@@ -71,19 +81,45 @@ export async function uploadToR2(
 
   headers['Authorization'] = generateAwsSignature('PUT', url, headers, buffer)
 
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers,
-    body: new Uint8Array(buffer),
+  // Use native https.request with custom agent for proper TLS handling
+  return new Promise<string>((resolve, reject) => {
+    const urlObj = new URL(url)
+    const options = {
+      hostname: urlObj.hostname,
+      port: 443,
+      path: urlObj.pathname,
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Length': buffer.length,
+      },
+      agent: httpsAgent,
+    }
+
+    const req = https.request(options, (res) => {
+      let responseBody = ''
+
+      res.on('data', (chunk) => {
+        responseBody += chunk
+      })
+
+      res.on('end', () => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          // Return public URL
+          resolve(`${PUBLIC_URL}/${key}`)
+        } else {
+          reject(new Error(`R2 upload failed: ${res.statusCode} ${responseBody}`))
+        }
+      })
+    })
+
+    req.on('error', (error) => {
+      reject(new Error(`R2 upload request failed: ${error.message}`))
+    })
+
+    req.write(buffer)
+    req.end()
   })
-
-  if (!response.ok) {
-    const text = await response.text()
-    throw new Error(`R2 upload failed: ${response.status} ${text}`)
-  }
-
-  // Return public URL
-  return `${PUBLIC_URL}/${key}`
 }
 
 /**

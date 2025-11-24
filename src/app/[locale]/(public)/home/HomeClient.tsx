@@ -11,10 +11,7 @@ export function HomeClient() {
 
   return (
     <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8">
-      <div className="text-center py-8 md:py-12 max-w-3xl">
-        <p className="text-xl md:text-xl lg:text-3xl text-text-secondary mb-6 md:mb-8">
-          :::...:::
-        </p>
+      <div className="text-center py-4 md:py-6 max-w-3xl">
         <p className="eyebrow mb-4 md:mb-4">
           <span className="text-primary-600">{t('eyebrowStart')}</span>
           <span className="text-text-secondary"> {t('eyebrowEmphasis')} </span>

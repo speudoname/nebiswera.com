@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Star } from 'lucide-react'
+import { Star, Upload, X, Image as ImageIcon } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 
@@ -23,6 +23,8 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
   const [text, setText] = useState('')
   const [rating, setRating] = useState(5) // Preselect 5 stars
   const [hoveredRating, setHoveredRating] = useState(0)
+  const [images, setImages] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -31,6 +33,30 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
                   text.trim().length >= 10 &&
                   text.trim().length <= 500 &&
                   rating > 0
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    const imageFiles = files.filter((f) => f.type.startsWith('image/'))
+    const remainingSlots = 3 - images.length
+    const newImages = imageFiles.slice(0, remainingSlots)
+
+    if (newImages.length > 0) {
+      setImages([...images, ...newImages])
+
+      newImages.forEach((file) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setPreviews((prev) => [...prev, reader.result as string])
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  function removeImage(index: number) {
+    setImages(images.filter((_, i) => i !== index))
+    setPreviews(previews.filter((_, i) => i !== index))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,6 +67,7 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
     setError(null)
 
     try {
+      // Create testimonial first
       const res = await fetch('/api/testimonials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,13 +86,44 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
       }
 
       const data = await res.json()
+      const testimonialId = data.testimonial.id
+
+      // Upload images if any
+      if (images.length > 0) {
+        const imageUrls: string[] = []
+
+        for (const image of images) {
+          const formData = new FormData()
+          formData.append('file', image)
+          formData.append('type', 'image')
+
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (!uploadRes.ok) throw new Error('Image upload failed')
+
+          const { url } = await uploadRes.json()
+          imageUrls.push(url)
+        }
+
+        // Update testimonial with image URLs
+        const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ images: imageUrls }),
+        })
+
+        if (!updateRes.ok) throw new Error('Failed to save images')
+      }
 
       onComplete({
         name: name.trim(),
         email: email.trim(),
         text: text.trim(),
         rating,
-        testimonialId: data.testimonial.id,
+        testimonialId,
       })
     } catch (err: any) {
       setError(err.message)
@@ -147,6 +205,65 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Optional images section */}
+        <div className="pt-4 border-t border-neu-dark">
+          <div className="text-center mb-4">
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              {t('step4.title')}
+            </label>
+            <p className="text-xs text-text-secondary">
+              {t('step4.description')}
+            </p>
+          </div>
+
+          {/* Upload area */}
+          {images.length < 3 && (
+            <label className="block mb-4">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <div className="border-2 border-dashed border-neu-dark rounded-neu-lg p-8 text-center cursor-pointer hover:bg-neu-light transition-colors">
+                <Upload className="w-8 h-8 mx-auto mb-2 text-text-muted" />
+                <p className="text-sm text-text-primary font-medium mb-1">
+                  {t('step4.uploadLabel')}
+                </p>
+                <p className="text-xs text-text-secondary">
+                  {t('step4.uploadHint', { count: 3 - images.length })}
+                </p>
+              </div>
+            </label>
+          )}
+
+          {/* Image previews */}
+          {previews.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {previews.map((preview, index) => (
+                <div
+                  key={index}
+                  className="relative aspect-square rounded-neu overflow-hidden shadow-neu group"
+                >
+                  <img
+                    src={preview}
+                    alt={`Preview ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-neu-sm hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {error && (

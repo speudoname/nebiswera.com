@@ -6,7 +6,6 @@ import { StepIndicator } from './components/StepIndicator'
 import { Step1BasicInfo } from './steps/Step1BasicInfo'
 import { Step2ProfilePhoto } from './steps/Step2ProfilePhoto'
 import { Step3AudioVideo } from './steps/Step3AudioVideo'
-import { Step4AdditionalImages } from './steps/Step4AdditionalImages'
 import { Step5ThankYou } from './steps/Step5ThankYou'
 
 export function CollectLoveMultiStepForm() {
@@ -41,19 +40,11 @@ export function CollectLoveMultiStepForm() {
     setCurrentStep(4)
   }
 
-  function handleStep4Complete() {
-    setCurrentStep(5)
-  }
-
-  function handleStep4Skip() {
-    setCurrentStep(5)
-  }
-
   return (
     <div className="min-h-screen bg-neu-base py-12 px-4">
       <div className="max-w-4xl mx-auto">
-        {currentStep < 5 && (
-          <StepIndicator currentStep={currentStep} totalSteps={5} />
+        {currentStep < 4 && (
+          <StepIndicator currentStep={currentStep} totalSteps={4} />
         )}
 
         <div className="animate-fade-in">
@@ -77,15 +68,7 @@ export function CollectLoveMultiStepForm() {
             />
           )}
 
-          {currentStep === 4 && testimonialId && (
-            <Step4AdditionalImages
-              testimonialId={testimonialId}
-              onComplete={handleStep4Complete}
-              onSkip={handleStep4Skip}
-            />
-          )}
-
-          {currentStep === 5 && (
+          {currentStep === 4 && (
             <Step5ThankYou locale={locale} />
           )}
         </div>

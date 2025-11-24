@@ -7,18 +7,18 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { CameraCapture } from '../components/CameraCapture'
 
-interface Step2ProfilePhotoProps {
+interface Step3ProfilePhotoProps {
   testimonialId: string
   onComplete: () => void
   onSkip: () => void
 }
 
-export function Step2ProfilePhoto({
+export function Step3ProfilePhoto({
   testimonialId,
   onComplete,
   onSkip,
-}: Step2ProfilePhotoProps) {
-  const t = useTranslations('collectLove.step2')
+}: Step3ProfilePhotoProps) {
+  const t = useTranslations('collectLove.step3Photo')
   const [mode, setMode] = useState<'choose' | 'camera' | 'upload'>('choose')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)

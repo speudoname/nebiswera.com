@@ -5,18 +5,18 @@ import { useTranslations } from 'next-intl'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
-interface Step4AdditionalImagesProps {
+interface Step2AdditionalImagesProps {
   testimonialId: string
   onComplete: () => void
   onSkip: () => void
 }
 
-export function Step4AdditionalImages({
+export function Step2AdditionalImages({
   testimonialId,
   onComplete,
   onSkip,
-}: Step4AdditionalImagesProps) {
-  const t = useTranslations('collectLove.step4')
+}: Step2AdditionalImagesProps) {
+  const t = useTranslations('collectLove.step2Images')
   const [images, setImages] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)

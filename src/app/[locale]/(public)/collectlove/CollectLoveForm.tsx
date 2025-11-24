@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
-import { Star, Send } from 'lucide-react'
+import { Star, Send, Upload, X, User, Image as ImageIcon } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -27,6 +27,11 @@ export function CollectLoveForm() {
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
   const [mediaType, setMediaType] = useState<'TEXT' | 'AUDIO' | 'VIDEO'>('TEXT')
 
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null)
+  const [additionalImages, setAdditionalImages] = useState<File[]>([])
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([])
+
   const t = {
     ka: {
       title: 'გააზიარე შენი გამოცდილება',
@@ -46,6 +51,12 @@ export function CollectLoveForm() {
       audioLabel: 'აუდიო ჩაწერა/ატვირთვა',
       videoLabel: 'ვიდეო ჩაწერა/ატვირთვა',
       optionalMedia: '(არასავალდებულო)',
+      profilePhotoLabel: 'პროფილის ფოტო',
+      profilePhotoDesc: 'ატვირთე შენი ფოტო',
+      additionalImagesLabel: 'დამატებითი სურათები',
+      additionalImagesDesc: 'ატვირთე დამატებითი სურათები (მაქს. 3)',
+      uploadBtn: 'ატვირთვა',
+      removeBtn: 'წაშლა',
     },
     en: {
       title: 'Share Your Experience',
@@ -65,6 +76,12 @@ export function CollectLoveForm() {
       audioLabel: 'Record/Upload Audio',
       videoLabel: 'Record/Upload Video',
       optionalMedia: '(Optional)',
+      profilePhotoLabel: 'Profile Photo',
+      profilePhotoDesc: 'Upload your photo',
+      additionalImagesLabel: 'Additional Images',
+      additionalImagesDesc: 'Upload additional images (max 3)',
+      uploadBtn: 'Upload',
+      removeBtn: 'Remove',
     },
   }[locale as 'ka' | 'en']
 
@@ -91,6 +108,63 @@ export function CollectLoveForm() {
     }
   }
 
+  async function uploadImage(file: File): Promise<string | null> {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'image')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.url
+      }
+      return null
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      return null
+    }
+  }
+
+  function handleProfilePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file && file.type.startsWith('image/')) {
+      setProfilePhoto(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProfilePhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  function handleAdditionalImagesChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    const imageFiles = files.filter((f) => f.type.startsWith('image/')).slice(0, 3 - additionalImages.length)
+
+    if (imageFiles.length > 0) {
+      setAdditionalImages([...additionalImages, ...imageFiles])
+
+      // Generate previews
+      imageFiles.forEach((file) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setAdditionalImagePreviews((prev) => [...prev, reader.result as string])
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  function removeAdditionalImage(index: number) {
+    setAdditionalImages((prev) => prev.filter((_, i) => i !== index))
+    setAdditionalImagePreviews((prev) => prev.filter((_, i) => i !== index))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -105,6 +179,8 @@ export function CollectLoveForm() {
       // Upload audio/video files to R2 if present
       let audioUrl: string | null = null
       let videoUrl: string | null = null
+      let profilePhotoUrl: string | null = null
+      const imageUrls: string[] = []
 
       if (audioBlob) {
         audioUrl = await uploadFile(audioBlob, 'audio')
@@ -112,6 +188,16 @@ export function CollectLoveForm() {
 
       if (videoBlob) {
         videoUrl = await uploadFile(videoBlob, 'video')
+      }
+
+      if (profilePhoto) {
+        profilePhotoUrl = await uploadImage(profilePhoto)
+      }
+
+      // Upload additional images
+      for (const image of additionalImages) {
+        const url = await uploadImage(image)
+        if (url) imageUrls.push(url)
       }
 
       const res = await fetch('/api/testimonials', {
@@ -123,6 +209,8 @@ export function CollectLoveForm() {
           type: mediaType,
           audioUrl,
           videoUrl,
+          profilePhoto: profilePhotoUrl,
+          images: imageUrls,
         }),
       })
 
@@ -231,6 +319,118 @@ export function CollectLoveForm() {
                       />
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Profile Photo Upload */}
+              <div className="pt-4 border-t border-neu-dark">
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  {t.profilePhotoLabel} <span className="text-text-secondary text-xs">{t.optionalMedia}</span>
+                </label>
+                <p className="text-sm text-text-secondary mb-3">{t.profilePhotoDesc}</p>
+                <div className="flex items-center gap-4">
+                  {profilePhotoPreview ? (
+                    <div className="relative">
+                      <img
+                        src={profilePhotoPreview}
+                        alt="Profile preview"
+                        className="w-24 h-24 rounded-full object-cover shadow-neu"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfilePhoto(null)
+                          setProfilePhotoPreview(null)
+                        }}
+                        className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white shadow-neu hover:shadow-neu-hover"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer">
+                      <div className="w-24 h-24 rounded-full bg-neu-base shadow-neu-inset flex items-center justify-center hover:shadow-neu-hover transition-shadow">
+                        <User className="w-10 h-10 text-text-secondary" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePhotoChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                  {!profilePhotoPreview && (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePhotoChange}
+                        className="hidden"
+                        id="profile-photo-input"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        leftIcon={Upload}
+                        onClick={() => document.getElementById('profile-photo-input')?.click()}
+                      >
+                        {t.uploadBtn}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Images Upload */}
+              <div className="pt-4">
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  {t.additionalImagesLabel} <span className="text-text-secondary text-xs">{t.optionalMedia}</span>
+                </label>
+                <p className="text-sm text-text-secondary mb-3">{t.additionalImagesDesc}</p>
+                <div className="space-y-3">
+                  {/* Image previews */}
+                  {additionalImagePreviews.length > 0 && (
+                    <div className="flex flex-wrap gap-3">
+                      {additionalImagePreviews.map((preview, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={preview}
+                            alt={`Image ${idx + 1}`}
+                            className="w-24 h-24 rounded-neu object-cover shadow-neu"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeAdditionalImage(idx)}
+                            className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white shadow-neu hover:shadow-neu-hover"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Upload button */}
+                  {additionalImages.length < 3 && (
+                    <label className="cursor-pointer">
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-neu bg-neu-base shadow-neu hover:shadow-neu-hover transition-shadow">
+                        <ImageIcon className="w-5 h-5 text-text-secondary" />
+                        <span className="text-sm text-text-secondary">
+                          {additionalImages.length === 0
+                            ? t.uploadBtn
+                            : `${t.uploadBtn} (${additionalImages.length}/3)`}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleAdditionalImagesChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
 

@@ -1,0 +1,12 @@
+# Target modern browsers only - no polyfills needed
+# Reduces bundle size by ~11KB
+
+# Last 2 versions of major browsers
+last 2 Chrome versions
+last 2 Firefox versions
+last 2 Safari versions
+last 2 Edge versions
+
+# Or browsers with >1% market share that support ES2020+
+not dead
+not op_mini all

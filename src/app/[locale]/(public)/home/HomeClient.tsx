@@ -27,12 +27,16 @@ export function HomeClient() {
         </p>
 
         {/* Video */}
-        <div className="mb-6 md:mb-8 w-full max-w-2xl mx-auto rounded-neu shadow-neu overflow-hidden">
+        <div className="mb-6 md:mb-8 w-full max-w-2xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video">
           <video
-            className="w-full h-auto"
+            className="w-full h-full object-cover"
+            width={1280}
+            height={720}
             autoPlay
             muted
             playsInline
+            // @ts-expect-error - fetchPriority is valid but not in React types yet
+            fetchPriority="high"
             poster="https://cdn.nebiswera.com/hero-video-poster.jpg"
           >
             <source src="https://cdn.nebiswera.com/hero-video.mp4" type="video/mp4" />

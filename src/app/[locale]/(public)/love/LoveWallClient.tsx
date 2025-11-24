@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Star, Play } from 'lucide-react'
+import { Star } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import Link from 'next/link'
@@ -149,10 +149,18 @@ export function LoveWallClient() {
                 {testimonial.text}
               </p>
 
-              {/* Video Preview */}
+              {/* Video Player */}
               {testimonial.videoUrl && (
-                <div className="mt-4 relative rounded-neu overflow-hidden bg-neu-dark/20 aspect-video flex items-center justify-center cursor-pointer group">
-                  <Play className="w-12 h-12 text-white group-hover:scale-110 transition-transform" />
+                <div className="mt-4 relative rounded-neu overflow-hidden shadow-neu-inset">
+                  <video
+                    src={testimonial.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="w-full aspect-video bg-neu-dark/20"
+                    playsInline
+                  >
+                    Your browser does not support the video tag.
+                  </video>
                 </div>
               )}
 

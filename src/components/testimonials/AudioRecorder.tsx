@@ -45,10 +45,27 @@ export function AudioRecorder({ onRecordingComplete, onUploadAudio, locale }: Au
 
   async function startRecording() {
     try {
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert(locale === 'ka'
+          ? 'თქვენი ბრაუზერი არ უჭერს მხარს აუდიო ჩაწერას'
+          : 'Your browser does not support audio recording')
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm',
-      })
+
+      // Check which mime types are supported
+      let mimeType = 'audio/webm'
+      if (!MediaRecorder.isTypeSupported('audio/webm')) {
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4'
+        } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+          mimeType = 'audio/ogg'
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
 
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
@@ -60,7 +77,7 @@ export function AudioRecorder({ onRecordingComplete, onUploadAudio, locale }: Au
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        const blob = new Blob(chunksRef.current, { type: mimeType })
         setAudioBlob(blob)
         setAudioURL(URL.createObjectURL(blob))
         onRecordingComplete(blob)
@@ -69,9 +86,28 @@ export function AudioRecorder({ onRecordingComplete, onUploadAudio, locale }: Au
 
       mediaRecorder.start()
       setIsRecording(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accessing microphone:', error)
-      alert(locale === 'ka' ? 'მიკროფონზე წვდომა შეზღუდულია' : 'Microphone access denied')
+
+      let message = locale === 'ka'
+        ? 'მიკროფონზე წვდომა შეზღუდულია. გთხოვთ მიეცით ნებართვა ბრაუზერის პარამეტრებში.'
+        : 'Microphone access denied. Please allow microphone permission in your browser settings.'
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        message = locale === 'ka'
+          ? 'მიკროფონზე წვდომა უარყოფილია. გთხოვთ მიეცით ნებართვა.'
+          : 'Microphone permission was denied. Please grant permission and try again.'
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        message = locale === 'ka'
+          ? 'მიკროფონი არ მოიძებნა.'
+          : 'No microphone found on your device.'
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        message = locale === 'ka'
+          ? 'მიკროფონი უკვე გამოიყენება სხვა აპლიკაციის მიერ.'
+          : 'Microphone is already in use by another application.'
+      }
+
+      alert(message)
     }
   }
 

@@ -48,8 +48,20 @@ export function VideoRecorder({ onRecordingComplete, onUploadVideo, locale }: Vi
 
   async function startRecording() {
     try {
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert(locale === 'ka'
+          ? 'თქვენი ბრაუზერი არ უჭერს მხარს ვიდეო ჩაწერას'
+          : 'Your browser does not support video recording')
+        return
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720 },
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user' // Prefer front camera on mobile
+        },
         audio: true,
       })
 
@@ -60,9 +72,19 @@ export function VideoRecorder({ onRecordingComplete, onUploadVideo, locale }: Vi
         previewRef.current.play()
       }
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm',
-      })
+      // Check which mime types are supported
+      let mimeType = 'video/webm'
+      if (!MediaRecorder.isTypeSupported('video/webm')) {
+        if (MediaRecorder.isTypeSupported('video/mp4')) {
+          mimeType = 'video/mp4'
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+          mimeType = 'video/webm;codecs=vp9'
+        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+          mimeType = 'video/webm;codecs=vp8'
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
 
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
@@ -74,7 +96,7 @@ export function VideoRecorder({ onRecordingComplete, onUploadVideo, locale }: Vi
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+        const blob = new Blob(chunksRef.current, { type: mimeType })
         setVideoBlob(blob)
         setVideoURL(URL.createObjectURL(blob))
         onRecordingComplete(blob)
@@ -88,9 +110,32 @@ export function VideoRecorder({ onRecordingComplete, onUploadVideo, locale }: Vi
       mediaRecorder.start()
       setIsRecording(true)
       setShowPreview(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accessing camera:', error)
-      alert(locale === 'ka' ? 'კამერაზე წვდომა შეზღუდულია' : 'Camera access denied')
+
+      let message = locale === 'ka'
+        ? 'კამერაზე წვდომა შეზღუდულია. გთხოვთ მიეცით ნებართვა ბრაუზერის პარამეტრებში.'
+        : 'Camera access denied. Please allow camera permission in your browser settings.'
+
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        message = locale === 'ka'
+          ? 'კამერაზე წვდომა უარყოფილია. გთხოვთ მიეცით ნებართვა.'
+          : 'Camera permission was denied. Please grant permission and try again.'
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        message = locale === 'ka'
+          ? 'კამერა არ მოიძებნა.'
+          : 'No camera found on your device.'
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        message = locale === 'ka'
+          ? 'კამერა უკვე გამოიყენება სხვა აპლიკაციის მიერ.'
+          : 'Camera is already in use by another application.'
+      } else if (error.name === 'OverconstrainedError') {
+        message = locale === 'ka'
+          ? 'თქვენი კამერა არ აკმაყოფილებს მოთხოვნებს.'
+          : 'Your camera does not meet the requirements.'
+      }
+
+      alert(message)
     }
   }
 

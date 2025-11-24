@@ -68,6 +68,29 @@ export function CollectLoveForm() {
     },
   }[locale as 'ka' | 'en']
 
+  async function uploadFile(blob: Blob, type: 'audio' | 'video'): Promise<string | null> {
+    try {
+      const formData = new FormData()
+      const file = new File([blob], `${type}.webm`, { type: blob.type })
+      formData.append('file', file)
+      formData.append('type', type)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.url
+      }
+      return null
+    } catch (error) {
+      console.error(`Error uploading ${type}:`, error)
+      return null
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -79,9 +102,17 @@ export function CollectLoveForm() {
     setLoading(true)
 
     try {
-      // TODO: Upload audio/video files to R2 and get URLs
-      // For now, we just submit the text testimonial
-      // Audio/video support will be added when R2 is configured
+      // Upload audio/video files to R2 if present
+      let audioUrl: string | null = null
+      let videoUrl: string | null = null
+
+      if (audioBlob) {
+        audioUrl = await uploadFile(audioBlob, 'audio')
+      }
+
+      if (videoBlob) {
+        videoUrl = await uploadFile(videoBlob, 'video')
+      }
 
       const res = await fetch('/api/testimonials', {
         method: 'POST',
@@ -90,8 +121,8 @@ export function CollectLoveForm() {
           ...formData,
           locale,
           type: mediaType,
-          // audioUrl: audioBlob ? 'TODO: Upload to R2' : null,
-          // videoUrl: videoBlob ? 'TODO: Upload to R2' : null,
+          audioUrl,
+          videoUrl,
         }),
       })
 

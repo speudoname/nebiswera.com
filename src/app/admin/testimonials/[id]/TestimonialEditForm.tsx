@@ -11,8 +11,6 @@ type Testimonial = {
   id: string
   name: string
   email: string | null
-  role: string | null
-  company: string | null
   text: string
   rating: number
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -80,7 +78,7 @@ export function TestimonialEditForm({ id }: { id: string }) {
       <Button
         variant="ghost"
         size="sm"
-        leftIcon={<ArrowLeft />}
+        leftIcon={ArrowLeft}
         onClick={() => router.back()}
         className="mb-6"
       >
@@ -102,20 +100,6 @@ export function TestimonialEditForm({ id }: { id: string }) {
             type="email"
             value={testimonial.email || ''}
             onChange={(e) => setTestimonial({ ...testimonial, email: e.target.value })}
-          />
-
-          {/* Role */}
-          <Input
-            label="Role"
-            value={testimonial.role || ''}
-            onChange={(e) => setTestimonial({ ...testimonial, role: e.target.value })}
-          />
-
-          {/* Company */}
-          <Input
-            label="Company"
-            value={testimonial.company || ''}
-            onChange={(e) => setTestimonial({ ...testimonial, company: e.target.value })}
           />
 
           {/* Text */}
@@ -231,7 +215,7 @@ export function TestimonialEditForm({ id }: { id: string }) {
           <div className="flex gap-4 pt-4">
             <Button
               variant="primary"
-              leftIcon={<Save />}
+              leftIcon={Save}
               onClick={handleSave}
               loading={saving}
               loadingText="Saving..."

@@ -1,7 +1,6 @@
 // API route for individual testimonial operations (admin only)
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // GET /api/testimonials/[id] - Get single testimonial
@@ -11,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     const testimonial = await prisma.testimonial.findUnique({
       where: { id },
@@ -39,7 +38,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (session?.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -53,8 +52,6 @@ export async function PUT(
       data: {
         name: body.name,
         email: body.email,
-        role: body.role,
-        company: body.company,
         text: body.text,
         rating: body.rating,
         locale: body.locale,
@@ -76,7 +73,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
 
     if (session?.user?.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

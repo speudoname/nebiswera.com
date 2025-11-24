@@ -162,8 +162,6 @@ model Testimonial {
   id           String            @id @default(cuid())
   name         String
   email        String?
-  role         String?
-  company      String?
   text         String            @db.Text
   rating       Int               @default(5)
   submittedAt  DateTime          @default(now())

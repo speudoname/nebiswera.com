@@ -1,13 +1,12 @@
 // API route for testimonials (admin and public)
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 // GET /api/testimonials - List testimonials (admin with all, public with approved only)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     const searchParams = request.nextUrl.searchParams
 
     const page = parseInt(searchParams.get('page') || '1')
@@ -80,8 +79,6 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name,
         email: body.email,
-        role: body.role || null,
-        company: body.company || null,
         text: body.text,
         rating: body.rating || 5,
         locale: body.locale || 'ka',

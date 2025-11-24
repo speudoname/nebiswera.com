@@ -17,8 +17,6 @@ export function CollectLoveForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role: '',
-    company: '',
     text: '',
     rating: 5,
   })
@@ -31,10 +29,6 @@ export function CollectLoveForm() {
       namePlaceholder: 'შენი სახელი',
       emailLabel: 'ელ-ფოსტა',
       emailPlaceholder: 'email@example.com',
-      roleLabel: 'როლი / პოზიცია (არასავალდებულო)',
-      rolePlaceholder: 'მაგ: მენეჯერი, სტუდენტი...',
-      companyLabel: 'კომპანია (არასავალდებულო)',
-      companyPlaceholder: 'სადაც მუშაობ',
       textLabel: 'შენი გამოცდილება',
       textPlaceholder: 'გვიზიარე რა გამოცდილება გქონდა ნებისწერასთან, როგორ შეცვალა შენი ცხოვრება...',
       ratingLabel: 'შეფასება',
@@ -53,10 +47,6 @@ export function CollectLoveForm() {
       namePlaceholder: 'Your name',
       emailLabel: 'Email',
       emailPlaceholder: 'email@example.com',
-      roleLabel: 'Role / Position (optional)',
-      rolePlaceholder: 'e.g: Manager, Student...',
-      companyLabel: 'Company (optional)',
-      companyPlaceholder: 'Where you work',
       textLabel: 'Your Experience',
       textPlaceholder: 'Share your experience with Nebiswera, how it changed your life...',
       ratingLabel: 'Rating',
@@ -153,22 +143,6 @@ export function CollectLoveForm() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-              />
-
-              {/* Role */}
-              <Input
-                label={t.roleLabel}
-                placeholder={t.rolePlaceholder}
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              />
-
-              {/* Company */}
-              <Input
-                label={t.companyLabel}
-                placeholder={t.companyPlaceholder}
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               />
 
               {/* Testimonial Text */}

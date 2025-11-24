@@ -85,10 +85,10 @@ export function TestimonialsTable() {
     }
   }
 
-  const statusColors: Record<TestimonialStatus, 'warning' | 'success' | 'danger'> = {
+  const statusColors: Record<TestimonialStatus, 'warning' | 'success' | 'error'> = {
     PENDING: 'warning',
     APPROVED: 'success',
-    REJECTED: 'danger',
+    REJECTED: 'error',
   }
 
   if (loading) {

@@ -30,8 +30,6 @@ async function main() {
         data: {
           id: t.id,
           name: t.name,
-          role: t.role,
-          company: t.company,
           text: t.text || '',
           rating: t.rating || 5,
           submittedAt: new Date(t.date),

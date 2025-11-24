@@ -10,8 +10,6 @@ import Link from 'next/link'
 type Testimonial = {
   id: string
   name: string
-  role: string | null
-  company: string | null
   text: string
   rating: number
   type: 'TEXT' | 'AUDIO' | 'VIDEO'
@@ -132,12 +130,6 @@ export function LoveWallClient() {
 
                 <div className="flex-1">
                   <h3 className="font-semibold text-text-primary">{testimonial.name}</h3>
-                  {testimonial.role && (
-                    <p className="text-sm text-text-secondary">
-                      {testimonial.role}
-                      {testimonial.company && `, ${testimonial.company}`}
-                    </p>
-                  )}
                   {/* Rating */}
                   <div className="flex gap-0.5 mt-1">
                     {Array.from({ length: testimonial.rating }).map((_, i) => (

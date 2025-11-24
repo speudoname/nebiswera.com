@@ -57,6 +57,7 @@ export async function PUT(
         locale: body.locale,
         status: body.status,
         type: body.type,
+        tags: body.tags || [],
       },
     })
 

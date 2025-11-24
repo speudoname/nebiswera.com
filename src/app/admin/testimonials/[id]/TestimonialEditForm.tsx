@@ -22,6 +22,7 @@ type Testimonial = {
   videoUrl: string | null
   submittedAt: string
   source: string | null
+  tags: string[]
 }
 
 export function TestimonialEditForm({ id }: { id: string }) {
@@ -29,6 +30,7 @@ export function TestimonialEditForm({ id }: { id: string }) {
   const [testimonial, setTestimonial] = useState<Testimonial | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [tagInput, setTagInput] = useState('')
 
   useEffect(() => {
     fetchTestimonial()
@@ -176,6 +178,85 @@ export function TestimonialEditForm({ id }: { id: string }) {
               <option value="ka">Georgian (ქართული)</option>
               <option value="en">English</option>
             </select>
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
+              Tags
+            </label>
+            <div className="space-y-2">
+              {/* Tag input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && tagInput.trim()) {
+                      e.preventDefault()
+                      if (!testimonial.tags.includes(tagInput.trim())) {
+                        setTestimonial({ ...testimonial, tags: [...testimonial.tags, tagInput.trim()] })
+                      }
+                      setTagInput('')
+                    }
+                  }}
+                  placeholder="Type tag and press Enter"
+                  className="flex-1 px-4 py-2 rounded-neu bg-neu-base shadow-neu-inset text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (tagInput.trim() && !testimonial.tags.includes(tagInput.trim())) {
+                      setTestimonial({ ...testimonial, tags: [...testimonial.tags, tagInput.trim()] })
+                      setTagInput('')
+                    }
+                  }}
+                  className="px-4 py-2 bg-primary-500 text-white rounded-neu shadow-neu hover:shadow-neu-hover text-sm"
+                >
+                  Add
+                </button>
+              </div>
+              {/* Tag list */}
+              <div className="flex flex-wrap gap-2">
+                {testimonial.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-2 px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTestimonial({ ...testimonial, tags: testimonial.tags.filter((_, i) => i !== index) })
+                      }}
+                      className="hover:text-primary-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              {/* Common tags suggestions */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <span className="text-xs text-text-secondary">Quick tags:</span>
+                {['nebiswera-participant', 'featured', 'video-testimonial', 'homepage'].map((suggestedTag) => (
+                  <button
+                    key={suggestedTag}
+                    type="button"
+                    onClick={() => {
+                      if (!testimonial.tags.includes(suggestedTag)) {
+                        setTestimonial({ ...testimonial, tags: [...testimonial.tags, suggestedTag] })
+                      }
+                    }}
+                    className="px-2 py-1 bg-neu-base text-text-secondary rounded text-xs shadow-neu-sm hover:shadow-neu"
+                    disabled={testimonial.tags.includes(suggestedTag)}
+                  >
+                    + {suggestedTag}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Media Preview */}

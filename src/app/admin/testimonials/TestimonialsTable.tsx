@@ -20,6 +20,7 @@ type Testimonial = {
   locale: string
   submittedAt: string
   source: string | null
+  tags: string[]
 }
 
 export function TestimonialsTable() {
@@ -30,10 +31,30 @@ export function TestimonialsTable() {
   const [total, setTotal] = useState(0)
   const [statusFilter, setStatusFilter] = useState<TestimonialStatus | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TestimonialType | 'ALL'>('ALL')
+  const [tagFilter, setTagFilter] = useState<string>('ALL')
+  const [availableTags, setAvailableTags] = useState<string[]>([])
 
   useEffect(() => {
     fetchTestimonials()
-  }, [page, statusFilter, typeFilter])
+  }, [page, statusFilter, typeFilter, tagFilter])
+
+  useEffect(() => {
+    // Fetch available tags from all testimonials
+    async function fetchTags() {
+      try {
+        const res = await fetch('/api/testimonials?limit=1000')
+        const data = await res.json()
+        const allTags = new Set<string>()
+        data.testimonials.forEach((t: Testimonial) => {
+          t.tags.forEach(tag => allTags.add(tag))
+        })
+        setAvailableTags(Array.from(allTags).sort())
+      } catch (error) {
+        console.error('Error fetching tags:', error)
+      }
+    }
+    fetchTags()
+  }, [])
 
   async function fetchTestimonials() {
     setLoading(true)
@@ -44,6 +65,7 @@ export function TestimonialsTable() {
       })
       if (statusFilter !== 'ALL') params.set('status', statusFilter)
       if (typeFilter !== 'ALL') params.set('type', typeFilter)
+      if (tagFilter !== 'ALL') params.set('tags', tagFilter)
 
       const res = await fetch(`/api/testimonials?${params}`)
       const data = await res.json()
@@ -98,7 +120,7 @@ export function TestimonialsTable() {
   return (
     <div>
       {/* Filters */}
-      <div className="mb-6 flex gap-4 items-center">
+      <div className="mb-6 flex gap-4 items-center flex-wrap">
         <div className="flex gap-2 items-center">
           <Filter className="w-4 h-4 text-text-secondary" />
           <span className="text-sm text-text-secondary">Status:</span>
@@ -128,6 +150,20 @@ export function TestimonialsTable() {
           </select>
         </div>
 
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-text-secondary">Tag:</span>
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="px-3 py-2 rounded-neu bg-neu-base shadow-neu-inset text-sm"
+          >
+            <option value="ALL">All</option>
+            {availableTags.map(tag => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="ml-auto text-sm text-text-secondary">
           Total: {total} testimonials
         </div>
@@ -141,6 +177,7 @@ export function TestimonialsTable() {
               <tr className="border-b border-neu-dark">
                 <th className="text-left py-4 px-4 font-semibold text-text-primary">Name</th>
                 <th className="text-left py-4 px-4 font-semibold text-text-primary">Text</th>
+                <th className="text-left py-4 px-4 font-semibold text-text-primary">Tags</th>
                 <th className="text-left py-4 px-4 font-semibold text-text-primary">Type</th>
                 <th className="text-left py-4 px-4 font-semibold text-text-primary">Status</th>
                 <th className="text-left py-4 px-4 font-semibold text-text-primary">Date</th>
@@ -156,6 +193,16 @@ export function TestimonialsTable() {
                   </td>
                   <td className="py-4 px-4 max-w-md">
                     <div className="text-sm text-text-secondary truncate">{t.text}</div>
+                  </td>
+                  <td className="py-4 px-4">
+                    <div className="flex flex-wrap gap-1">
+                      {t.tags.map((tag, idx) => (
+                        <span key={idx} className="inline-block px-2 py-1 bg-primary-100 text-primary-700 rounded text-xs">
+                          {tag}
+                        </span>
+                      ))}
+                      {t.tags.length === 0 && <span className="text-xs text-text-secondary">-</span>}
+                    </div>
                   </td>
                   <td className="py-4 px-4">
                     <Badge variant="default" size="sm">{t.type}</Badge>

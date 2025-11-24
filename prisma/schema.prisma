@@ -177,6 +177,7 @@ model Testimonial {
   status       TestimonialStatus @default(PENDING)
   type         TestimonialType   @default(TEXT)
   source       String?           // "shapo_import" or "website_form"
+  tags         String[]          @default([]) // Admin tags for filtering/organizing
 
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt

@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') as 'PENDING' | 'APPROVED' | 'REJECTED' | null
     const type = searchParams.get('type') as 'TEXT' | 'AUDIO' | 'VIDEO' | null
     const search = searchParams.get('search') || ''
+    const tags = searchParams.get('tags') || ''
 
     const isAdmin = session?.user?.role === 'ADMIN'
 
@@ -28,6 +29,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (type) where.type = type
+
+    // Filter by tags (array contains)
+    if (tags) {
+      where.tags = {
+        has: tags
+      }
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },

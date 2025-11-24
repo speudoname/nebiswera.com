@@ -119,22 +119,17 @@ export function Step2ProfilePhoto({
             {t('takePhoto')}
           </Button>
 
-          <label>
+          <label className="block">
             <input
               type="file"
               accept="image/*"
               onChange={handleFileUpload}
               className="hidden"
             />
-            <Button
-              as="span"
-              variant="secondary"
-              size="lg"
-              fullWidth
-            >
-              <Upload className="w-5 h-5 mr-2" />
+            <span className="inline-flex w-full items-center justify-center whitespace-nowrap font-medium rounded-neu transition-all duration-200 px-8 py-4 text-base gap-2 bg-neu-base text-text-primary shadow-neu hover:shadow-neu-hover hover:bg-neu-light active:shadow-neu-pressed cursor-pointer">
+              <Upload className="w-5 h-5" />
               {t('uploadPhoto')}
-            </Button>
+            </span>
           </label>
 
           <Button

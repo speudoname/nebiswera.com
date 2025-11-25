@@ -20,12 +20,17 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    // Non-admin users only see approved
-    if (!isAdmin) {
-      where.status = 'APPROVED'
+    // Default: only show APPROVED testimonials
+    // Admins can explicitly filter by status, or pass status="" to see all
+    if (status !== null && isAdmin) {
+      // Admin explicitly filtering by status
+      if (status) {
+        where.status = status
+      }
+      // If status is "", don't set filter (show all)
     } else {
-      // Admin can filter by status
-      if (status) where.status = status
+      // No status param, or non-admin: show APPROVED only
+      where.status = 'APPROVED'
     }
 
     if (type) where.type = type

@@ -11,13 +11,17 @@ export async function GET(request: NextRequest) {
   try {
     const settings = await getSettings()
 
-    // Mask the token for security (show only last 4 chars)
+    // Mask tokens for security (show only last 4 chars)
     const maskedSettings = {
       ...settings,
       postmarkServerToken: settings.postmarkServerToken
         ? `****${settings.postmarkServerToken.slice(-4)}`
         : null,
       hasPostmarkToken: !!settings.postmarkServerToken,
+      marketingServerToken: settings.marketingServerToken
+        ? `****${settings.marketingServerToken.slice(-4)}`
+        : null,
+      hasMarketingToken: !!settings.marketingServerToken,
     }
 
     return NextResponse.json(maskedSettings)
@@ -37,11 +41,22 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { postmarkServerToken, postmarkStreamName, emailFromAddress, emailFromName } = body
+    const {
+      // Transactional settings
+      postmarkServerToken,
+      postmarkStreamName,
+      emailFromAddress,
+      emailFromName,
+      // Marketing settings
+      marketingServerToken,
+      marketingStreamName,
+      marketingFromAddress,
+      marketingFromName,
+    } = body
 
     const updateData: Record<string, string> = {}
 
-    // Only update token if provided and not the masked version
+    // Transactional settings - only update token if provided and not masked
     if (postmarkServerToken && !postmarkServerToken.startsWith('****')) {
       updateData.postmarkServerToken = postmarkServerToken
     }
@@ -58,15 +73,36 @@ export async function PATCH(request: NextRequest) {
       updateData.emailFromName = emailFromName
     }
 
+    // Marketing settings - only update token if provided and not masked
+    if (marketingServerToken && !marketingServerToken.startsWith('****')) {
+      updateData.marketingServerToken = marketingServerToken
+    }
+
+    if (marketingStreamName !== undefined) {
+      updateData.marketingStreamName = marketingStreamName
+    }
+
+    if (marketingFromAddress !== undefined) {
+      updateData.marketingFromAddress = marketingFromAddress
+    }
+
+    if (marketingFromName !== undefined) {
+      updateData.marketingFromName = marketingFromName
+    }
+
     const settings = await updateSettings(updateData)
 
-    // Mask the token for response
+    // Mask tokens for response
     const maskedSettings = {
       ...settings,
       postmarkServerToken: settings.postmarkServerToken
         ? `****${settings.postmarkServerToken.slice(-4)}`
         : null,
       hasPostmarkToken: !!settings.postmarkServerToken,
+      marketingServerToken: settings.marketingServerToken
+        ? `****${settings.marketingServerToken.slice(-4)}`
+        : null,
+      hasMarketingToken: !!settings.marketingServerToken,
     }
 
     return NextResponse.json(maskedSettings)

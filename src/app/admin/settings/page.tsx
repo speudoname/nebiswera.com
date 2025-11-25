@@ -2,14 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Input, Badge } from '@/components/ui'
-import { Mail, User, Link, Loader2 } from 'lucide-react'
+import { Mail, User, Link, Loader2, Megaphone } from 'lucide-react'
 
 interface Settings {
+  // Transactional
   postmarkServerToken: string | null
   postmarkStreamName: string
   emailFromAddress: string | null
   emailFromName: string
   hasPostmarkToken: boolean
+  // Marketing
+  marketingServerToken: string | null
+  marketingStreamName: string
+  marketingFromAddress: string | null
+  marketingFromName: string
+  hasMarketingToken: boolean
 }
 
 export default function SettingsPage() {
@@ -18,10 +25,16 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [formData, setFormData] = useState({
+    // Transactional
     postmarkServerToken: '',
     postmarkStreamName: 'outbound',
     emailFromAddress: '',
     emailFromName: 'Nebiswera',
+    // Marketing
+    marketingServerToken: '',
+    marketingStreamName: 'broadcast',
+    marketingFromAddress: '',
+    marketingFromName: 'ლევან ბახია (წერილები)',
   })
 
   useEffect(() => {
@@ -34,10 +47,16 @@ export default function SettingsPage() {
       const data = await res.json()
       setSettings(data)
       setFormData({
+        // Transactional
         postmarkServerToken: data.postmarkServerToken || '',
         postmarkStreamName: data.postmarkStreamName || 'outbound',
         emailFromAddress: data.emailFromAddress || '',
         emailFromName: data.emailFromName || 'Nebiswera',
+        // Marketing
+        marketingServerToken: data.marketingServerToken || '',
+        marketingStreamName: data.marketingStreamName || 'broadcast',
+        marketingFromAddress: data.marketingFromAddress || '',
+        marketingFromName: data.marketingFromName || 'ლევან ბახია (წერილები)',
       })
     } catch (error) {
       console.error('Failed to fetch settings:', error)
@@ -64,6 +83,7 @@ export default function SettingsPage() {
         setFormData({
           ...formData,
           postmarkServerToken: data.postmarkServerToken || '',
+          marketingServerToken: data.marketingServerToken || '',
         })
         setMessage({ type: 'success', text: 'Settings saved successfully!' })
       } else {
@@ -105,15 +125,15 @@ export default function SettingsPage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        {/* Postmark Settings */}
+        {/* Transactional Postmark Settings */}
         <div className="bg-neu-light rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
             <h3 className="no-margin flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary-600" />
-              Postmark Email Settings
+              Transactional Email Settings
             </h3>
             <p className="text-body-sm text-muted mt-1 no-margin">
-              Configure your Postmark server for sending transactional emails.
+              Configure Postmark server for sending transactional emails (verification, password reset).
             </p>
           </div>
           <div className="px-6 py-4 space-y-4">
@@ -153,24 +173,20 @@ export default function SettingsPage() {
                 className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
               >
                 <option value="outbound">outbound (Transactional)</option>
-                <option value="broadcast">broadcast (Marketing)</option>
               </select>
-              <p className="text-caption text-muted mt-1 no-margin">
-                Use &quot;outbound&quot; for transactional emails like verification and password reset
-              </p>
             </div>
           </div>
         </div>
 
-        {/* From Email Settings */}
+        {/* Transactional Sender Information */}
         <div className="bg-neu-light rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
             <h3 className="no-margin flex items-center gap-2">
               <User className="h-5 w-5 text-primary-600" />
-              Sender Information
+              Transactional Sender Information
             </h3>
             <p className="text-body-sm text-muted mt-1 no-margin">
-              Configure the &quot;From&quot; address and name for outgoing emails.
+              Configure the &quot;From&quot; address and name for transactional emails.
             </p>
           </div>
           <div className="px-6 py-4 space-y-4">
@@ -199,6 +215,96 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Marketing Postmark Settings */}
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h3 className="no-margin flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-primary-600" />
+              Marketing Email Settings
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
+              Configure separate Postmark server for marketing campaigns (newsletters, broadcasts).
+            </p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div>
+              <label htmlFor="marketingServerToken" className="block text-body-sm font-medium text-secondary mb-1">
+                Marketing Server API Token
+              </label>
+              <div className="relative">
+                <input
+                  id="marketingServerToken"
+                  name="marketingServerToken"
+                  type="password"
+                  placeholder={settings?.hasMarketingToken ? 'Token is set (enter new value to change)' : 'Enter your Marketing server token'}
+                  value={formData.marketingServerToken}
+                  onChange={(e) => setFormData({ ...formData, marketingServerToken: e.target.value })}
+                  className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                />
+                {settings?.hasMarketingToken && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Badge variant="success">Configured</Badge>
+                  </div>
+                )}
+              </div>
+              <p className="text-caption text-muted mt-1 no-margin">
+                Use a separate Postmark server for marketing to protect domain reputation
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="marketingStreamName" className="block text-body-sm font-medium text-secondary mb-1">
+                Message Stream
+              </label>
+              <select
+                id="marketingStreamName"
+                value={formData.marketingStreamName}
+                onChange={(e) => setFormData({ ...formData, marketingStreamName: e.target.value })}
+                className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+              >
+                <option value="broadcast">broadcast (Marketing)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Marketing Sender Information */}
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h3 className="no-margin flex items-center gap-2">
+              <User className="h-5 w-5 text-primary-600" />
+              Marketing Sender Information
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
+              Configure the &quot;From&quot; address and name for marketing emails.
+            </p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <Input
+              id="marketingFromAddress"
+              name="marketingFromAddress"
+              type="email"
+              label="From Email Address"
+              placeholder="levan@nbswera.com"
+              value={formData.marketingFromAddress}
+              onChange={(e) => setFormData({ ...formData, marketingFromAddress: e.target.value })}
+            />
+            <p className="text-caption text-muted -mt-2 no-margin">
+              Uses separate domain (nbswera.com) for marketing reputation
+            </p>
+
+            <Input
+              id="marketingFromName"
+              name="marketingFromName"
+              type="text"
+              label="From Name"
+              placeholder="ლევან ბახია (წერილები)"
+              value={formData.marketingFromName}
+              onChange={(e) => setFormData({ ...formData, marketingFromName: e.target.value })}
+            />
+          </div>
+        </div>
+
         {/* Webhook Info (Read Only) */}
         <div className="bg-neu-light rounded-neu shadow-neu mb-6">
           <div className="px-6 py-4 border-b border-neu-dark">
@@ -207,17 +313,35 @@ export default function SettingsPage() {
               Webhook Configuration
             </h3>
             <p className="text-body-sm text-muted mt-1 no-margin">
-              Webhook is automatically configured to track email delivery status.
+              Webhooks are configured to track email delivery status.
             </p>
           </div>
-          <div className="px-6 py-4">
+          <div className="px-6 py-4 space-y-4">
+            {/* Transactional Webhook */}
             <div className="bg-neu-light rounded-neu p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-body-sm font-medium text-secondary">Webhook URL</span>
+                <span className="text-body-sm font-medium text-secondary">Transactional Webhook URL</span>
                 <Badge variant="success">Active</Badge>
               </div>
               <code className="text-body-sm text-secondary bg-neu-base px-2 py-1 rounded-neu block break-all">
                 https://nebiswera.com/api/webhooks/postmark
+              </code>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant="info">Delivery</Badge>
+                <Badge variant="info">Bounce</Badge>
+                <Badge variant="info">Open</Badge>
+                <Badge variant="info">Spam Complaint</Badge>
+              </div>
+            </div>
+
+            {/* Marketing Webhook */}
+            <div className="bg-neu-light rounded-neu p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-body-sm font-medium text-secondary">Marketing Webhook URL</span>
+                <Badge variant="success">Active</Badge>
+              </div>
+              <code className="text-body-sm text-secondary bg-neu-base px-2 py-1 rounded-neu block break-all">
+                https://nebiswera.com/api/webhooks/postmark-marketing
               </code>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge variant="info">Delivery</Badge>

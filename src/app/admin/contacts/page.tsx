@@ -10,7 +10,6 @@ import {
   Plus,
   Upload,
   Download,
-  Tag,
   Trash2,
   Tags,
   Archive,
@@ -20,6 +19,7 @@ import {
   Save,
   X,
   Filter,
+  Settings,
 } from 'lucide-react'
 
 interface Tag {
@@ -83,11 +83,15 @@ export default function ContactsPage() {
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [selectAllMatching, setSelectAllMatching] = useState(false)
   const [bulkModalOpen, setBulkModalOpen] = useState(false)
   const [bulkAction, setBulkAction] = useState<BulkAction | null>(null)
   const [bulkTags, setBulkTags] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState<Contact['status']>('ACTIVE')
   const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkNewTags, setBulkNewTags] = useState<{ name: string; color: string }[]>([])
+  const [bulkNewTagInput, setBulkNewTagInput] = useState('')
+  const [bulkNewTagColor, setBulkNewTagColor] = useState('#8B5CF6')
 
   // Segment state
   const [saveSegmentOpen, setSaveSegmentOpen] = useState(false)
@@ -150,7 +154,8 @@ export default function ContactsPage() {
   // Clear selection when filters change
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [search, status, source, selectedTag, pagination.page])
+    setSelectAllMatching(false)
+  }, [search, status, source, selectedTag, pagination.page, pagination.limit])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -200,13 +205,33 @@ export default function ContactsPage() {
 
     setBulkLoading(true)
     try {
+      // If adding tags and there are new tags to create, create them first
+      let allTagIds = [...bulkTags]
+      if (bulkAction === 'addTags' && bulkNewTags.length > 0) {
+        for (const newTag of bulkNewTags) {
+          const createRes = await fetch('/api/admin/contacts/tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newTag),
+          })
+          if (createRes.ok) {
+            const createdTag = await createRes.json()
+            allTagIds.push(createdTag.id)
+          }
+        }
+        // Refresh tags list
+        fetchTags()
+      }
+
       const res = await fetch('/api/admin/contacts/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contactIds: Array.from(selectedIds),
+          contactIds: selectAllMatching ? undefined : Array.from(selectedIds),
+          selectAllMatching,
+          filters: selectAllMatching ? { search, status, source, tagId: selectedTag } : undefined,
           action: bulkAction,
-          tagIds: bulkTags,
+          tagIds: allTagIds,
           status: bulkStatus,
         }),
       })
@@ -215,7 +240,10 @@ export default function ContactsPage() {
         setBulkModalOpen(false)
         setBulkAction(null)
         setBulkTags([])
+        setBulkNewTags([])
+        setBulkNewTagInput('')
         setSelectedIds(new Set())
+        setSelectAllMatching(false)
         fetchContacts()
       } else {
         const data = await res.json()
@@ -305,10 +333,10 @@ export default function ContactsPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="no-margin">Contacts</h1>
         <div className="flex gap-2">
-          <Link href="/admin/contacts/tags">
+          <Link href="/admin/contacts/manage">
             <Button variant="secondary">
-              <Tag className="w-4 h-4 mr-2" />
-              Manage Tags
+              <Settings className="w-4 h-4 mr-2" />
+              Manage
             </Button>
           </Link>
           <Link href="/admin/contacts/import">
@@ -436,9 +464,30 @@ export default function ContactsPage() {
       {/* Bulk Actions Bar */}
       {selectedIds.size > 0 && (
         <div className="mb-4 p-3 bg-primary-50 rounded-neu flex items-center justify-between">
-          <span className="text-sm text-primary-700">
-            {selectedIds.size} contact{selectedIds.size !== 1 ? 's' : ''} selected
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-primary-700">
+              {selectAllMatching
+                ? `All ${pagination.total} matching contacts selected`
+                : `${selectedIds.size} contact${selectedIds.size !== 1 ? 's' : ''} selected`}
+            </span>
+            {/* Show option to select all matching when all visible are selected */}
+            {selectedIds.size === contacts.length && pagination.total > contacts.length && !selectAllMatching && (
+              <button
+                onClick={() => setSelectAllMatching(true)}
+                className="text-sm text-primary-600 underline hover:text-primary-700"
+              >
+                Select all {pagination.total} matching contacts
+              </button>
+            )}
+            {selectAllMatching && (
+              <button
+                onClick={() => setSelectAllMatching(false)}
+                className="text-sm text-primary-600 underline hover:text-primary-700"
+              >
+                Select only this page
+              </button>
+            )}
+          </div>
           <div className="flex gap-2">
             <Button
               variant="secondary"
@@ -545,28 +594,48 @@ export default function ContactsPage() {
         </table>
 
         {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="bg-neu-light px-4 py-3 flex items-center justify-between border-t border-neu-dark">
-            <div className="flex-1 flex items-center justify-between">
-              <p className="text-body-sm text-secondary no-margin">
-                Showing{' '}
-                <span className="font-medium">
-                  {(pagination.page - 1) * pagination.limit + 1}
-                </span>{' '}
-                to{' '}
-                <span className="font-medium">
-                  {Math.min(pagination.page * pagination.limit, pagination.total)}
-                </span>{' '}
-                of <span className="font-medium">{pagination.total}</span> results
-              </p>
-              <Pagination
-                page={pagination.page}
-                totalPages={pagination.totalPages}
-                onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
-              />
+        <div className="bg-neu-light px-4 py-3 flex items-center justify-between border-t border-neu-dark">
+          <div className="flex items-center gap-4">
+            <p className="text-body-sm text-secondary no-margin">
+              Showing{' '}
+              <span className="font-medium">
+                {pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1}
+              </span>{' '}
+              to{' '}
+              <span className="font-medium">
+                {Math.min(pagination.page * pagination.limit, pagination.total)}
+              </span>{' '}
+              of <span className="font-medium">{pagination.total}</span> results
+            </p>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-text-muted">Per page:</label>
+              <select
+                value={pagination.limit}
+                onChange={(e) => {
+                  const newLimit = Number(e.target.value)
+                  setPagination((prev) => ({
+                    ...prev,
+                    limit: newLimit,
+                    page: 1, // Reset to first page when changing limit
+                  }))
+                }}
+                className="rounded-neu border-2 border-transparent bg-neu-base px-2 py-1 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
             </div>
           </div>
-        )}
+          {pagination.totalPages > 1 && (
+            <Pagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              onPageChange={(page) => setPagination((prev) => ({ ...prev, page }))}
+            />
+          )}
+        </div>
       </div>
 
       {/* Create Modal */}
@@ -614,6 +683,8 @@ export default function ContactsPage() {
           setBulkModalOpen(false)
           setBulkAction(null)
           setBulkTags([])
+          setBulkNewTags([])
+          setBulkNewTagInput('')
         }}
         title={
           bulkAction === 'addTags'
@@ -630,6 +701,7 @@ export default function ContactsPage() {
             <p className="text-sm text-text-muted">
               {bulkAction === 'addTags' ? 'Select tags to add:' : 'Select tags to remove:'}
             </p>
+            {/* Existing tags */}
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
                 <button
@@ -657,6 +729,91 @@ export default function ContactsPage() {
                 </button>
               ))}
             </div>
+
+            {/* Create new tag - only for addTags */}
+            {bulkAction === 'addTags' && (
+              <>
+                {/* New tags to be created */}
+                {bulkNewTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {bulkNewTags.map((tag) => (
+                      <span
+                        key={tag.name}
+                        className="px-3 py-1 rounded-full text-sm flex items-center gap-1"
+                        style={{
+                          backgroundColor: `${tag.color}20`,
+                          color: tag.color,
+                        }}
+                      >
+                        {tag.name}
+                        <button
+                          type="button"
+                          onClick={() => setBulkNewTags(bulkNewTags.filter((t) => t.name !== tag.name))}
+                          className="hover:opacity-70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new tag input */}
+                <div className="pt-2 border-t border-neu-dark">
+                  <p className="text-xs text-text-muted mb-2">Or create a new tag:</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={bulkNewTagColor}
+                      onChange={(e) => setBulkNewTagColor(e.target.value)}
+                      className="w-9 h-9 rounded-neu border-0 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={bulkNewTagInput}
+                      onChange={(e) => setBulkNewTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && bulkNewTagInput.trim()) {
+                          e.preventDefault()
+                          const exists = tags.some(
+                            (t) => t.name.toLowerCase() === bulkNewTagInput.trim().toLowerCase()
+                          )
+                          const existsInNew = bulkNewTags.some(
+                            (t) => t.name.toLowerCase() === bulkNewTagInput.trim().toLowerCase()
+                          )
+                          if (!exists && !existsInNew) {
+                            setBulkNewTags([...bulkNewTags, { name: bulkNewTagInput.trim(), color: bulkNewTagColor }])
+                          }
+                          setBulkNewTagInput('')
+                        }
+                      }}
+                      placeholder="New tag name..."
+                      className="flex-1 rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        if (bulkNewTagInput.trim()) {
+                          const exists = tags.some(
+                            (t) => t.name.toLowerCase() === bulkNewTagInput.trim().toLowerCase()
+                          )
+                          const existsInNew = bulkNewTags.some(
+                            (t) => t.name.toLowerCase() === bulkNewTagInput.trim().toLowerCase()
+                          )
+                          if (!exists && !existsInNew) {
+                            setBulkNewTags([...bulkNewTags, { name: bulkNewTagInput.trim(), color: bulkNewTagColor }])
+                          }
+                          setBulkNewTagInput('')
+                        }
+                      }}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -696,6 +853,8 @@ export default function ContactsPage() {
               setBulkModalOpen(false)
               setBulkAction(null)
               setBulkTags([])
+              setBulkNewTags([])
+              setBulkNewTagInput('')
             }}
           >
             Cancel
@@ -706,7 +865,8 @@ export default function ContactsPage() {
             onClick={handleBulkAction}
             loading={bulkLoading}
             disabled={
-              (bulkAction === 'addTags' || bulkAction === 'removeTags') && bulkTags.length === 0
+              (bulkAction === 'addTags' && bulkTags.length === 0 && bulkNewTags.length === 0) ||
+              (bulkAction === 'removeTags' && bulkTags.length === 0)
             }
           >
             {bulkAction === 'delete'

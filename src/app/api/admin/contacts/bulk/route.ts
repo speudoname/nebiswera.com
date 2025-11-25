@@ -3,13 +3,52 @@ import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { logTagsAdded, logTagsRemoved, logStatusChanged } from '@/lib/contact-activity'
 import type { NextRequest } from 'next/server'
-import type { ContactStatus } from '@prisma/client'
+import type { ContactStatus, Prisma } from '@prisma/client'
+
+interface BulkFilters {
+  search?: string
+  status?: string
+  source?: string
+  tagId?: string
+}
 
 interface BulkOperation {
-  contactIds: string[]
+  contactIds?: string[]
+  selectAllMatching?: boolean
+  filters?: BulkFilters
   action: 'addTags' | 'removeTags' | 'changeStatus' | 'delete'
   tagIds?: string[]
   status?: ContactStatus
+}
+
+// Build where clause from filters (same logic as contacts GET)
+function buildWhereClause(filters: BulkFilters): Prisma.ContactWhereInput {
+  const where: Prisma.ContactWhereInput = {}
+
+  if (filters.search) {
+    where.OR = [
+      { email: { contains: filters.search, mode: 'insensitive' } },
+      { firstName: { contains: filters.search, mode: 'insensitive' } },
+      { lastName: { contains: filters.search, mode: 'insensitive' } },
+      { phone: { contains: filters.search, mode: 'insensitive' } },
+    ]
+  }
+
+  if (filters.status && filters.status !== 'all') {
+    where.status = filters.status as ContactStatus
+  }
+
+  if (filters.source && filters.source !== 'all') {
+    where.source = filters.source
+  }
+
+  if (filters.tagId) {
+    where.tags = {
+      some: { tagId: filters.tagId },
+    }
+  }
+
+  return where
 }
 
 export async function POST(request: NextRequest) {
@@ -20,9 +59,24 @@ export async function POST(request: NextRequest) {
   try {
     const token = await getAuthToken(request)
     const body = await request.json() as BulkOperation
-    const { contactIds, action, tagIds, status } = body
+    const { contactIds: providedIds, selectAllMatching, filters, action, tagIds, status } = body
 
-    if (!contactIds || !Array.isArray(contactIds) || contactIds.length === 0) {
+    // Determine contact IDs to operate on
+    let contactIds: string[] = []
+
+    if (selectAllMatching && filters) {
+      // Fetch all matching contact IDs based on filters
+      const where = buildWhereClause(filters)
+      const matchingContacts = await prisma.contact.findMany({
+        where,
+        select: { id: true },
+      })
+      contactIds = matchingContacts.map(c => c.id)
+    } else if (providedIds && Array.isArray(providedIds)) {
+      contactIds = providedIds
+    }
+
+    if (contactIds.length === 0) {
       return NextResponse.json(
         { error: 'No contacts selected' },
         { status: 400 }

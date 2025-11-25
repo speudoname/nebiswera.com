@@ -3,10 +3,16 @@ import { prisma } from '@/lib/db'
 const SETTINGS_ID = 'app_settings'
 
 export interface AppSettings {
+  // Transactional email settings
   postmarkServerToken: string | null
   postmarkStreamName: string
   emailFromAddress: string | null
   emailFromName: string
+  // Marketing email settings
+  marketingServerToken: string | null
+  marketingStreamName: string
+  marketingFromAddress: string | null
+  marketingFromName: string
 }
 
 export async function getSettings(): Promise<AppSettings> {
@@ -31,6 +37,10 @@ export async function getSettings(): Promise<AppSettings> {
     postmarkStreamName: settings.postmarkStreamName,
     emailFromAddress: settings.emailFromAddress,
     emailFromName: settings.emailFromName,
+    marketingServerToken: settings.marketingServerToken,
+    marketingStreamName: settings.marketingStreamName,
+    marketingFromAddress: settings.marketingFromAddress,
+    marketingFromName: settings.marketingFromName,
   }
 }
 
@@ -49,5 +59,9 @@ export async function updateSettings(data: Partial<AppSettings>): Promise<AppSet
     postmarkStreamName: settings.postmarkStreamName,
     emailFromAddress: settings.emailFromAddress,
     emailFromName: settings.emailFromName,
+    marketingServerToken: settings.marketingServerToken,
+    marketingStreamName: settings.marketingStreamName,
+    marketingFromAddress: settings.marketingFromAddress,
+    marketingFromName: settings.marketingFromName,
   }
 }

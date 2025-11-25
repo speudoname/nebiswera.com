@@ -107,9 +107,22 @@ enum TokenType {
 }
 
 enum EmailType {
+  // Transactional types
   VERIFICATION
   PASSWORD_RESET
   WELCOME
+  // Marketing types
+  CAMPAIGN
+  NEWSLETTER
+  BROADCAST
+  ANNOUNCEMENT
+
+  @@schema("public")
+}
+
+enum EmailCategory {
+  TRANSACTIONAL
+  MARKETING
 
   @@schema("public")
 }
@@ -129,14 +142,15 @@ enum EmailStatus {
 // ===========================================
 
 model EmailLog {
-  id          String      @id @default(cuid())
-  messageId   String      @unique
+  id          String        @id @default(cuid())
+  messageId   String        @unique
   to          String
   subject     String
   type        EmailType
-  status      EmailStatus @default(SENT)
-  locale      String      @default("en")
-  sentAt      DateTime    @default(now())
+  category    EmailCategory @default(TRANSACTIONAL)
+  status      EmailStatus   @default(SENT)
+  locale      String        @default("en")
+  sentAt      DateTime      @default(now())
   deliveredAt DateTime?
   openedAt    DateTime?
   bouncedAt   DateTime?
@@ -145,6 +159,7 @@ model EmailLog {
 
   @@index([status])
   @@index([type])
+  @@index([category])
   @@index([sentAt])
   @@index([to])
   @@schema("public")
@@ -158,11 +173,17 @@ model EmailLog {
 model Settings {
   id        String   @id @default("app_settings")
 
-  // Postmark Configuration
+  // Transactional Postmark Configuration
   postmarkServerToken String?
   postmarkStreamName  String   @default("outbound")
   emailFromAddress    String?
   emailFromName       String   @default("Nebiswera")
+
+  // Marketing Postmark Configuration (separate server)
+  marketingServerToken String?
+  marketingStreamName  String   @default("broadcast")
+  marketingFromAddress String?
+  marketingFromName    String   @default("ლევან ბახია (წერილები)")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

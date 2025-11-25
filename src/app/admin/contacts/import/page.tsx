@@ -105,6 +105,16 @@ export default function ImportPage() {
   const [newTagInput, setNewTagInput] = useState('')
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0])
 
+  // Import progress state
+  const [importProgress, setImportProgress] = useState({
+    processed: 0,
+    total: 0,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    failed: 0,
+  })
+
   // Fetch available tags
   useEffect(() => {
     fetch('/api/admin/contacts/tags')
@@ -239,45 +249,98 @@ export default function ImportPage() {
     setStep('importing')
     setError('')
 
+    const contacts = validationResult.valid
+    const BATCH_SIZE = 100
+    const totalBatches = Math.ceil(contacts.length / BATCH_SIZE)
+
+    // Initialize progress
+    setImportProgress({
+      processed: 0,
+      total: contacts.length,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+      failed: 0,
+    })
+
+    const allErrors: { row: number; email: string; error: string }[] = [
+      ...validationResult.invalid.map(inv => ({
+        row: inv.row,
+        email: inv.data.email || '',
+        error: inv.error,
+      })),
+    ]
+    let totalCreated = 0
+    let totalUpdated = 0
+    let totalSkipped = 0
+    let totalFailed = validationResult.invalid.length
+
     try {
-      const res = await fetch('/api/admin/contacts/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contacts: validationResult.valid,
-          source,
-          sourceDetails,
-          fileName: file?.name || 'import',
-          updateStrategy,
-          tagIds: selectedTagIds,
-          newTags,
-        }),
-      })
+      for (let i = 0; i < totalBatches; i++) {
+        const start = i * BATCH_SIZE
+        const end = Math.min(start + BATCH_SIZE, contacts.length)
+        const batch = contacts.slice(start, end)
 
-      const data = await res.json()
-
-      if (res.ok) {
-        const totalFailed = data.results.failed + validationResult.invalid.length
-        setResult({
-          total: rawData.length,
-          created: data.results.created,
-          updated: data.results.updated,
-          skipped: data.results.skipped,
-          failed: totalFailed,
-          errors: [
-            ...validationResult.invalid.map(inv => ({
-              row: inv.row,
-              email: inv.data.email || '',
-              error: inv.error,
-            })),
-            ...data.results.errors,
-          ],
+        const res = await fetch('/api/admin/contacts/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contacts: batch,
+            source,
+            sourceDetails,
+            fileName: file?.name || 'import',
+            updateStrategy,
+            tagIds: selectedTagIds,
+            newTags: i === 0 ? newTags : [], // Only create new tags on first batch
+            batchOffset: start, // For accurate row numbers in errors
+          }),
         })
-        setStep('complete')
-      } else {
-        setError(data.error || 'Import failed')
-        setStep('preview')
+
+        const data = await res.json()
+
+        if (res.ok) {
+          totalCreated += data.results.created
+          totalUpdated += data.results.updated
+          totalSkipped += data.results.skipped
+          totalFailed += data.results.failed
+
+          // Add errors with adjusted row numbers
+          if (data.results.errors) {
+            allErrors.push(...data.results.errors.map((err: { row: number; email: string; error: string }) => ({
+              ...err,
+              row: err.row + start, // Adjust row number for batch offset
+            })))
+          }
+
+          // Update progress
+          setImportProgress({
+            processed: end,
+            total: contacts.length,
+            created: totalCreated,
+            updated: totalUpdated,
+            skipped: totalSkipped,
+            failed: totalFailed,
+          })
+        } else {
+          // If a batch fails completely, mark all as failed
+          totalFailed += batch.length
+          setImportProgress(prev => ({
+            ...prev,
+            processed: end,
+            failed: totalFailed,
+          }))
+        }
       }
+
+      setResult({
+        total: rawData.length,
+        created: totalCreated,
+        updated: totalUpdated,
+        skipped: totalSkipped,
+        failed: totalFailed,
+        errors: allErrors.slice(0, 100), // Limit errors shown
+      })
+      setStep('complete')
     } catch (err) {
       setError('Import failed')
       setStep('preview')
@@ -721,9 +784,48 @@ export default function ImportPage() {
         )}
 
         {step === 'importing' && (
-          <div className="text-center py-12">
-            <div className="animate-spin w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto mb-4" />
-            <p className="text-text-secondary">Importing contacts...</p>
+          <div className="py-8 space-y-6">
+            <div className="text-center">
+              <div className="animate-spin w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto mb-4" />
+              <p className="text-lg font-medium text-text-primary mb-1">Importing contacts...</p>
+              <p className="text-sm text-text-muted">
+                {importProgress.processed} of {importProgress.total} processed
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-neu-base rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-primary-500 transition-all duration-300 ease-out"
+                style={{
+                  width: `${importProgress.total > 0 ? (importProgress.processed / importProgress.total) * 100 : 0}%`,
+                }}
+              />
+            </div>
+
+            {/* Live stats */}
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div className="p-3 bg-green-50 rounded-neu">
+                <p className="text-xl font-bold text-green-600">{importProgress.created}</p>
+                <p className="text-xs text-green-600">Created</p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded-neu">
+                <p className="text-xl font-bold text-blue-600">{importProgress.updated}</p>
+                <p className="text-xs text-blue-600">Updated</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-neu">
+                <p className="text-xl font-bold text-gray-600">{importProgress.skipped}</p>
+                <p className="text-xs text-gray-600">Skipped</p>
+              </div>
+              <div className="p-3 bg-red-50 rounded-neu">
+                <p className="text-xl font-bold text-red-600">{importProgress.failed}</p>
+                <p className="text-xs text-red-600">Failed</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-text-muted">
+              Processing in batches of 100 contacts...
+            </p>
           </div>
         )}
 

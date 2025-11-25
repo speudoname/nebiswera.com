@@ -2,12 +2,14 @@
 // Docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public", "crm"]
 }
 
 // ===========================================
@@ -30,8 +32,10 @@ model User {
   // Relations
   accounts                Account[]
   sessions                Session[]
+  contact                 Contact?  // Link to CRM contact if exists
 
   @@index([createdAt])
+  @@schema("public")
   @@map("users")
 }
 
@@ -53,6 +57,7 @@ model Account {
 
   @@unique([provider, providerAccountId])
   @@index([userId])
+  @@schema("public")
   @@map("accounts")
 }
 
@@ -65,6 +70,7 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@schema("public")
   @@map("sessions")
 }
 
@@ -78,6 +84,7 @@ model VerificationToken {
   @@index([identifier])
   @@index([expires])
   @@index([type])
+  @@schema("public")
   @@map("verification_tokens")
 }
 
@@ -132,6 +139,7 @@ model EmailLog {
   @@index([type])
   @@index([sentAt])
   @@index([to])
+  @@schema("public")
   @@map("email_logs")
 }
 

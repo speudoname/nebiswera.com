@@ -27,16 +27,19 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file')
     const type = formData.get('type') as string
 
-    // Validate file exists
-    if (!file || !(file instanceof File)) {
+    // Validate file exists and has required properties
+    if (!file || typeof file === 'string' || !('size' in file) || !('type' in file)) {
       return NextResponse.json(
         { error: 'Invalid or missing file' },
         { status: 400 }
       )
     }
+
+    // Type assertion for file (FormData file can be Blob with additional properties)
+    const uploadFile = file as Blob & { name: string; size: number; type: string }
 
     // Validate type parameter
     const validTypes = ['audio', 'video', 'image']
@@ -51,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file size
     const maxSize = MAX_FILE_SIZES[uploadType]
-    if (file.size > maxSize) {
+    if (uploadFile.size > maxSize) {
       return NextResponse.json(
         { error: `File too large. Maximum size for ${type}: ${Math.round(maxSize / 1024 / 1024)}MB` },
         { status: 413 }
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Validate MIME type
     const allowedTypes = ALLOWED_MIME_TYPES[uploadType]
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedTypes.includes(uploadFile.type)) {
       return NextResponse.json(
         { error: `Invalid file type. Allowed types for ${type}: ${allowedTypes.join(', ')}` },
         { status: 400 }
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
     const uploadId = nanoid()
 
     // Get file extension
-    const ext = file.name.split('.').pop() ||
+    const ext = uploadFile.name.split('.').pop() ||
                 (uploadType === 'audio' ? 'webm' : uploadType === 'video' ? 'webm' : 'jpg')
 
     // Generate unique filename
@@ -79,11 +82,11 @@ export async function POST(request: NextRequest) {
     const key = generateTestimonialKey(uploadId, uniqueFilename)
 
     // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer()
+    const arrayBuffer = await uploadFile.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
     // Upload to R2
-    const url = await uploadToR2(buffer, key, file.type)
+    const url = await uploadToR2(buffer, key, uploadFile.type)
 
     return NextResponse.json({
       success: true,

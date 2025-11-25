@@ -7,6 +7,7 @@ interface TestimonialShowcaseProps {
   type?: TestimonialType
   title?: string
   subtitle?: string
+  darkBackground?: boolean
 }
 
 export async function TestimonialShowcase({
@@ -14,6 +15,7 @@ export async function TestimonialShowcase({
   type,
   title,
   subtitle,
+  darkBackground = false,
 }: TestimonialShowcaseProps) {
   const testimonials = await getRandomTestimonials(count, type)
 
@@ -21,8 +23,12 @@ export async function TestimonialShowcase({
     return null
   }
 
+  const bgClass = darkBackground
+    ? 'bg-gradient-to-b from-neu-base to-neu-light'
+    : 'bg-gradient-to-b from-neu-light to-neu-base'
+
   return (
-    <section className="py-16 md:py-20 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
+    <section className={`py-16 md:py-20 px-4 sm:px-6 md:px-8 ${bgClass}`}>
       <div className="max-w-6xl mx-auto">
         {(title || subtitle) && (
           <div className="text-center mb-12 md:mb-16">

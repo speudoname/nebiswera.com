@@ -85,7 +85,7 @@ export function TransformationPromiseSection() {
   const t = content[locale]
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-base to-neu-light">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12 md:mb-16">

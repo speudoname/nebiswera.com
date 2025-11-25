@@ -35,29 +35,29 @@ export default async function HomePage({
       {/* Hero Section */}
       <HomeClient />
 
-      {/* Testimonials #1 */}
-      <TestimonialShowcase count={3} />
-
       {/* Secret Reveal */}
       <SecretRevealSection />
 
-      {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
-      <WhatItIsNotSection />
+      {/* Testimonials #1 */}
+      <TestimonialShowcase count={3} darkBackground={true} />
 
       {/* Problem Awareness */}
       <ProblemAwarenessSection />
 
+      {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
+      <WhatItIsNotSection />
+
       {/* Testimonials #2 */}
-      <TestimonialShowcase count={2} />
+      <TestimonialShowcase count={2} darkBackground={true} />
 
       {/* Transformation Promise */}
       <TransformationPromiseSection />
 
-      {/* Philosophy (3 Steps) */}
-      <PhilosophySection />
-
       {/* 3-Day Workshop Offer - Part 1 (Header, Schedule, Stats) */}
       <WorkshopOfferSection />
+
+      {/* Philosophy (3 Steps) */}
+      <PhilosophySection />
 
       {/* Testimonials #3 - Videos preferred (between stats and three things) */}
       <TestimonialShowcase count={3} type="VIDEO" />

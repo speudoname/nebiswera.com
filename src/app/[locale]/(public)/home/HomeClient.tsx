@@ -10,7 +10,8 @@ export function HomeClient() {
   const locale = useLocale()
 
   return (
-    <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-8">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
+    <div className="flex-1 flex items-center justify-center">
       <div className="text-center py-4 md:py-6 max-w-3xl">
         <p className="eyebrow mb-4 md:mb-4">
           <span className="text-primary-600">{t('eyebrowStart')}</span>
@@ -57,5 +58,6 @@ export function HomeClient() {
         </div>
       </div>
     </div>
+    </section>
   )
 }

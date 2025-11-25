@@ -2,18 +2,67 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadToR2, generateTestimonialKey } from '@/lib/r2'
 import { nanoid } from 'nanoid'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
+// File size limits per type (in bytes)
+const MAX_FILE_SIZES = {
+  image: 10 * 1024 * 1024,  // 10MB
+  audio: 50 * 1024 * 1024,  // 50MB
+  video: 100 * 1024 * 1024, // 100MB
+}
+
+// Allowed MIME types per upload type
+const ALLOWED_MIME_TYPES = {
+  image: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'],
+  audio: ['audio/webm', 'audio/mp3', 'audio/mpeg', 'audio/wav'],
+  video: ['video/webm', 'video/mp4', 'video/quicktime'],
+}
+
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = await checkRateLimit(request, 'general')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const type = formData.get('type') as 'audio' | 'video' | 'image'
+    const type = formData.get('type') as string
 
-    if (!file || !type) {
+    // Validate file exists
+    if (!file || !(file instanceof File)) {
       return NextResponse.json(
-        { error: 'Missing required fields: file, type' },
+        { error: 'Invalid or missing file' },
+        { status: 400 }
+      )
+    }
+
+    // Validate type parameter
+    const validTypes = ['audio', 'video', 'image']
+    if (!type || !validTypes.includes(type)) {
+      return NextResponse.json(
+        { error: 'Invalid type. Must be: audio, video, or image' },
+        { status: 400 }
+      )
+    }
+
+    const uploadType = type as 'audio' | 'video' | 'image'
+
+    // Validate file size
+    const maxSize = MAX_FILE_SIZES[uploadType]
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: `File too large. Maximum size for ${type}: ${Math.round(maxSize / 1024 / 1024)}MB` },
+        { status: 413 }
+      )
+    }
+
+    // Validate MIME type
+    const allowedTypes = ALLOWED_MIME_TYPES[uploadType]
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json(
+        { error: `Invalid file type. Allowed types for ${type}: ${allowedTypes.join(', ')}` },
         { status: 400 }
       )
     }
@@ -23,10 +72,10 @@ export async function POST(request: NextRequest) {
 
     // Get file extension
     const ext = file.name.split('.').pop() ||
-                (type === 'audio' ? 'webm' : type === 'video' ? 'webm' : 'jpg')
+                (uploadType === 'audio' ? 'webm' : uploadType === 'video' ? 'webm' : 'jpg')
 
     // Generate unique filename
-    const uniqueFilename = `${type}-${Date.now()}.${ext}`
+    const uniqueFilename = `${uploadType}-${Date.now()}.${ext}`
     const key = generateTestimonialKey(uploadId, uniqueFilename)
 
     // Convert file to buffer

@@ -300,16 +300,54 @@ model ContactTag {
 }
 
 model ImportLog {
-  id           String   @id @default(cuid())
-  fileName     String
-  totalRows    Int
-  successCount Int
-  failedCount  Int
-  errors       Json?    // Array of error messages with row numbers
-  importedBy   String   // Admin user ID
-  createdAt    DateTime @default(now())
+  id             String         @id @default(cuid())
+  fileName       String
+  totalRows      Int
+  successCount   Int
+  failedCount    Int
+  skippedCount   Int            @default(0)
+  updatedCount   Int            @default(0)
+  updateStrategy UpdateStrategy @default(SKIP_EXISTING)
+  tagsApplied    String[]       @default([]) // Tag IDs applied during import
+  errors         Json?          // Array of error messages with row numbers
+  importedBy     String         // Admin user ID
+  createdAt      DateTime       @default(now())
 
   @@index([createdAt])
   @@schema("crm")
   @@map("import_logs")
+}
+
+enum UpdateStrategy {
+  SKIP_EXISTING     // Don't update contacts that already exist
+  UPDATE_EMPTY_ONLY // Only fill in missing/empty fields
+  OVERWRITE_ALL     // Replace all data for existing contacts
+  ADD_TAGS_ONLY     // Just add tags without changing other data
+
+  @@schema("crm")
+}
+
+// ===========================================
+// Segments (Saved Filters)
+// ===========================================
+
+model Segment {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+
+  // Filter criteria stored as JSON
+  // Example: { status: "ACTIVE", tags: ["tag1", "tag2"], source: "newsletter" }
+  filters     Json
+
+  // Cached count (updated periodically or on demand)
+  contactCount Int     @default(0)
+
+  createdBy   String   // Admin user ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@schema("crm")
+  @@map("segments")
 }

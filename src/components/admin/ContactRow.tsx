@@ -29,6 +29,7 @@ interface ContactRowProps {
   contact: Contact
   onEdit: () => void
   onDelete: () => void
+  hideFirstColumn?: boolean
 }
 
 const statusConfig = {
@@ -38,12 +39,14 @@ const statusConfig = {
   ARCHIVED: { variant: 'default' as const, label: 'Archived' },
 }
 
-export function ContactRow({ contact, onEdit, onDelete }: ContactRowProps) {
+export function ContactRow({ contact, onEdit, onDelete, hideFirstColumn }: ContactRowProps) {
   const fullName = [contact.firstName, contact.lastName].filter(Boolean).join(' ')
   const statusInfo = statusConfig[contact.status]
 
-  return (
-    <tr>
+  // When hideFirstColumn is true, we render as fragment to be used inside a parent <tr>
+  // Otherwise we render a full <tr>
+  const content = (
+    <>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className="h-10 w-10 flex-shrink-0 bg-primary-100 rounded-full flex items-center justify-center">
@@ -105,6 +108,12 @@ export function ContactRow({ contact, onEdit, onDelete }: ContactRowProps) {
           Delete
         </button>
       </td>
-    </tr>
+    </>
   )
+
+  if (hideFirstColumn) {
+    return content
+  }
+
+  return <tr>{content}</tr>
 }

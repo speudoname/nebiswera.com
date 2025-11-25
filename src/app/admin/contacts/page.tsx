@@ -4,12 +4,36 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Button, Input, Modal, Pagination } from '@/components/ui'
 import { FilterBar, ContactRow, TagBadge } from '@/components/admin'
-import { AlertTriangle, Loader2, Plus, Upload, Download, Tag } from 'lucide-react'
+import {
+  AlertTriangle,
+  Loader2,
+  Plus,
+  Upload,
+  Download,
+  Tag,
+  Trash2,
+  Tags,
+  Archive,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  Save,
+  X,
+  Filter,
+} from 'lucide-react'
 
 interface Tag {
   id: string
   name: string
   color: string
+}
+
+interface Segment {
+  id: string
+  name: string
+  description: string | null
+  filters: Record<string, unknown>
+  contactCount: number
 }
 
 interface Contact {
@@ -36,9 +60,12 @@ interface PaginationState {
   totalPages: number
 }
 
+type BulkAction = 'addTags' | 'removeTags' | 'changeStatus' | 'delete'
+
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [tags, setTags] = useState<Tag[]>([])
+  const [segments, setSegments] = useState<Segment[]>([])
   const [sources, setSources] = useState<string[]>([])
   const [pagination, setPagination] = useState<PaginationState>({
     page: 1,
@@ -54,6 +81,20 @@ export default function ContactsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [bulkAction, setBulkAction] = useState<BulkAction | null>(null)
+  const [bulkTags, setBulkTags] = useState<string[]>([])
+  const [bulkStatus, setBulkStatus] = useState<Contact['status']>('ACTIVE')
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  // Segment state
+  const [saveSegmentOpen, setSaveSegmentOpen] = useState(false)
+  const [segmentName, setSegmentName] = useState('')
+  const [segmentDescription, setSegmentDescription] = useState('')
+  const [savingSegment, setSavingSegment] = useState(false)
+
   const fetchTags = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/contacts/tags')
@@ -61,6 +102,16 @@ export default function ContactsPage() {
       setTags(data)
     } catch (error) {
       console.error('Failed to fetch tags:', error)
+    }
+  }, [])
+
+  const fetchSegments = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/contacts/segments')
+      const data = await res.json()
+      setSegments(data)
+    } catch (error) {
+      console.error('Failed to fetch segments:', error)
     }
   }, [])
 
@@ -89,11 +140,17 @@ export default function ContactsPage() {
 
   useEffect(() => {
     fetchTags()
-  }, [fetchTags])
+    fetchSegments()
+  }, [fetchTags, fetchSegments])
 
   useEffect(() => {
     fetchContacts()
   }, [fetchContacts])
+
+  // Clear selection when filters change
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [search, status, source, selectedTag, pagination.page])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,6 +176,130 @@ export default function ContactsPage() {
     }
   }
 
+  // Bulk selection handlers
+  const toggleSelectAll = () => {
+    if (selectedIds.size === contacts.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(contacts.map((c) => c.id)))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds)
+    if (newSet.has(id)) {
+      newSet.delete(id)
+    } else {
+      newSet.add(id)
+    }
+    setSelectedIds(newSet)
+  }
+
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedIds.size === 0) return
+
+    setBulkLoading(true)
+    try {
+      const res = await fetch('/api/admin/contacts/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contactIds: Array.from(selectedIds),
+          action: bulkAction,
+          tagIds: bulkTags,
+          status: bulkStatus,
+        }),
+      })
+
+      if (res.ok) {
+        setBulkModalOpen(false)
+        setBulkAction(null)
+        setBulkTags([])
+        setSelectedIds(new Set())
+        fetchContacts()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Operation failed')
+      }
+    } catch (error) {
+      console.error('Bulk operation failed:', error)
+      alert('Operation failed')
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const openBulkModal = (action: BulkAction) => {
+    setBulkAction(action)
+    setBulkModalOpen(true)
+  }
+
+  // Save current filters as segment
+  const handleSaveSegment = async () => {
+    if (!segmentName.trim()) return
+
+    setSavingSegment(true)
+    try {
+      const filters = {
+        status: status !== 'all' ? status : undefined,
+        source: source !== 'all' ? source : undefined,
+        tagIds: selectedTag ? [selectedTag] : undefined,
+        search: search || undefined,
+      }
+
+      const res = await fetch('/api/admin/contacts/segments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: segmentName,
+          description: segmentDescription,
+          filters,
+        }),
+      })
+
+      if (res.ok) {
+        setSaveSegmentOpen(false)
+        setSegmentName('')
+        setSegmentDescription('')
+        fetchSegments()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to save segment')
+      }
+    } catch (error) {
+      console.error('Failed to save segment:', error)
+      alert('Failed to save segment')
+    } finally {
+      setSavingSegment(false)
+    }
+  }
+
+  const loadSegment = (segment: Segment) => {
+    const filters = segment.filters as {
+      status?: string
+      source?: string
+      tagIds?: string[]
+      search?: string
+    }
+
+    setStatus(filters.status || 'all')
+    setSource(filters.source || 'all')
+    setSelectedTag(filters.tagIds?.[0] || '')
+    setSearch(filters.search || '')
+    setPagination((prev) => ({ ...prev, page: 1 }))
+  }
+
+  const handleExport = (format: 'csv' | 'json') => {
+    const params = new URLSearchParams({
+      format,
+      status,
+      tagId: selectedTag,
+    })
+    window.location.href = `/api/admin/contacts/export?${params}`
+  }
+
+  const hasActiveFilters = status !== 'all' || source !== 'all' || selectedTag || search
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -136,12 +317,56 @@ export default function ContactsPage() {
               Import
             </Button>
           </Link>
+          <div className="relative group">
+            <Button variant="secondary">
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <div className="absolute right-0 mt-1 w-32 bg-neu-light rounded-neu shadow-neu opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+              <button
+                onClick={() => handleExport('csv')}
+                className="w-full px-4 py-2 text-left text-sm hover:bg-neu-base"
+              >
+                Export CSV
+              </button>
+              <button
+                onClick={() => handleExport('json')}
+                className="w-full px-4 py-2 text-left text-sm hover:bg-neu-base"
+              >
+                Export JSON
+              </button>
+            </div>
+          </div>
           <Button onClick={() => setCreateModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Contact
           </Button>
         </div>
       </div>
+
+      {/* Segments */}
+      {segments.length > 0 && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter className="w-4 h-4 text-text-muted" />
+            <span className="text-sm text-text-muted">Segments:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {segments.map((segment) => (
+              <button
+                key={segment.id}
+                onClick={() => loadSegment(segment)}
+                className="px-3 py-1.5 bg-neu-base rounded-neu text-sm hover:bg-neu-dark/30 transition-colors"
+              >
+                {segment.name}
+                <span className="ml-2 text-xs text-text-muted">
+                  ({segment.contactCount})
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <FilterBar
         search={search}
@@ -194,11 +419,82 @@ export default function ContactsPage() {
         ]}
       />
 
+      {/* Save Segment Button */}
+      {hasActiveFilters && (
+        <div className="mb-4">
+          <Button
+            variant="secondary"
+            onClick={() => setSaveSegmentOpen(true)}
+            className="text-sm"
+          >
+            <Save className="w-4 h-4 mr-2" />
+            Save as Segment
+          </Button>
+        </div>
+      )}
+
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 p-3 bg-primary-50 rounded-neu flex items-center justify-between">
+          <span className="text-sm text-primary-700">
+            {selectedIds.size} contact{selectedIds.size !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => openBulkModal('addTags')}
+              className="text-sm"
+            >
+              <Tags className="w-4 h-4 mr-1" />
+              Add Tags
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => openBulkModal('removeTags')}
+              className="text-sm"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Remove Tags
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => openBulkModal('changeStatus')}
+              className="text-sm"
+            >
+              <Archive className="w-4 h-4 mr-1" />
+              Change Status
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => openBulkModal('delete')}
+              className="text-sm"
+            >
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Contacts Table */}
       <div className="bg-neu-light rounded-neu shadow-neu overflow-hidden">
         <table className="min-w-full divide-y divide-neu-dark">
           <thead className="bg-neu-light">
             <tr>
+              <th className="px-4 py-3 text-left">
+                <button
+                  onClick={toggleSelectAll}
+                  className="text-text-muted hover:text-text-primary"
+                >
+                  {selectedIds.size === 0 ? (
+                    <Square className="w-5 h-5" />
+                  ) : selectedIds.size === contacts.length ? (
+                    <CheckSquare className="w-5 h-5 text-primary-600" />
+                  ) : (
+                    <MinusSquare className="w-5 h-5 text-primary-600" />
+                  )}
+                </button>
+              </th>
               <th className="px-6 py-3 text-left label-sm">Contact</th>
               <th className="px-6 py-3 text-left label-sm">Phone</th>
               <th className="px-6 py-3 text-left label-sm">Tags</th>
@@ -211,24 +507,38 @@ export default function ContactsPage() {
           <tbody className="bg-neu-light divide-y divide-neu-dark">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center">
+                <td colSpan={8} className="px-6 py-12 text-center">
                   <Loader2 className="h-8 w-8 text-primary-600 animate-spin mx-auto" />
                 </td>
               </tr>
             ) : contacts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-text-muted">
+                <td colSpan={8} className="px-6 py-12 text-center text-text-muted">
                   No contacts found
                 </td>
               </tr>
             ) : (
               contacts.map((contact) => (
-                <ContactRow
-                  key={contact.id}
-                  contact={contact}
-                  onEdit={() => window.location.href = `/admin/contacts/${contact.id}`}
-                  onDelete={() => setDeleteConfirm(contact.id)}
-                />
+                <tr key={contact.id}>
+                  <td className="px-4 py-4">
+                    <button
+                      onClick={() => toggleSelect(contact.id)}
+                      className="text-text-muted hover:text-text-primary"
+                    >
+                      {selectedIds.has(contact.id) ? (
+                        <CheckSquare className="w-5 h-5 text-primary-600" />
+                      ) : (
+                        <Square className="w-5 h-5" />
+                      )}
+                    </button>
+                  </td>
+                  <ContactRow
+                    contact={contact}
+                    onEdit={() => (window.location.href = `/admin/contacts/${contact.id}`)}
+                    onDelete={() => setDeleteConfirm(contact.id)}
+                    hideFirstColumn
+                  />
+                </tr>
               ))
             )}
           </tbody>
@@ -287,8 +597,191 @@ export default function ContactsPage() {
           <Button type="button" variant="secondary" onClick={() => setDeleteConfirm(null)}>
             Cancel
           </Button>
-          <Button type="button" variant="danger" onClick={() => deleteConfirm && handleDelete(deleteConfirm)}>
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+          >
             Delete
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Bulk Action Modal */}
+      <Modal
+        isOpen={bulkModalOpen}
+        onClose={() => {
+          setBulkModalOpen(false)
+          setBulkAction(null)
+          setBulkTags([])
+        }}
+        title={
+          bulkAction === 'addTags'
+            ? 'Add Tags'
+            : bulkAction === 'removeTags'
+            ? 'Remove Tags'
+            : bulkAction === 'changeStatus'
+            ? 'Change Status'
+            : 'Delete Contacts'
+        }
+      >
+        {(bulkAction === 'addTags' || bulkAction === 'removeTags') && (
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">
+              {bulkAction === 'addTags' ? 'Select tags to add:' : 'Select tags to remove:'}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => {
+                    if (bulkTags.includes(tag.id)) {
+                      setBulkTags(bulkTags.filter((t) => t !== tag.id))
+                    } else {
+                      setBulkTags([...bulkTags, tag.id])
+                    }
+                  }}
+                  className={`px-3 py-1 rounded-full text-sm transition-all ${
+                    bulkTags.includes(tag.id)
+                      ? 'ring-2 ring-offset-1'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                  style={{
+                    backgroundColor: `${tag.color}20`,
+                    color: tag.color,
+                    ['--tw-ring-color' as string]: tag.color,
+                  } as React.CSSProperties}
+                >
+                  {tag.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {bulkAction === 'changeStatus' && (
+          <div className="space-y-4">
+            <p className="text-sm text-text-muted">Select new status:</p>
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value as Contact['status'])}
+              className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="UNSUBSCRIBED">Unsubscribed</option>
+              <option value="BOUNCED">Bounced</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+          </div>
+        )}
+
+        {bulkAction === 'delete' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <p className="text-text-secondary text-center">
+              Are you sure you want to delete {selectedIds.size} contact
+              {selectedIds.size !== 1 ? 's' : ''}? This action cannot be undone.
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3 mt-6">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setBulkModalOpen(false)
+              setBulkAction(null)
+              setBulkTags([])
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant={bulkAction === 'delete' ? 'danger' : 'primary'}
+            onClick={handleBulkAction}
+            loading={bulkLoading}
+            disabled={
+              (bulkAction === 'addTags' || bulkAction === 'removeTags') && bulkTags.length === 0
+            }
+          >
+            {bulkAction === 'delete'
+              ? 'Delete'
+              : bulkAction === 'addTags'
+              ? 'Add Tags'
+              : bulkAction === 'removeTags'
+              ? 'Remove Tags'
+              : 'Update Status'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Save Segment Modal */}
+      <Modal
+        isOpen={saveSegmentOpen}
+        onClose={() => {
+          setSaveSegmentOpen(false)
+          setSegmentName('')
+          setSegmentDescription('')
+        }}
+        title="Save as Segment"
+      >
+        <div className="space-y-4">
+          <Input
+            id="segmentName"
+            name="segmentName"
+            label="Segment Name *"
+            value={segmentName}
+            onChange={(e) => setSegmentName(e.target.value)}
+            placeholder="e.g., Active Newsletter Subscribers"
+          />
+          <div>
+            <label className="block text-body-sm font-medium text-secondary mb-1">
+              Description
+            </label>
+            <textarea
+              value={segmentDescription}
+              onChange={(e) => setSegmentDescription(e.target.value)}
+              placeholder="Optional description..."
+              rows={2}
+              className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none"
+            />
+          </div>
+          <div className="p-3 bg-neu-base rounded-neu text-sm">
+            <p className="text-text-muted mb-2">Current filters:</p>
+            <ul className="space-y-1 text-text-secondary">
+              {status !== 'all' && <li>Status: {status}</li>}
+              {source !== 'all' && <li>Source: {source}</li>}
+              {selectedTag && (
+                <li>Tag: {tags.find((t) => t.id === selectedTag)?.name}</li>
+              )}
+              {search && <li>Search: &quot;{search}&quot;</li>}
+            </ul>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setSaveSegmentOpen(false)
+              setSegmentName('')
+              setSegmentDescription('')
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSaveSegment}
+            loading={savingSegment}
+            disabled={!segmentName.trim()}
+          >
+            Save Segment
           </Button>
         </div>
       </Modal>
@@ -350,9 +843,7 @@ function CreateContactModal({
     <Modal isOpen={true} onClose={onClose} title="Add Contact">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-neu text-sm">
-            {error}
-          </div>
+          <div className="bg-red-50 text-red-600 p-3 rounded-neu text-sm">{error}</div>
         )}
 
         <Input
@@ -419,9 +910,7 @@ function CreateContactModal({
         </div>
 
         <div>
-          <label className="block text-body-sm font-medium text-secondary mb-1">
-            Tags
-          </label>
+          <label className="block text-body-sm font-medium text-secondary mb-1">Tags</label>
           <div className="flex flex-wrap gap-2 p-2 bg-neu-base rounded-neu shadow-neu-inset min-h-[40px]">
             {tags.map((tag) => (
               <button
@@ -455,9 +944,7 @@ function CreateContactModal({
         </div>
 
         <div>
-          <label className="block text-body-sm font-medium text-secondary mb-1">
-            Notes
-          </label>
+          <label className="block text-body-sm font-medium text-secondary mb-1">Notes</label>
           <textarea
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}

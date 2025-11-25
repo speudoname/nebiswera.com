@@ -58,6 +58,22 @@ export function LoveWallClient() {
       .slice(0, 2)
   }
 
+  function getVideoThumbnail(videoUrl: string, savedThumbnail: string | null): string | undefined {
+    // If we have a saved thumbnail, use it
+    if (savedThumbnail) return savedThumbnail
+
+    // Otherwise, generate Mux thumbnail URL if it's a Mux video
+    if (videoUrl.includes('stream.mux.com')) {
+      const match = videoUrl.match(/stream\.mux\.com\/([^.]+)/)
+      if (match) {
+        const playbackId = match[1]
+        return `https://image.mux.com/${playbackId}/thumbnail.jpg?time=1&width=1280`
+      }
+    }
+
+    return undefined
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neu-base py-16 px-4">
@@ -147,7 +163,7 @@ export function LoveWallClient() {
                 <div className="mt-4 relative rounded-neu overflow-hidden shadow-neu-inset">
                   <video
                     src={testimonial.videoUrl}
-                    poster={testimonial.videoThumbnail || undefined}
+                    poster={getVideoThumbnail(testimonial.videoUrl, testimonial.videoThumbnail)}
                     controls
                     preload="metadata"
                     className="w-full aspect-video bg-neu-dark/20"

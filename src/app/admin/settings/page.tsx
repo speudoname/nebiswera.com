@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Input, Badge } from '@/components/ui'
-import { Mail, User, Link, Loader2, Megaphone } from 'lucide-react'
+import { Mail, User, Link, Loader2, Megaphone, Eye, EyeOff } from 'lucide-react'
 
 interface Settings {
   // Transactional
@@ -24,6 +24,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showTransactionalToken, setShowTransactionalToken] = useState(false)
+  const [showMarketingToken, setShowMarketingToken] = useState(false)
   const [formData, setFormData] = useState({
     // Transactional
     postmarkServerToken: '',
@@ -145,17 +147,23 @@ export default function SettingsPage() {
                 <input
                   id="postmarkServerToken"
                   name="postmarkServerToken"
-                  type="password"
+                  type={showTransactionalToken ? 'text' : 'password'}
                   placeholder={settings?.hasPostmarkToken ? 'Token is set (enter new value to change)' : 'Enter your Postmark server token'}
                   value={formData.postmarkServerToken}
                   onChange={(e) => setFormData({ ...formData, postmarkServerToken: e.target.value })}
-                  className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                  className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 pr-24 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
                 />
-                {settings?.hasPostmarkToken && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Badge variant="success">Configured</Badge>
-                  </div>
-                )}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTransactionalToken(!showTransactionalToken)}
+                    className="p-1 text-text-secondary hover:text-primary-600 transition-colors"
+                    title={showTransactionalToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showTransactionalToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                  {settings?.hasPostmarkToken && <Badge variant="success">Configured</Badge>}
+                </div>
               </div>
               <p className="text-caption text-muted mt-1 no-margin">
                 Find this in your Postmark account under Server &gt; API Tokens
@@ -235,17 +243,23 @@ export default function SettingsPage() {
                 <input
                   id="marketingServerToken"
                   name="marketingServerToken"
-                  type="password"
+                  type={showMarketingToken ? 'text' : 'password'}
                   placeholder={settings?.hasMarketingToken ? 'Token is set (enter new value to change)' : 'Enter your Marketing server token'}
                   value={formData.marketingServerToken}
                   onChange={(e) => setFormData({ ...formData, marketingServerToken: e.target.value })}
-                  className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                  className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 pr-24 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
                 />
-                {settings?.hasMarketingToken && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Badge variant="success">Configured</Badge>
-                  </div>
-                )}
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowMarketingToken(!showMarketingToken)}
+                    className="p-1 text-text-secondary hover:text-primary-600 transition-colors"
+                    title={showMarketingToken ? 'Hide token' : 'Show token'}
+                  >
+                    {showMarketingToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                  {settings?.hasMarketingToken && <Badge variant="success">Configured</Badge>}
+                </div>
               </div>
               <p className="text-caption text-muted mt-1 no-margin">
                 Use a separate Postmark server for marketing to protect domain reputation

@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import type { NextRequest } from 'next/server'
-import { EmailStatus, EmailType } from '@prisma/client'
+import { EmailStatus, EmailType, EmailCategory, Prisma } from '@prisma/client'
+
+// Define which types belong to which category
+const TRANSACTIONAL_TYPES: EmailType[] = ['VERIFICATION', 'PASSWORD_RESET', 'WELCOME']
+const MARKETING_TYPES: EmailType[] = ['CAMPAIGN', 'NEWSLETTER', 'BROADCAST', 'ANNOUNCEMENT']
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
@@ -14,15 +18,12 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '20')
   const status = searchParams.get('status') || 'all'
   const type = searchParams.get('type') || 'all'
+  const category = searchParams.get('category') || 'all'
   const search = searchParams.get('search') || ''
 
   const skip = (page - 1) * limit
 
-  const where: {
-    status?: EmailStatus
-    type?: EmailType
-    to?: { contains: string; mode: 'insensitive' }
-  } = {}
+  const where: Prisma.EmailLogWhereInput = {}
 
   if (status !== 'all' && Object.values(EmailStatus).includes(status as EmailStatus)) {
     where.status = status as EmailStatus
@@ -30,6 +31,13 @@ export async function GET(request: NextRequest) {
 
   if (type !== 'all' && Object.values(EmailType).includes(type as EmailType)) {
     where.type = type as EmailType
+  }
+
+  // Filter by category (transactional or marketing)
+  if (category === 'TRANSACTIONAL') {
+    where.category = EmailCategory.TRANSACTIONAL
+  } else if (category === 'MARKETING') {
+    where.category = EmailCategory.MARKETING
   }
 
   if (search) {

@@ -11,20 +11,12 @@ export async function GET(request: NextRequest) {
   try {
     const settings = await getSettings()
 
-    // Mask tokens for security (show only last 4 chars)
-    const maskedSettings = {
+    // Return full settings (admin only endpoint)
+    return NextResponse.json({
       ...settings,
-      postmarkServerToken: settings.postmarkServerToken
-        ? `****${settings.postmarkServerToken.slice(-4)}`
-        : null,
       hasPostmarkToken: !!settings.postmarkServerToken,
-      marketingServerToken: settings.marketingServerToken
-        ? `****${settings.marketingServerToken.slice(-4)}`
-        : null,
       hasMarketingToken: !!settings.marketingServerToken,
-    }
-
-    return NextResponse.json(maskedSettings)
+    })
   } catch (error) {
     console.error('Failed to get settings:', error)
     return NextResponse.json(
@@ -56,8 +48,8 @@ export async function PATCH(request: NextRequest) {
 
     const updateData: Record<string, string> = {}
 
-    // Transactional settings - only update token if provided and not masked
-    if (postmarkServerToken && !postmarkServerToken.startsWith('****')) {
+    // Transactional settings - only update token if provided
+    if (postmarkServerToken) {
       updateData.postmarkServerToken = postmarkServerToken
     }
 
@@ -73,8 +65,8 @@ export async function PATCH(request: NextRequest) {
       updateData.emailFromName = emailFromName
     }
 
-    // Marketing settings - only update token if provided and not masked
-    if (marketingServerToken && !marketingServerToken.startsWith('****')) {
+    // Marketing settings - only update token if provided
+    if (marketingServerToken) {
       updateData.marketingServerToken = marketingServerToken
     }
 
@@ -92,20 +84,12 @@ export async function PATCH(request: NextRequest) {
 
     const settings = await updateSettings(updateData)
 
-    // Mask tokens for response
-    const maskedSettings = {
+    // Return full settings (admin only endpoint)
+    return NextResponse.json({
       ...settings,
-      postmarkServerToken: settings.postmarkServerToken
-        ? `****${settings.postmarkServerToken.slice(-4)}`
-        : null,
       hasPostmarkToken: !!settings.postmarkServerToken,
-      marketingServerToken: settings.marketingServerToken
-        ? `****${settings.marketingServerToken.slice(-4)}`
-        : null,
       hasMarketingToken: !!settings.marketingServerToken,
-    }
-
-    return NextResponse.json(maskedSettings)
+    })
   } catch (error) {
     console.error('Failed to update settings:', error)
     return NextResponse.json(

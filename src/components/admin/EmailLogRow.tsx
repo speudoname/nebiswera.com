@@ -5,7 +5,8 @@ interface EmailLog {
   messageId: string
   to: string
   subject: string
-  type: 'VERIFICATION' | 'PASSWORD_RESET' | 'WELCOME'
+  type: 'VERIFICATION' | 'PASSWORD_RESET' | 'WELCOME' | 'CAMPAIGN' | 'NEWSLETTER' | 'BROADCAST' | 'ANNOUNCEMENT'
+  category: 'TRANSACTIONAL' | 'MARKETING'
   status: 'SENT' | 'DELIVERED' | 'BOUNCED' | 'SPAM_COMPLAINT' | 'OPENED'
   locale: string
   sentAt: string
@@ -29,9 +30,20 @@ const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 
 }
 
 const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
+  // Transactional
   VERIFICATION: 'info',
   PASSWORD_RESET: 'warning',
   WELCOME: 'success',
+  // Marketing
+  CAMPAIGN: 'default',
+  NEWSLETTER: 'default',
+  BROADCAST: 'default',
+  ANNOUNCEMENT: 'default',
+}
+
+const categoryVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
+  TRANSACTIONAL: 'info',
+  MARKETING: 'warning',
 }
 
 function formatDate(date: string | null): string {
@@ -53,7 +65,12 @@ export function EmailLogRow({ email, onViewDetails }: EmailLogRowProps) {
         <div className="text-sm text-text-muted truncate max-w-xs">{email.subject}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <Badge variant={typeVariants[email.type]}>
+        <Badge variant={categoryVariants[email.category] || 'default'}>
+          {email.category === 'TRANSACTIONAL' ? 'Trans.' : 'Mktg.'}
+        </Badge>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <Badge variant={typeVariants[email.type] || 'default'}>
           {email.type.replace('_', ' ')}
         </Badge>
       </td>

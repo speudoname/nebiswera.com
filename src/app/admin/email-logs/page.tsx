@@ -10,7 +10,8 @@ interface EmailLog {
   messageId: string
   to: string
   subject: string
-  type: 'VERIFICATION' | 'PASSWORD_RESET' | 'WELCOME'
+  type: 'VERIFICATION' | 'PASSWORD_RESET' | 'WELCOME' | 'CAMPAIGN' | 'NEWSLETTER' | 'BROADCAST' | 'ANNOUNCEMENT'
+  category: 'TRANSACTIONAL' | 'MARKETING'
   status: 'SENT' | 'DELIVERED' | 'BOUNCED' | 'SPAM_COMPLAINT' | 'OPENED'
   locale: string
   sentAt: string
@@ -36,9 +37,20 @@ const statusVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 
 }
 
 const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
+  // Transactional
   VERIFICATION: 'info',
   PASSWORD_RESET: 'warning',
   WELCOME: 'success',
+  // Marketing
+  CAMPAIGN: 'default',
+  NEWSLETTER: 'default',
+  BROADCAST: 'default',
+  ANNOUNCEMENT: 'default',
+}
+
+const categoryVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'default'> = {
+  TRANSACTIONAL: 'info',
+  MARKETING: 'warning',
 }
 
 export default function EmailLogsPage() {
@@ -53,6 +65,7 @@ export default function EmailLogsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [type, setType] = useState('all')
+  const [category, setCategory] = useState('all')
   const [selectedEmail, setSelectedEmail] = useState<EmailLog | null>(null)
 
   const fetchEmails = useCallback(async () => {
@@ -64,6 +77,7 @@ export default function EmailLogsPage() {
         search,
         status,
         type,
+        category,
       })
       const res = await fetch(`/api/admin/email-logs?${params}`)
       const data = await res.json()
@@ -74,7 +88,7 @@ export default function EmailLogsPage() {
     } finally {
       setLoading(false)
     }
-  }, [pagination.page, pagination.limit, search, status, type])
+  }, [pagination.page, pagination.limit, search, status, type, category])
 
   useEffect(() => {
     fetchEmails()
@@ -98,6 +112,20 @@ export default function EmailLogsPage() {
         onSearch={handleSearch}
         searchPlaceholder="Search by email address..."
         filters={[
+          {
+            name: 'category',
+            label: 'Category',
+            value: category,
+            onChange: (value) => {
+              setCategory(value)
+              setPagination((prev) => ({ ...prev, page: 1 }))
+            },
+            options: [
+              { value: 'all', label: 'All Emails' },
+              { value: 'TRANSACTIONAL', label: 'Transactional' },
+              { value: 'MARKETING', label: 'Marketing' },
+            ],
+          },
           {
             name: 'status',
             label: 'Status',
@@ -125,9 +153,15 @@ export default function EmailLogsPage() {
             },
             options: [
               { value: 'all', label: 'All Types' },
+              // Transactional
               { value: 'VERIFICATION', label: 'Verification' },
               { value: 'PASSWORD_RESET', label: 'Password Reset' },
               { value: 'WELCOME', label: 'Welcome' },
+              // Marketing
+              { value: 'CAMPAIGN', label: 'Campaign' },
+              { value: 'NEWSLETTER', label: 'Newsletter' },
+              { value: 'BROADCAST', label: 'Broadcast' },
+              { value: 'ANNOUNCEMENT', label: 'Announcement' },
             ],
           },
         ]}
@@ -139,6 +173,7 @@ export default function EmailLogsPage() {
           <thead className="bg-neu-light">
             <tr>
               <th className="px-6 py-3 text-left label-sm">Recipient</th>
+              <th className="px-6 py-3 text-left label-sm">Category</th>
               <th className="px-6 py-3 text-left label-sm">Type</th>
               <th className="px-6 py-3 text-left label-sm">Status</th>
               <th className="px-6 py-3 text-left label-sm">Sent</th>
@@ -148,13 +183,13 @@ export default function EmailLogsPage() {
           <tbody className="bg-neu-light divide-y divide-neu-dark">
             {loading ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center">
+                <td colSpan={6} className="px-6 py-12 text-center">
                   <Loader2 className="h-8 w-8 text-primary-600 animate-spin mx-auto" />
                 </td>
               </tr>
             ) : emails.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
+                <td colSpan={6} className="px-6 py-12 text-center text-text-muted">
                   No email logs found
                 </td>
               </tr>
@@ -235,10 +270,16 @@ function EmailDetails({ email, onClose }: { email: EmailLog; onClose: () => void
         <p className="no-margin">{email.subject}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="block label-sm mb-1">Category</label>
+          <Badge variant={categoryVariants[email.category] || 'default'}>
+            {email.category}
+          </Badge>
+        </div>
         <div>
           <label className="block label-sm mb-1">Type</label>
-          <Badge variant={typeVariants[email.type]}>
+          <Badge variant={typeVariants[email.type] || 'default'}>
             {email.type.replace('_', ' ')}
           </Badge>
         </div>

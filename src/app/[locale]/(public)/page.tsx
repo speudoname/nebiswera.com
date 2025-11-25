@@ -9,8 +9,8 @@ import { SocialProofSection } from './home/content/SocialProofSection'
 import { CTASection } from './home/content/CTASection'
 import { TestimonialShowcase } from './home/content/TestimonialShowcase'
 import { WorkshopOfferSection } from './home/content/WorkshopOfferSection'
+import { WorkshopThreeThings } from './home/content/WorkshopThreeThings'
 import { WhatItIsNotSection } from './home/content/WhatItIsNotSection'
-import { ChoiceParadoxSection } from './home/content/ChoiceParadoxSection'
 import { getTranslations } from 'next-intl/server'
 
 export async function generateMetadata({
@@ -53,17 +53,17 @@ export default async function HomePage({
       {/* Transformation Promise */}
       <TransformationPromiseSection />
 
-      {/* 3-Day Workshop Offer */}
-      <WorkshopOfferSection />
-
       {/* Philosophy (3 Steps) */}
       <PhilosophySection />
 
-      {/* Testimonials #3 - Videos preferred */}
+      {/* 3-Day Workshop Offer - Part 1 (Header, Schedule, Stats) */}
+      <WorkshopOfferSection />
+
+      {/* Testimonials #3 - Videos preferred (between stats and three things) */}
       <TestimonialShowcase count={3} type="VIDEO" />
 
-      {/* Choice Paradox + Contrast Callout */}
-      <ChoiceParadoxSection />
+      {/* Workshop Three Things (სამი რამ რაც ხდება ვორქშოფის დროს) */}
+      <WorkshopThreeThings />
 
       {/* Social Proof (Stats + Link to all testimonials) */}
       <SocialProofSection />

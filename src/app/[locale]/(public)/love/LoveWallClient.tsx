@@ -75,19 +75,11 @@ export function LoveWallClient() {
           <h1 className="text-4xl md:text-5xl font-bold text-text-primary mb-4">
             {locale === 'ka' ? 'რას ამბობენ ჩვენზე' : 'What They Say About Us'}
           </h1>
-          <p className="text-lg text-text-secondary mb-8">
+          <p className="text-lg text-text-secondary">
             {locale === 'ka'
               ? 'ნებისწერის მონაწილეთა გამოცდილება და გაზიარებული მოსაზრებები'
               : 'Experiences and shared thoughts from Nebiswera participants'}
           </p>
-
-          <div className="flex justify-center">
-            <Link href={`/${locale}/collectlove`}>
-              <button className="px-6 py-3 bg-primary-500 text-white rounded-neu shadow-neu hover:shadow-neu-hover font-medium">
-                {locale === 'ka' ? 'გააზიარე შენი გამოცდილება' : 'Share Your Experience'}
-              </button>
-            </Link>
-          </div>
         </div>
 
         {/* Filter Tabs */}

@@ -33,7 +33,7 @@ export function Step5ThankYou({ locale }: Step5ThankYouProps) {
       </div>
 
       <div className="space-y-4 max-w-md mx-auto">
-        <Link href={`/${locale}/love`}>
+        <Link href={`/${locale}/love`} className="block">
           <Button
             variant="primary"
             size="lg"
@@ -44,7 +44,7 @@ export function Step5ThankYou({ locale }: Step5ThankYouProps) {
           </Button>
         </Link>
 
-        <Link href={`/${locale}`}>
+        <Link href={`/${locale}`} className="block">
           <Button
             variant="secondary"
             size="lg"

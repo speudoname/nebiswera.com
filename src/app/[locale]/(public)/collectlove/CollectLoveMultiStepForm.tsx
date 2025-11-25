@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { StepIndicator } from './components/StepIndicator'
 import { Step1BasicInfo } from './steps/Step1BasicInfo'
@@ -8,10 +8,56 @@ import { Step2ProfilePhoto } from './steps/Step2ProfilePhoto'
 import { Step3AudioVideo } from './steps/Step3AudioVideo'
 import { Step5ThankYou } from './steps/Step5ThankYou'
 
+const STORAGE_KEY = 'testimonial_progress'
+
 export function CollectLoveMultiStepForm() {
   const locale = useLocale()
   const [currentStep, setCurrentStep] = useState(1)
   const [testimonialId, setTestimonialId] = useState<string | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      try {
+        const { step, id } = JSON.parse(saved)
+        if (step && id) {
+          setCurrentStep(step)
+          setTestimonialId(id)
+        }
+      } catch (e) {
+        // Invalid data, ignore
+      }
+    }
+    setIsLoaded(true)
+  }, [])
+
+  // Save progress to localStorage whenever it changes
+  useEffect(() => {
+    if (isLoaded && testimonialId && currentStep < 4) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        step: currentStep,
+        id: testimonialId,
+      }))
+    }
+  }, [currentStep, testimonialId, isLoaded])
+
+  // Clear progress when reaching thank you page
+  useEffect(() => {
+    if (currentStep === 4) {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+  }, [currentStep])
+
+  // Don't render until we've checked localStorage
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-neu-base py-12 px-4 flex items-center justify-center">
+        <p className="text-text-secondary">Loading...</p>
+      </div>
+    )
+  }
 
   function handleStep1Complete(data: {
     name: string

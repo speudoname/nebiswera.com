@@ -1,7 +1,7 @@
-import { getTranslations } from 'next-intl/server'
 import { Card } from '@/components/ui/Card'
 import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
+import { TermsContent } from './content/TermsContent'
 
 export async function generateMetadata({
   params,
@@ -12,16 +12,11 @@ export async function generateMetadata({
   return generatePageMetadata('terms', locale)
 }
 
-export default async function TermsPage() {
-  const t = await getTranslations('pages.terms')
-
+export default function TermsPage() {
   return (
     <div className="max-w-4xl mx-auto py-8 md:py-12 px-4 sm:px-6 lg:px-8">
       <Card padding="md" className="md:p-8">
-        <h1>{t('title')}</h1>
-        <p className="text-text-secondary">
-          {t('content')}
-        </p>
+        <TermsContent />
       </Card>
     </div>
   )

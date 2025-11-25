@@ -24,7 +24,7 @@ const content: Record<Locale, {
     stats: [
       { number: '500+', label: 'მოსწავლე' },
       { number: '4.9/5', label: 'შეფასება' },
-      { number: '95%', label: 'რეკომენდაცია' },
+      { number: '95%', label: 'გირჩევენ' },
     ],
     cta: 'ნახე ყველა ისტორია',
     viewAll: 'ყველა შედეგის ნახვა',

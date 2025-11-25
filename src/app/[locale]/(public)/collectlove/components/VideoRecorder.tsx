@@ -164,7 +164,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
 
   return (
     <div className="p-6 bg-neu-base rounded-neu-lg shadow-neu-md">
-      <div className="mb-6 relative bg-black rounded-neu overflow-hidden aspect-video">
+      <div className="mb-6 relative bg-black rounded-neu overflow-hidden aspect-video max-h-[60vh]">
         {!videoUrl ? (
           <video
             ref={previewRef}
@@ -178,7 +178,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
             ref={playbackRef}
             src={videoUrl}
             controls
-            autoPlay
+            playsInline
             className="w-full h-full object-cover"
           />
         )}

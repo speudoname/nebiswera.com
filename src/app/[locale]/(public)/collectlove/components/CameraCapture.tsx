@@ -129,7 +129,7 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
   if (capturedImage) {
     return (
       <div className="space-y-4">
-        <div className="relative aspect-video bg-black rounded-neu-lg overflow-hidden shadow-neu-md">
+        <div className="relative aspect-video max-h-[60vh] bg-black rounded-neu-lg overflow-hidden shadow-neu-md">
           <img
             src={capturedImage}
             alt="Captured"

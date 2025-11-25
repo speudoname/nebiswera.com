@@ -33,11 +33,21 @@ export function TestimonialsTable() {
   const [typeFilter, setTypeFilter] = useState<TestimonialType | 'ALL'>('ALL')
   const [tagFilter, setTagFilter] = useState<string>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [debouncedSearch, setDebouncedSearch] = useState<string>('')
   const [availableTags, setAvailableTags] = useState<string[]>([])
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     fetchTestimonials()
-  }, [page, statusFilter, typeFilter, tagFilter, searchQuery])
+  }, [page, statusFilter, typeFilter, tagFilter, debouncedSearch])
 
   useEffect(() => {
     // Fetch available tags from all testimonials
@@ -67,7 +77,7 @@ export function TestimonialsTable() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter)
       if (typeFilter !== 'ALL') params.set('type', typeFilter)
       if (tagFilter !== 'ALL') params.set('tags', tagFilter)
-      if (searchQuery.trim()) params.set('search', searchQuery.trim())
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
 
       const res = await fetch(`/api/testimonials?${params}`)
       const data = await res.json()

@@ -11,11 +11,26 @@ export function HomeClient() {
   const locale = useLocale()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isMuted, setIsMuted] = useState(true)
+  const [showButton, setShowButton] = useState(true)
+  const [hasUnmuted, setHasUnmuted] = useState(false)
 
   function toggleMute() {
     if (videoRef.current) {
       videoRef.current.muted = !videoRef.current.muted
       setIsMuted(videoRef.current.muted)
+
+      // If unmuting for the first time, hide the button
+      if (!videoRef.current.muted && !hasUnmuted) {
+        setHasUnmuted(true)
+        setShowButton(false)
+      }
+    }
+  }
+
+  function handleVideoClick() {
+    // After first unmute, clicking video toggles button visibility
+    if (hasUnmuted) {
+      setShowButton(!showButton)
     }
   }
 
@@ -41,7 +56,8 @@ export function HomeClient() {
         <div className="mb-6 md:mb-8 w-full max-w-xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video relative">
           <video
             ref={videoRef}
-            className="w-full h-full object-cover"
+            onClick={handleVideoClick}
+            className="w-full h-full object-cover cursor-pointer"
             width={1280}
             height={720}
             autoPlay
@@ -56,17 +72,33 @@ export function HomeClient() {
           </video>
 
           {/* Unmute Button */}
-          <button
-            onClick={toggleMute}
-            className="absolute bottom-4 right-4 bg-neu-base/90 backdrop-blur-sm text-text-primary rounded-full p-3 shadow-neu hover:shadow-neu-hover active:shadow-neu-pressed transition-all"
-            aria-label={isMuted ? 'Unmute video' : 'Mute video'}
-          >
-            {isMuted ? (
-              <VolumeX className="w-5 h-5" />
-            ) : (
-              <Volume2 className="w-5 h-5" />
-            )}
-          </button>
+          {showButton && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleMute()
+              }}
+              className={`absolute transition-all ${
+                !hasUnmuted
+                  ? 'bottom-6 right-6 bg-primary-500 text-white px-6 py-4 rounded-neu shadow-neu-md hover:shadow-neu-lg hover:bg-primary-600 active:shadow-neu-pressed'
+                  : 'bottom-4 right-4 bg-neu-base/90 backdrop-blur-sm text-text-primary rounded-full p-3 shadow-neu hover:shadow-neu-hover active:shadow-neu-pressed'
+              }`}
+              aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+            >
+              {!hasUnmuted ? (
+                <div className="flex items-center gap-2">
+                  <VolumeX className="w-6 h-6" />
+                  <span className="font-semibold text-sm">
+                    {locale === 'ka' ? 'ხმის ჩართვა' : 'Click for Sound'}
+                  </span>
+                </div>
+              ) : isMuted ? (
+                <VolumeX className="w-5 h-5" />
+              ) : (
+                <Volume2 className="w-5 h-5" />
+              )}
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">

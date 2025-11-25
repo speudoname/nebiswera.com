@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
-import type { TestimonialType } from '@prisma/client'
+
+export type TestimonialType = 'TEXT' | 'AUDIO' | 'VIDEO'
 
 export interface TestimonialData {
   id: string

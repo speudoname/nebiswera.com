@@ -1,6 +1,7 @@
 import { getRandomTestimonials } from '@/lib/testimonials'
-import type { TestimonialType } from '@prisma/client'
 import { TestimonialCard } from './TestimonialCard'
+
+type TestimonialType = 'TEXT' | 'AUDIO' | 'VIDEO'
 
 interface TestimonialShowcaseProps {
   count?: number

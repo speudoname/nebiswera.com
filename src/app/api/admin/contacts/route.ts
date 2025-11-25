@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { isAdmin } from '@/lib/auth/utils'
+import { isAdmin, getAuthToken } from '@/lib/auth/utils'
+import { logContactCreated } from '@/lib/contact-activity'
 import type { NextRequest } from 'next/server'
 import type { Prisma } from '@prisma/client'
 
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const token = await getAuthToken(request)
     const body = await request.json()
     const { email, firstName, lastName, phone, source, sourceDetails, status, notes, tagIds } = body
 
@@ -151,6 +153,8 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    await logContactCreated(contact, token?.sub, source)
 
     return NextResponse.json({
       ...contact,

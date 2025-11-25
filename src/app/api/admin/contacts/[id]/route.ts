@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { isAdmin } from '@/lib/auth/utils'
+import { isAdmin, getAuthToken } from '@/lib/auth/utils'
+import { logContactUpdated, logStatusChanged, logTagsAdded, logTagsRemoved } from '@/lib/contact-activity'
 import type { NextRequest } from 'next/server'
 
 export async function GET(
@@ -52,12 +53,14 @@ export async function PATCH(
   const { id } = await params
 
   try {
+    const token = await getAuthToken(request)
     const body = await request.json()
     const { email, firstName, lastName, phone, source, sourceDetails, status, notes, tagIds } = body
 
-    // Check if contact exists
+    // Check if contact exists with tags
     const existingContact = await prisma.contact.findUnique({
       where: { id },
+      include: { tags: { include: { tag: true } } },
     })
 
     if (!existingContact) {
@@ -75,6 +78,29 @@ export async function PATCH(
           { status: 400 }
         )
       }
+    }
+
+    // Track changes for activity logging
+    const changes: Record<string, { old: unknown; new: unknown }> = {}
+    if (email !== undefined && email !== existingContact.email) {
+      changes.email = { old: existingContact.email, new: email }
+    }
+    if (firstName !== undefined && firstName !== existingContact.firstName) {
+      changes.firstName = { old: existingContact.firstName, new: firstName }
+    }
+    if (lastName !== undefined && lastName !== existingContact.lastName) {
+      changes.lastName = { old: existingContact.lastName, new: lastName }
+    }
+    if (phone !== undefined && phone !== existingContact.phone) {
+      changes.phone = { old: existingContact.phone, new: phone }
+    }
+    if (notes !== undefined && notes !== existingContact.notes) {
+      changes.notes = { old: existingContact.notes, new: notes }
+    }
+
+    // Log status change separately
+    if (status !== undefined && status !== existingContact.status) {
+      await logStatusChanged(id, existingContact.status, status, token?.sub)
     }
 
     // Update contact
@@ -99,8 +125,23 @@ export async function PATCH(
       },
     })
 
+    // Log field changes
+    if (Object.keys(changes).length > 0) {
+      await logContactUpdated(id, changes, token?.sub)
+    }
+
     // Update tags if provided
     if (tagIds !== undefined) {
+      const existingTagIds = existingContact.tags.map((t) => t.tagId)
+      const existingTagNames = existingContact.tags.map((t) => t.tag.name)
+
+      // Find added and removed tags
+      const addedTagIds = tagIds.filter((tid: string) => !existingTagIds.includes(tid))
+      const removedTagIds = existingTagIds.filter((tid) => !tagIds.includes(tid))
+      const removedTagNames = existingContact.tags
+        .filter((t) => removedTagIds.includes(t.tagId))
+        .map((t) => t.tag.name)
+
       // Remove all existing tags
       await prisma.contactTag.deleteMany({
         where: { contactId: id },
@@ -127,6 +168,17 @@ export async function PATCH(
           },
         },
       })
+
+      // Log tag changes
+      if (addedTagIds.length > 0 && updatedContact) {
+        const addedTagNames = updatedContact.tags
+          .filter((t) => addedTagIds.includes(t.tagId))
+          .map((t) => t.tag.name)
+        await logTagsAdded(id, addedTagNames, token?.sub)
+      }
+      if (removedTagNames.length > 0) {
+        await logTagsRemoved(id, removedTagNames, token?.sub)
+      }
 
       return NextResponse.json({
         ...updatedContact,

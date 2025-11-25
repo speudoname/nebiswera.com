@@ -1,7 +1,5 @@
-'use client'
-
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { UserProfileDropdown } from './UserProfileDropdown'
 
 interface AppHeaderProps {
@@ -16,6 +14,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ user, signOutAction }: AppHeaderProps) {
   const locale = useLocale()
+  const t = useTranslations('common')
 
   return (
     <header className="bg-neu-base shadow-neu-sm">
@@ -27,7 +26,7 @@ export function AppHeader({ user, signOutAction }: AppHeaderProps) {
               href={`/${locale}`}
               className="text-lg md:text-xl font-bold text-primary-600 hover:text-primary-700 transition-colors"
             >
-              {locale === 'ka' ? ':::...ნებისწერა...:::' : ':::...nebiswera...:::'}
+              {t('logoText')}
             </Link>
           </div>
 

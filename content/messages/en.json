@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Nebiswera",
+    "logoText": ":::...nebiswera...:::",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",

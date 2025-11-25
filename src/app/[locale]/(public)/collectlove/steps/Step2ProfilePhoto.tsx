@@ -27,7 +27,7 @@ export function Step2ProfilePhoto({
     setIsUploading(true)
 
     try {
-      const { uploadFileToR2 } = await import('@/lib/upload-helpers')
+      const { uploadFileToR2 } = await import('@/lib/storage/upload-helpers')
       const url = await uploadFileToR2(blob, 'image')
 
       const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {

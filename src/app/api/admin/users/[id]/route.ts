@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { isAdmin, getAuthToken } from '@/lib/auth-utils'
+import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import type { NextRequest } from 'next/server'
 
 export async function GET(

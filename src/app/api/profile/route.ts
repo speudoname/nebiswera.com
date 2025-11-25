@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getAuthToken } from '@/lib/auth-utils'
+import { getAuthToken } from '@/lib/auth/utils'
 import bcrypt from 'bcryptjs'
 import type { NextRequest } from 'next/server'
 import { profileUpdateSchema, formatZodError } from '@/lib/validations'

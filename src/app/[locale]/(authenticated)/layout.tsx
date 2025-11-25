@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
-import { signOutAction } from '@/lib/actions'
+import { signOutAction } from '@/lib/auth/actions'
 import { AppHeader } from '@/components/layout'
 
 export default async function AuthenticatedLayout({

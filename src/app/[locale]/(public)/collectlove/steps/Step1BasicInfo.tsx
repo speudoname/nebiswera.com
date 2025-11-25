@@ -90,7 +90,7 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
 
       // Upload images if any
       if (images.length > 0) {
-        const { uploadFileToR2 } = await import('@/lib/upload-helpers')
+        const { uploadFileToR2 } = await import('@/lib/storage/upload-helpers')
         const imageUrls: string[] = []
 
         for (const image of images) {

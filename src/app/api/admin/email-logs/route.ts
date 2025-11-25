@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { isAdmin } from '@/lib/auth-utils'
+import { isAdmin } from '@/lib/auth/utils'
 import type { NextRequest } from 'next/server'
 import { EmailStatus, EmailType } from '@prisma/client'
 

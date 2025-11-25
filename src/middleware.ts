@@ -3,7 +3,11 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import createIntlMiddleware from 'next-intl/middleware'
 import { locales, defaultLocale, type Locale } from '@/i18n/config'
-import { AUTH_COOKIE_NAME } from '@/lib/auth-utils'
+import { AUTH_COOKIE_NAME } from '@/lib/auth/utils'
+import { handleAdminRoutes } from '@/lib/middleware/admin'
+import { handleRouteProtection } from '@/lib/middleware/routes'
+import { handleEmailVerification } from '@/lib/middleware/verification'
+import { handleLocaleRedirect } from '@/lib/middleware/locale'
 
 // Cookie name for storing user's locale preference (set by client)
 const LOCALE_COOKIE_NAME = 'NEXT_LOCALE'
@@ -31,41 +35,23 @@ function getLocaleFromPathname(pathname: string): string | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Skip locale handling for API routes, static files, and admin panel
-  const shouldSkipIntl = publicPaths.some((path) => pathname.startsWith(path))
+  // 1. Skip locale handling for API routes, static files, and admin panel
+  if (publicPaths.some((path) => pathname.startsWith(path))) {
+    // 2. Handle admin routes separately
+    const adminResponse = await handleAdminRoutes(request)
+    if (adminResponse) return adminResponse
 
-  // Handle admin routes separately (English only, no locale prefix)
-  if (pathname.startsWith('/admin')) {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-      cookieName: AUTH_COOKIE_NAME,
-    })
-
-    if (!token) {
-      const loginUrl = new URL(`/${defaultLocale}/auth/login`, request.url)
-      loginUrl.searchParams.set('callbackUrl', pathname)
-      return NextResponse.redirect(loginUrl)
+    // For other public paths (api, static), continue
+    if (pathname.startsWith('/api')) {
+      return NextResponse.next()
     }
-    if (token.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL(`/${defaultLocale}/dashboard`, request.url))
-    }
-    return NextResponse.next()
   }
 
-  // Handle root redirect - check for stored locale preference
-  if (pathname === '/') {
-    const storedLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value as Locale | undefined
-    const targetLocale = storedLocale && locales.includes(storedLocale) ? storedLocale : defaultLocale
-    return NextResponse.redirect(new URL(`/${targetLocale}`, request.url))
-  }
+  // 3. Handle root redirect
+  const rootRedirect = handleLocaleRedirect(request)
+  if (rootRedirect) return rootRedirect
 
-  // For API routes, skip intl middleware
-  if (pathname.startsWith('/api')) {
-    return NextResponse.next()
-  }
-
-  // Get the locale from pathname
+  // 4. Get locale
   const locale = getLocaleFromPathname(pathname)
 
   // If no locale in pathname, let intl middleware handle the redirect
@@ -73,78 +59,50 @@ export async function middleware(request: NextRequest) {
     return intlMiddleware(request)
   }
 
-  // Get the path without locale for checking protected/auth routes
-  const pathnameWithoutLocale = getPathnameWithoutLocale(pathname)
-
-  // Get the token for auth checks
+  // 5. Get auth token
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
     cookieName: AUTH_COOKIE_NAME,
   })
 
-  const isLoggedIn = !!token
+  const pathnameWithoutLocale = getPathnameWithoutLocale(pathname)
   const userPreferredLocale = token?.preferredLocale as Locale | undefined
 
   // For anonymous users, check cookie for stored preference
+  const isLoggedIn = !!token
   const storedLocale = !isLoggedIn
     ? (request.cookies.get(LOCALE_COOKIE_NAME)?.value as Locale | undefined)
     : undefined
   const effectivePreferredLocale = userPreferredLocale || storedLocale
 
-  // Protected routes (dashboard, profile)
-  const protectedPaths = ['/dashboard', '/profile']
-  const isProtectedPath = protectedPaths.some((path) =>
-    pathnameWithoutLocale.startsWith(path)
-  )
+  // 6. Route Protection
+  const protectionRedirect = handleRouteProtection({
+    request,
+    token,
+    locale,
+    pathnameWithoutLocale,
+  })
+  if (protectionRedirect) return protectionRedirect
 
-  // Auth routes (login, register, etc.)
-  const authPaths = ['/auth/login', '/auth/register']
-  const isAuthPath = authPaths.some((path) => pathnameWithoutLocale.startsWith(path))
+  // 7. Email Verification
+  const verificationRedirect = handleEmailVerification({
+    request,
+    token,
+    locale,
+    pathnameWithoutLocale,
+  })
+  if (verificationRedirect) return verificationRedirect
 
-  // Verify-required page
-  const isVerifyRequiredPath = pathnameWithoutLocale === '/auth/verify-required'
-
-  // Redirect to login if accessing protected route while not logged in
-  if (isProtectedPath && !isLoggedIn) {
-    const loginUrl = new URL(`/${locale}/auth/login`, request.url)
-    loginUrl.searchParams.set('callbackUrl', pathname)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Redirect to dashboard if accessing auth routes while logged in
-  if (isAuthPath && isLoggedIn) {
-    const targetLocale = userPreferredLocale || locale
-    return NextResponse.redirect(new URL(`/${targetLocale}/dashboard`, request.url))
-  }
-
-  // Check email verification grace period for logged-in users
-  if (isLoggedIn && !isVerifyRequiredPath) {
-    const emailVerified = token?.emailVerified
-    const emailVerificationSentAt = token?.emailVerificationSentAt
-
-    // If not verified and verification was sent
-    if (!emailVerified && emailVerificationSentAt) {
-      const sentAt = new Date(emailVerificationSentAt as unknown as string)
-      const hoursSinceSent = (Date.now() - sentAt.getTime()) / (1000 * 60 * 60)
-
-      // Grace period expired (24 hours) - redirect to verify-required page
-      if (hoursSinceSent > 24) {
-        const targetLocale = userPreferredLocale || locale
-        return NextResponse.redirect(new URL(`/${targetLocale}/auth/verify-required`, request.url))
-      }
-    }
-  }
-
+  // 8. Preferred Locale Redirect
   // Redirect users to their preferred locale if different from current URL
-  // This works for both logged-in users (from JWT) and anonymous users (from cookie)
   if (effectivePreferredLocale && locale !== effectivePreferredLocale && locales.includes(effectivePreferredLocale)) {
     const newUrl = new URL(request.url)
     newUrl.pathname = pathname.replace(`/${locale}`, `/${effectivePreferredLocale}`)
     return NextResponse.redirect(newUrl)
   }
 
-  // Let intl middleware handle the response (sets locale cookie, etc.)
+  // 9. Final: Intl Middleware
   return intlMiddleware(request)
 }
 

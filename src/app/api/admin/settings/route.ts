@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSettings, updateSettings } from '@/lib/settings'
-import { isAdmin } from '@/lib/auth-utils'
+import { isAdmin } from '@/lib/auth/utils'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {

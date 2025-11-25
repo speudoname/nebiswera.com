@@ -1,6 +1,6 @@
 // Approve testimonial (admin only)
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 
 export async function PATCH(

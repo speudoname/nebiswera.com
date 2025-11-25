@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
-import { prisma } from './db'
+import { prisma } from '../db'
 
 const useSecureCookies = process.env.NODE_ENV === 'production'
 const cookieDomain = process.env.NODE_ENV === 'production' ? '.nebiswera.com' : undefined

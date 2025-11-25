@@ -30,7 +30,7 @@ export function Step3AudioVideo({
     setUploadProgress(0)
 
     try {
-      const { uploadFileToR2 } = await import('@/lib/upload-helpers')
+      const { uploadFileToR2 } = await import('@/lib/storage/upload-helpers')
       const url = await uploadFileToR2(blob, type)
 
       const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {

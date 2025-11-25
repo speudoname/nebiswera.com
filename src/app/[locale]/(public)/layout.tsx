@@ -1,5 +1,5 @@
 import { PublicHeader, PublicFooter } from '@/components/layout'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 
 export default async function PublicLayout({

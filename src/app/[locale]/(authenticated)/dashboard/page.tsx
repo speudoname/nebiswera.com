@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from 'next-intl/server'
-import { auth } from '@/lib/auth'
+import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner'
 import { Badge, IconBadge } from '@/components/ui'

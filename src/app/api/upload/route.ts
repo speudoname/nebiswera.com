@@ -1,6 +1,6 @@
 // API endpoint for server-side file uploads to R2
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToR2, generateTestimonialKey } from '@/lib/r2'
+import { uploadToR2, generateTestimonialKey } from '@/lib/storage/r2'
 import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
 

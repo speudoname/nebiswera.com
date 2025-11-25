@@ -95,17 +95,23 @@ model VerificationToken {
 enum Role {
   USER
   ADMIN
+
+  @@schema("public")
 }
 
 enum TokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+
+  @@schema("public")
 }
 
 enum EmailType {
   VERIFICATION
   PASSWORD_RESET
   WELCOME
+
+  @@schema("public")
 }
 
 enum EmailStatus {
@@ -114,6 +120,8 @@ enum EmailStatus {
   BOUNCED
   SPAM_COMPLAINT
   OPENED
+
+  @@schema("public")
 }
 
 // ===========================================
@@ -159,6 +167,7 @@ model Settings {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@schema("public")
   @@map("settings")
 }
 
@@ -195,6 +204,7 @@ model Testimonial {
   @@index([type])
   @@index([submittedAt])
   @@index([locale])
+  @@schema("public")
   @@map("testimonials")
 }
 
@@ -202,10 +212,104 @@ enum TestimonialStatus {
   PENDING
   APPROVED
   REJECTED
+
+  @@schema("public")
 }
 
 enum TestimonialType {
   TEXT
   AUDIO
   VIDEO
+
+  @@schema("public")
+}
+
+// ===========================================
+// CRM Schema - Contacts Management
+// ===========================================
+
+model Contact {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  firstName     String?
+  lastName      String?
+  phone         String?
+
+  // Source tracking
+  source        String        // e.g., "newsletter", "webinar", "import", "manual"
+  sourceDetails String?       // Additional context (webinar name, import file, etc.)
+
+  // Link to user (if they register)
+  userId        String?       @unique
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Status
+  status        ContactStatus @default(ACTIVE)
+
+  // Metadata
+  customFields  Json?         // Flexible key-value storage for future needs
+  notes         String?       @db.Text
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  tags          ContactTag[]
+
+  @@index([email])
+  @@index([source])
+  @@index([status])
+  @@index([createdAt])
+  @@schema("crm")
+  @@map("contacts")
+}
+
+enum ContactStatus {
+  ACTIVE
+  UNSUBSCRIBED
+  BOUNCED
+  ARCHIVED
+
+  @@schema("crm")
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String   @default("#8B5CF6") // Purple default
+  description String?
+  createdAt   DateTime @default(now())
+
+  contacts    ContactTag[]
+
+  @@schema("crm")
+  @@map("tags")
+}
+
+model ContactTag {
+  contactId  String
+  tagId      String
+  assignedAt DateTime @default(now())
+
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@schema("crm")
+  @@map("contact_tags")
+}
+
+model ImportLog {
+  id           String   @id @default(cuid())
+  fileName     String
+  totalRows    Int
+  successCount Int
+  failedCount  Int
+  errors       Json?    // Array of error messages with row numbers
+  importedBy   String   // Admin user ID
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@schema("crm")
+  @@map("import_logs")
 }

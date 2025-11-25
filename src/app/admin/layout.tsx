@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { SessionProvider } from '@/providers/SessionProvider'
 import { Inter, Noto_Sans_Georgian } from 'next/font/google'
-import { Home, Users, Mail, Settings, Undo2, LogOut, Heart } from 'lucide-react'
+import { Home, Users, Mail, Settings, Undo2, LogOut, Heart, Contact2 } from 'lucide-react'
 
 const inter = Inter({
   subsets: ['latin', 'latin-ext'],
@@ -19,6 +19,7 @@ const notoSansGeorgian = Noto_Sans_Georgian({
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: Home },
+  { name: 'Contacts', href: '/admin/contacts', icon: Contact2 },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Testimonials', href: '/admin/testimonials', icon: Heart },
   { name: 'Email Logs', href: '/admin/email-logs', icon: Mail },

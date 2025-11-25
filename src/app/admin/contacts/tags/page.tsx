@@ -1,0 +1,351 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { Button, Input, Modal } from '@/components/ui'
+import { ArrowLeft, Plus, Loader2, AlertTriangle, Edit2, Trash2 } from 'lucide-react'
+
+interface Tag {
+  id: string
+  name: string
+  color: string
+  description: string | null
+  contactCount: number
+  createdAt: string
+}
+
+const PRESET_COLORS = [
+  '#8B5CF6', // Purple
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#F59E0B', // Amber
+  '#EF4444', // Red
+  '#EC4899', // Pink
+  '#6366F1', // Indigo
+  '#14B8A6', // Teal
+]
+
+export default function TagsPage() {
+  const [tags, setTags] = useState<Tag[]>([])
+  const [loading, setLoading] = useState(true)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [editingTag, setEditingTag] = useState<Tag | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<Tag | null>(null)
+
+  const fetchTags = async () => {
+    try {
+      const res = await fetch('/api/admin/contacts/tags')
+      const data = await res.json()
+      setTags(data)
+    } catch (error) {
+      console.error('Failed to fetch tags:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTags()
+  }, [])
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/contacts/tags/${id}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setDeleteConfirm(null)
+        fetchTags()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete tag')
+      }
+    } catch (error) {
+      console.error('Failed to delete tag:', error)
+      alert('Failed to delete tag')
+    }
+  }
+
+  return (
+    <div>
+      <Link
+        href="/admin/contacts"
+        className="inline-flex items-center text-sm text-text-secondary hover:text-text-primary mb-4"
+      >
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Back to Contacts
+      </Link>
+
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="no-margin">Manage Tags</h1>
+        <Button onClick={() => setCreateModalOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Create Tag
+        </Button>
+      </div>
+
+      <div className="bg-neu-light rounded-neu shadow-neu overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 text-primary-600 animate-spin" />
+          </div>
+        ) : tags.length === 0 ? (
+          <div className="text-center py-12 text-text-muted">
+            <p className="mb-4">No tags created yet</p>
+            <Button onClick={() => setCreateModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Tag
+            </Button>
+          </div>
+        ) : (
+          <table className="min-w-full divide-y divide-neu-dark">
+            <thead className="bg-neu-light">
+              <tr>
+                <th className="px-6 py-3 text-left label-sm">Tag</th>
+                <th className="px-6 py-3 text-left label-sm">Description</th>
+                <th className="px-6 py-3 text-left label-sm">Contacts</th>
+                <th className="px-6 py-3 text-left label-sm">Created</th>
+                <th className="px-6 py-3 text-right label-sm">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-neu-light divide-y divide-neu-dark">
+              {tags.map((tag) => (
+                <tr key={tag.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                      style={{
+                        backgroundColor: `${tag.color}20`,
+                        color: tag.color,
+                      }}
+                    >
+                      {tag.name}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-text-muted">
+                    {tag.description || '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                    {tag.contactCount}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-text-muted">
+                    {new Date(tag.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => setEditingTag(tag)}
+                      className="text-primary-600 hover:text-primary-700 mr-3"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(tag)}
+                      className="text-primary-700 hover:text-primary-800"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Create Modal */}
+      {createModalOpen && (
+        <TagFormModal
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={() => {
+            setCreateModalOpen(false)
+            fetchTags()
+          }}
+        />
+      )}
+
+      {/* Edit Modal */}
+      {editingTag && (
+        <TagFormModal
+          tag={editingTag}
+          onClose={() => setEditingTag(null)}
+          onSuccess={() => {
+            setEditingTag(null)
+            fetchTags()
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete Tag"
+      >
+        <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-primary-100 rounded-full">
+          <AlertTriangle className="w-6 h-6 text-primary-600" />
+        </div>
+        <p className="text-text-secondary text-center mb-2">
+          Are you sure you want to delete the tag &quot;{deleteConfirm?.name}&quot;?
+        </p>
+        {deleteConfirm && deleteConfirm.contactCount > 0 && (
+          <p className="text-sm text-amber-600 text-center mb-4">
+            This tag is used by {deleteConfirm.contactCount} contact(s). It will be removed from all contacts.
+          </p>
+        )}
+        <div className="flex justify-end gap-3 mt-6">
+          <Button type="button" variant="secondary" onClick={() => setDeleteConfirm(null)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            onClick={() => deleteConfirm && handleDelete(deleteConfirm.id)}
+          >
+            Delete
+          </Button>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+
+function TagFormModal({
+  tag,
+  onClose,
+  onSuccess,
+}: {
+  tag?: Tag
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [formData, setFormData] = useState({
+    name: tag?.name || '',
+    color: tag?.color || PRESET_COLORS[0],
+    description: tag?.description || '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const url = tag
+        ? `/api/admin/contacts/tags/${tag.id}`
+        : '/api/admin/contacts/tags'
+      const method = tag ? 'PATCH' : 'POST'
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (res.ok) {
+        onSuccess()
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to save tag')
+      }
+    } catch (err) {
+      setError('Failed to save tag')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal isOpen={true} onClose={onClose} title={tag ? 'Edit Tag' : 'Create Tag'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded-neu text-sm">
+            {error}
+          </div>
+        )}
+
+        <Input
+          id="name"
+          name="name"
+          label="Name *"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          required
+        />
+
+        <div>
+          <label className="block text-body-sm font-medium text-secondary mb-2">
+            Color
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {PRESET_COLORS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => setFormData({ ...formData, color })}
+                className={`w-8 h-8 rounded-full transition-all ${
+                  formData.color === color
+                    ? 'ring-2 ring-offset-2 ring-primary-400 scale-110'
+                    : 'hover:scale-105'
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="text-sm text-text-muted">Custom:</span>
+            <input
+              type="color"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              className="w-8 h-8 rounded cursor-pointer"
+            />
+            <span className="text-sm text-text-muted">{formData.color}</span>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-body-sm font-medium text-secondary mb-1">
+            Preview
+          </label>
+          <span
+            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+            style={{
+              backgroundColor: `${formData.color}20`,
+              color: formData.color,
+            }}
+          >
+            {formData.name || 'Tag name'}
+          </span>
+        </div>
+
+        <div>
+          <label className="block text-body-sm font-medium text-secondary mb-1">
+            Description
+          </label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={2}
+            className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none"
+            placeholder="Optional description for this tag"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={loading}>
+            {tag ? 'Save Changes' : 'Create Tag'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}

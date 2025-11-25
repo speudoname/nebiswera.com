@@ -168,10 +168,11 @@ model Testimonial {
   locale       String            @default("ka") // ka or en
 
   // Media
-  profilePhoto String?
-  images       String[] // Array of R2 URLs
-  audioUrl     String?
-  videoUrl     String?
+  profilePhoto   String?
+  images         String[] // Array of R2 URLs
+  audioUrl       String?
+  videoUrl       String?
+  videoThumbnail String? // Auto-generated thumbnail for video
 
   // Metadata
   status       TestimonialStatus @default(PENDING)

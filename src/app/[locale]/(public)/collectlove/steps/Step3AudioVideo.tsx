@@ -33,11 +33,25 @@ export function Step3AudioVideo({
       const { uploadFileToR2 } = await import('@/lib/storage/upload-helpers')
       const url = await uploadFileToR2(blob, type)
 
+      // Generate and upload thumbnail for videos
+      let thumbnailUrl: string | undefined
+      if (type === 'video') {
+        try {
+          const { generateVideoThumbnail } = await import('@/lib/storage/video-thumbnail')
+          const thumbnailBlob = await generateVideoThumbnail(blob, 1)
+          thumbnailUrl = await uploadFileToR2(thumbnailBlob, 'image')
+        } catch (error) {
+          console.error('Failed to generate video thumbnail:', error)
+          // Continue without thumbnail - not critical
+        }
+      }
+
       const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           [type === 'audio' ? 'audioUrl' : 'videoUrl']: url,
+          ...(type === 'video' && thumbnailUrl ? { videoThumbnail: thumbnailUrl } : {}),
           type: type.toUpperCase(),
         }),
       })

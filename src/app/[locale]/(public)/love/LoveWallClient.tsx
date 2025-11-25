@@ -17,6 +17,7 @@ type Testimonial = {
   profilePhoto: string | null
   images: string[]
   videoUrl: string | null
+  videoThumbnail: string | null
   submittedAt: string
 }
 
@@ -146,6 +147,7 @@ export function LoveWallClient() {
                 <div className="mt-4 relative rounded-neu overflow-hidden shadow-neu-inset">
                   <video
                     src={testimonial.videoUrl}
+                    poster={testimonial.videoThumbnail || undefined}
                     controls
                     preload="metadata"
                     className="w-full aspect-video bg-neu-dark/20"

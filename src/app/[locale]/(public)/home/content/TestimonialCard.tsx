@@ -81,7 +81,7 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
 
       {/* Text content with height constraint */}
       <div className="mb-4">
-        <p className={`text-text-secondary text-sm md:text-base leading-relaxed ${!isExpanded && isLongText ? 'line-clamp-4' : ''}`}>
+        <p className="text-text-secondary text-sm md:text-base leading-relaxed">
           "{displayText}"
         </p>
         {isLongText && (

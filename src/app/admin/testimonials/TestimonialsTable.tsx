@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, X, Edit, Trash2, Filter } from 'lucide-react'
+import { Check, X, Edit, Trash2, Filter, Search } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
@@ -32,11 +32,12 @@ export function TestimonialsTable() {
   const [statusFilter, setStatusFilter] = useState<TestimonialStatus | 'ALL'>('ALL')
   const [typeFilter, setTypeFilter] = useState<TestimonialType | 'ALL'>('ALL')
   const [tagFilter, setTagFilter] = useState<string>('ALL')
+  const [searchQuery, setSearchQuery] = useState<string>('')
   const [availableTags, setAvailableTags] = useState<string[]>([])
 
   useEffect(() => {
     fetchTestimonials()
-  }, [page, statusFilter, typeFilter, tagFilter])
+  }, [page, statusFilter, typeFilter, tagFilter, searchQuery])
 
   useEffect(() => {
     // Fetch available tags from all testimonials
@@ -66,6 +67,7 @@ export function TestimonialsTable() {
       if (statusFilter !== 'ALL') params.set('status', statusFilter)
       if (typeFilter !== 'ALL') params.set('type', typeFilter)
       if (tagFilter !== 'ALL') params.set('tags', tagFilter)
+      if (searchQuery.trim()) params.set('search', searchQuery.trim())
 
       const res = await fetch(`/api/testimonials?${params}`)
       const data = await res.json()
@@ -119,6 +121,20 @@ export function TestimonialsTable() {
 
   return (
     <div>
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name, email, or text..."
+            className="w-full pl-10 pr-4 py-2 rounded-neu bg-neu-base shadow-neu-inset text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="mb-6 flex gap-4 items-center flex-wrap">
         <div className="flex gap-2 items-center">

@@ -1,13 +1,23 @@
 'use client'
 
 import { useTranslations, useLocale } from 'next-intl'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
-import { ArrowRight, BookOpen } from 'lucide-react'
+import { ArrowRight, BookOpen, Volume2, VolumeX } from 'lucide-react'
 
 export function HomeClient() {
   const t = useTranslations('home')
   const locale = useLocale()
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isMuted, setIsMuted] = useState(true)
+
+  function toggleMute() {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted
+      setIsMuted(videoRef.current.muted)
+    }
+  }
 
   return (
     <section className="pt-8 pb-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
@@ -28,13 +38,15 @@ export function HomeClient() {
         </h2>
 
         {/* Video */}
-        <div className="mb-6 md:mb-8 w-full max-w-xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video">
+        <div className="mb-6 md:mb-8 w-full max-w-xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video relative">
           <video
+            ref={videoRef}
             className="w-full h-full object-cover"
             width={1280}
             height={720}
             autoPlay
             muted
+            loop
             playsInline
             // @ts-expect-error - fetchPriority is valid but not in React types yet
             fetchPriority="high"
@@ -42,6 +54,19 @@ export function HomeClient() {
           >
             <source src="https://cdn.nebiswera.com/hero-video.mp4" type="video/mp4" />
           </video>
+
+          {/* Unmute Button */}
+          <button
+            onClick={toggleMute}
+            className="absolute bottom-4 right-4 bg-neu-base/90 backdrop-blur-sm text-text-primary rounded-full p-3 shadow-neu hover:shadow-neu-hover active:shadow-neu-pressed transition-all"
+            aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-5 h-5" />
+            ) : (
+              <Volume2 className="w-5 h-5" />
+            )}
+          </button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">

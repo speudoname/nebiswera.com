@@ -8,6 +8,7 @@ export interface TestimonialData {
   rating: number
   profilePhoto: string | null
   videoUrl: string | null
+  videoThumbnail: string | null
   audioUrl: string | null
   images: string[]
   type: TestimonialType
@@ -53,6 +54,7 @@ export async function getRandomTestimonials(
       rating: true,
       profilePhoto: true,
       videoUrl: true,
+      videoThumbnail: true,
       audioUrl: true,
       images: true,
       type: true,

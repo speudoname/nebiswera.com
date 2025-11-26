@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@arco-themes/react-easy-email-theme": "^0.0.3",
     "@auth/prisma-adapter": "^2.11.1",
     "@aws-sdk/client-s3": "^3.939.0",
     "@prisma/client": "5",

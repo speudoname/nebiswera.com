@@ -2,11 +2,13 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui'
-import { FileText, Copy, FileImage, Save, Eye, Code } from 'lucide-react'
+import { FileText, Copy, FileImage, Save, Eye, Code, Blocks } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
 import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
+import { VisualEmailBlockEditor, type VisualEmailEditorRef } from './VisualEmailBlockEditor'
+import type { EmailDesign } from '@/types/email-blocks'
 
 interface Step2ContentProps {
   data: CampaignData
@@ -20,44 +22,22 @@ const VARIABLES = [
   { key: '{{fullName}}', label: 'Full Name', description: 'firstName + lastName or email' },
 ]
 
-const MJML_SNIPPETS = [
-  {
-    label: 'Button',
-    code: `<mj-button background-color="#8B5CF6" href="https://example.com">
-  Click Here
-</mj-button>`,
-  },
-  {
-    label: 'Image',
-    code: `<mj-image src="https://via.placeholder.com/600x200" alt="Image description" />`,
-  },
-  {
-    label: 'Divider',
-    code: `<mj-divider border-color="#E0E0E0" border-width="1px" />`,
-  },
-  {
-    label: 'Social',
-    code: `<mj-social font-size="15px" icon-size="30px" mode="horizontal">
-  <mj-social-element name="facebook" href="https://facebook.com/" />
-  <mj-social-element name="twitter" href="https://twitter.com/" />
-  <mj-social-element name="instagram" href="https://instagram.com/" />
-</mj-social>`,
-  },
-]
-
 export function Step2Content({ data, onUpdate }: Step2ContentProps) {
+  const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual')
   const [activeTab, setActiveTab] = useState<'editor' | 'text'>('editor')
   const [saving, setSaving] = useState(false)
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
-  const emailEditorRef = useRef<EmailEditorRef>(null)
+  const visualEditorRef = useRef<VisualEmailEditorRef>(null)
+  const codeEditorRef = useRef<EmailEditorRef>(null)
 
-  // Save MJML and compile to HTML
+  // Save from editor
   const handleSaveFromEditor = async () => {
-    if (!emailEditorRef.current?.exportHtml) return
+    const editorRef = editorMode === 'visual' ? visualEditorRef.current : codeEditorRef.current
+    if (!editorRef?.exportHtml) return
 
     setSaving(true)
     try {
-      const { design, html, text } = await emailEditorRef.current.exportHtml()
+      const { design, html, text } = await editorRef.exportHtml()
 
       // Ensure unsubscribe link is present
       const hasUnsubscribeLink = html.includes('{{{ pm:unsubscribe }}}') || html.includes('{{unsubscribe}}')
@@ -70,48 +50,33 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         const textWithUnsubscribe = text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}'
 
         onUpdate({
-          designJson: design, // MJML code
+          designJson: design,
           htmlContent: htmlWithUnsubscribe,
           textContent: textWithUnsubscribe,
         })
       } else {
         onUpdate({
-          designJson: design, // MJML code
+          designJson: design,
           htmlContent: html,
           textContent: text,
         })
       }
     } catch (error) {
       console.error('Failed to export from editor:', error)
-      alert(`Failed to compile MJML: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      alert(`Failed to compile: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSaving(false)
     }
   }
 
   const handleTemplateSelect = (template: EmailTemplate) => {
-    // Load template HTML - user can then convert to MJML or edit
     onUpdate({
       htmlContent: template.htmlContent,
       textContent: template.textContent,
-      designJson: null, // Clear MJML when loading HTML template
+      designJson: null,
       ...(template.suggestedSubject && !data.subject ? { subject: template.suggestedSubject } : {}),
       ...(template.suggestedPreviewText && !data.previewText ? { previewText: template.suggestedPreviewText } : {}),
     })
-  }
-
-  const insertSnippet = (snippet: typeof MJML_SNIPPETS[0]) => {
-    if (!emailEditorRef.current) return
-    const currentMjml = emailEditorRef.current.getMjml()
-    // Insert before closing </mj-column> tag
-    const insertPosition = currentMjml.lastIndexOf('</mj-column>')
-    if (insertPosition !== -1) {
-      const newMjml =
-        currentMjml.slice(0, insertPosition) +
-        '\n        ' + snippet.code + '\n        ' +
-        currentMjml.slice(insertPosition)
-      emailEditorRef.current.setMjml(newMjml)
-    }
   }
 
   const generatePlainText = () => {
@@ -130,13 +95,26 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
     onUpdate({ textContent: text })
   }
 
+  // Parse design JSON for visual editor
+  let initialDesign: EmailDesign | null = null
+  if (data.designJson) {
+    try {
+      const parsed = typeof data.designJson === 'string' ? JSON.parse(data.designJson) : data.designJson
+      if (parsed && typeof parsed === 'object' && 'blocks' in parsed) {
+        initialDesign = parsed
+      }
+    } catch (e) {
+      // Not block design, probably MJML code
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-text-primary mb-2">Email Content</h2>
           <p className="text-text-muted">
-            Design your email with MJML code
+            {editorMode === 'visual' ? 'Build your email visually with blocks' : 'Write MJML code directly'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -154,7 +132,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
               loading={saving}
             >
               <Save className="w-4 h-4 mr-2" />
-              Compile & Save
+              {editorMode === 'visual' ? 'Save Design' : 'Compile & Save'}
             </Button>
           )}
         </div>
@@ -164,7 +142,9 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
       <div className="bg-blue-50 border border-blue-200 rounded-neu p-4">
         <h3 className="text-sm font-medium text-blue-900 mb-2">📝 Personalization Variables</h3>
         <p className="text-xs text-blue-800 mb-2">
-          Type these variables directly in your MJML content to personalize for each recipient:
+          {editorMode === 'visual'
+            ? 'Type these variables in text blocks to personalize for each recipient:'
+            : 'Use these variables in your MJML code:'}
         </p>
         <div className="flex flex-wrap gap-2">
           {VARIABLES.map((v) => (
@@ -182,29 +162,38 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         </div>
       </div>
 
-      {/* MJML Snippets Panel */}
-      {activeTab === 'editor' && (
-        <div className="bg-purple-50 border border-purple-200 rounded-neu p-4">
-          <h3 className="text-sm font-medium text-purple-900 mb-2">⚡ MJML Snippets</h3>
-          <div className="flex flex-wrap gap-2">
-            {MJML_SNIPPETS.map((snippet) => (
-              <Button
-                key={snippet.label}
-                variant="ghost"
-                size="sm"
-                onClick={() => insertSnippet(snippet)}
-              >
-                <Code className="w-3 h-3 mr-1" />
-                {snippet.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Editor Tabs */}
       <div>
         <div className="flex items-center gap-4 border-b border-neu-dark mb-4">
+          {/* Editor Mode Toggle */}
+          <div className="flex items-center gap-2 border-r border-neu-dark pr-4 mr-2">
+            <button
+              type="button"
+              onClick={() => setEditorMode('visual')}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                editorMode === 'visual'
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <Blocks className="w-4 h-4" />
+              Visual
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditorMode('code')}
+              className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                editorMode === 'code'
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              <Code className="w-4 h-4" />
+              Code
+            </button>
+          </div>
+
+          {/* Content Tabs */}
           <button
             type="button"
             onClick={() => setActiveTab('editor')}
@@ -215,12 +204,11 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
             }`}
           >
             <Eye className="w-4 h-4" />
-            MJML Editor
+            {editorMode === 'visual' ? 'Visual Builder' : 'MJML Editor'}
           </button>
           <button
             type="button"
             onClick={async () => {
-              // Auto-save and generate plain text when switching tabs
               await handleSaveFromEditor()
               setActiveTab('text')
             }}
@@ -237,16 +225,29 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
 
         {activeTab === 'editor' ? (
           <div>
-            <EmailEditorWrapper
-              ref={emailEditorRef}
-              initialMjml={typeof data.designJson === 'string' ? data.designJson : undefined}
-              onReady={() => {
-                console.log('MJML editor ready')
-              }}
-            />
-            <p className="text-xs text-text-muted mt-3">
-              💡 Click "Compile & Save" to convert MJML to HTML before moving to the next step
-            </p>
+            {editorMode === 'visual' ? (
+              <>
+                <VisualEmailBlockEditor
+                  ref={visualEditorRef}
+                  initialDesign={initialDesign}
+                  onReady={() => console.log('Visual editor ready')}
+                />
+                <p className="text-xs text-text-muted mt-3">
+                  💡 Drag blocks to reorder, click to edit inline, use the gear icon for detailed properties
+                </p>
+              </>
+            ) : (
+              <>
+                <EmailEditorWrapper
+                  ref={codeEditorRef}
+                  initialMjml={typeof data.designJson === 'string' && !initialDesign ? data.designJson : undefined}
+                  onReady={() => console.log('Code editor ready')}
+                />
+                <p className="text-xs text-text-muted mt-3">
+                  💡 Click "Compile & Save" to convert MJML to HTML before moving to the next step
+                </p>
+              </>
+            )}
           </div>
         ) : (
           <div>
@@ -270,7 +271,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
               value={data.textContent}
               onChange={(e) => onUpdate({ textContent: e.target.value })}
               rows={20}
-              placeholder="Plain text will be auto-generated when you compile and save the MJML..."
+              placeholder="Plain text will be auto-generated when you compile and save..."
               className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-4 py-3 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none font-mono"
               required
             />
@@ -283,13 +284,26 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
 
       {/* Tips */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-neu p-4">
-        <h3 className="text-sm font-medium text-yellow-900 mb-2">✏️ MJML Tips</h3>
+        <h3 className="text-sm font-medium text-yellow-900 mb-2">✏️ Email Builder Tips</h3>
         <ul className="text-xs text-yellow-800 space-y-1">
-          <li>• MJML is a responsive email framework - your emails will look great on all devices</li>
-          <li>• Use the snippets above to quickly add common elements</li>
-          <li>• Personalization variables work inside any MJML text element</li>
+          {editorMode === 'visual' ? (
+            <>
+              <li>• Drag blocks to reorder them</li>
+              <li>• Click text/button to edit inline</li>
+              <li>• Use the gear icon for detailed styling options</li>
+              <li>• Undo/Redo available in the left sidebar</li>
+              <li>• Personalization variables work in text blocks</li>
+            </>
+          ) : (
+            <>
+              <li>• MJML is a responsive email framework</li>
+              <li>• Your emails will look great on all devices</li>
+              <li>• Personalization variables work inside any MJML text element</li>
+              <li>• Learn more at <a href="https://mjml.io/documentation/" target="_blank" rel="noopener" className="underline">mjml.io</a></li>
+            </>
+          )}
           <li>• Unsubscribe link is automatically added if missing</li>
-          <li>• Learn more at <a href="https://mjml.io/documentation/" target="_blank" rel="noopener" className="underline">mjml.io</a></li>
+          <li>• Switch between Visual and Code modes anytime</li>
         </ul>
       </div>
 

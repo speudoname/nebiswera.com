@@ -78,17 +78,6 @@ export async function queueNotification(
     sendAt = new Date(Date.now() + notification.triggerMinutes * 60 * 1000)
   }
 
-  // Get registration email
-  const registration = await prisma.webinarRegistration.findUnique({
-    where: { id: registrationId },
-    select: { email: true },
-  })
-
-  if (!registration) {
-    console.error('Registration not found for queue:', registrationId)
-    return
-  }
-
   // Don't queue if send time is in the past
   if (sendAt < new Date()) {
     // Send immediately instead

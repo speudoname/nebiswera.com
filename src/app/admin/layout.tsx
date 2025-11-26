@@ -47,7 +47,7 @@ function AdminLayoutContent({
         <nav className="mt-6 px-3">
           {navigation.map((item) => {
             const isActive = pathname === item.href ||
-              (item.href !== '/admin' && pathname.startsWith(item.href))
+              (item.href !== '/admin' && pathname?.startsWith(item.href))
             const Icon = item.icon
             return (
               <Link

@@ -258,9 +258,11 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
         )}
         {activeTab === 'interactions' && webinarId && (
           <div className="text-center py-12 text-text-muted">
-            Interactions editor coming soon...
+            <Link href={`/admin/webinars/${webinarId}/interactions`} className="text-primary-600 hover:underline">
+              Manage Interactions →
+            </Link>
             <br />
-            <span className="text-sm">Add polls, CTAs, downloads, and Q&A prompts at specific timestamps.</span>
+            <span className="text-sm mt-2 block">Add polls, CTAs, downloads, and Q&A prompts at specific timestamps.</span>
           </div>
         )}
         {activeTab === 'chat' && webinarId && (
@@ -272,9 +274,11 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
         )}
         {activeTab === 'notifications' && webinarId && (
           <div className="text-center py-12 text-text-muted">
-            Notification templates coming soon...
+            <Link href={`/admin/webinars/${webinarId}/notifications`} className="text-primary-600 hover:underline">
+              Manage Notifications →
+            </Link>
             <br />
-            <span className="text-sm">Set up confirmation, reminder, and follow-up emails.</span>
+            <span className="text-sm mt-2 block">Set up confirmation, reminder, and follow-up emails.</span>
           </div>
         )}
         {activeTab === 'registrations' && webinarId && (

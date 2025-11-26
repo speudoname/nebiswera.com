@@ -215,7 +215,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })
 
       // Aggregate poll results
-      const config = interaction.config as { options?: string[] }
+      const config = interaction.content as { options?: string[] }
       const optionCounts: Record<number, number> = {}
 
       for (const response of responses) {
@@ -246,22 +246,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Return all interactions for this webinar
-    const interactions = await prisma.webinarInteraction.findMany({
+    const interactionsData = await prisma.webinarInteraction.findMany({
       where: {
         webinarId: webinar.id,
         enabled: true,
       },
-      orderBy: { triggerTime: 'asc' },
+      orderBy: { triggersAt: 'asc' },
       select: {
         id: true,
         type: true,
-        triggerTime: true,
+        triggersAt: true,
         title: true,
-        config: true,
+        content: true,
         viewCount: true,
         actionCount: true,
       },
     })
+
+    // Map to API response format
+    const interactions = interactionsData.map((i) => ({
+      id: i.id,
+      type: i.type,
+      triggerTime: i.triggersAt,
+      title: i.title,
+      config: i.content,
+      viewCount: i.viewCount,
+      actionCount: i.actionCount,
+    }))
 
     return NextResponse.json({ interactions })
   } catch (error) {

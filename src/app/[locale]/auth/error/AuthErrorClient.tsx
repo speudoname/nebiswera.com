@@ -11,7 +11,7 @@ function AuthErrorContent() {
   const t = useTranslations('auth.errors')
   const locale = useLocale()
   const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+  const error = searchParams?.get('error')
 
   const getErrorMessage = () => {
     switch (error) {

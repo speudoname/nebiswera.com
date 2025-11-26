@@ -745,17 +745,17 @@ This queue-based approach will easily extend to your future automation system.
 - [x] Follow-up notifications ✅
 
 ### Sprint 8: Analytics
-- [ ] Analytics event ingestion API
-- [ ] Video heartbeat tracking
+- [x] Analytics event ingestion API ✅
+- [x] Video heartbeat tracking (via watch progress) ✅
 - [ ] Engagement score calculation
-- [ ] Admin analytics dashboard
-- [ ] Conversion funnel visualization
-- [ ] Per-interaction stats
+- [x] Admin analytics dashboard ✅
+- [x] Conversion funnel visualization ✅
+- [x] Per-interaction stats ✅
 
 ### Sprint 9: Replay System
-- [ ] Replay room with seeking
-- [ ] Mark sessions as replay-available
-- [ ] Replay registration flow
+- [x] Replay room with seeking (same as on-demand) ✅
+- [ ] Mark sessions as replay-available (admin UI)
+- [x] Replay registration flow ✅
 - [ ] Replay expiration logic
 
 ### Sprint 10: Polish & Testing

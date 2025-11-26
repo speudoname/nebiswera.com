@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Stream } from '@cloudflare/stream-react'
+import { Stream, StreamPlayerApi } from '@cloudflare/stream-react'
 
 interface WebinarPlayerProps {
   videoUid: string
@@ -26,7 +26,7 @@ export function WebinarPlayer({
   onVideoStart,
   onError,
 }: WebinarPlayerProps) {
-  const streamRef = useRef<HTMLStreamElement>(null)
+  const streamRef = useRef<StreamPlayerApi | undefined>(undefined)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [videoDuration, setVideoDuration] = useState(duration || 0)
@@ -89,23 +89,23 @@ export function WebinarPlayer({
     onError?.('Video playback error')
   }, [onError])
 
-  // Prevent seeking for simulated live
+  // Track last valid time for simulated live (to prevent seeking back)
+  const lastValidTime = useRef(0)
+
+  // Update last valid time for simulated live mode
   useEffect(() => {
-    if (!streamRef.current || allowSeeking) return
-
-    const handleSeeking = () => {
-      if (streamRef.current && playbackMode === 'simulated_live') {
-        // Don't allow seeking backwards in simulated live mode
-        // Calculate what the position should be based on session start
-        streamRef.current.currentTime = currentTime
-      }
+    if (playbackMode === 'simulated_live' && currentTime > lastValidTime.current) {
+      lastValidTime.current = currentTime
     }
+  }, [playbackMode, currentTime])
 
-    const element = streamRef.current
-    element.addEventListener('seeking', handleSeeking)
+  // Handle seeking for simulated live (called on every time update)
+  useEffect(() => {
+    if (!streamRef.current || allowSeeking || playbackMode !== 'simulated_live') return
 
-    return () => {
-      element.removeEventListener('seeking', handleSeeking)
+    // If someone tries to seek backwards, push them back forward
+    if (currentTime < lastValidTime.current - 1) {
+      streamRef.current.currentTime = lastValidTime.current
     }
   }, [allowSeeking, playbackMode, currentTime])
 
@@ -125,25 +125,20 @@ export function WebinarPlayer({
       )}
 
       {/* Cloudflare Stream Player */}
-      <Stream
-        ref={streamRef}
-        src={videoUid}
-        controls={allowSeeking}
-        autoplay
-        onLoadedData={handleLoadedData}
-        onPlay={handlePlay}
-        onPause={() => setIsPlaying(false)}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={handleEnded}
-        onError={handleError}
-        className="w-full h-full"
-        style={{
-          // Hide controls for simulated live
-          ...(!allowSeeking && {
-            pointerEvents: 'none',
-          }),
-        }}
-      />
+      <div className={`w-full h-full ${!allowSeeking ? 'pointer-events-none' : ''}`}>
+        <Stream
+          streamRef={streamRef}
+          src={videoUid}
+          controls={allowSeeking}
+          autoplay
+          onLoadedData={handleLoadedData}
+          onPlay={handlePlay}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          onError={handleError}
+        />
+      </div>
 
       {/* Custom controls for simulated live (no seeking) */}
       {!allowSeeking && !isLoading && (
@@ -202,17 +197,4 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-// Extend HTMLElement for Stream component
-declare global {
-  interface HTMLStreamElement extends HTMLElement {
-    play(): Promise<void>
-    pause(): void
-    currentTime: number
-    duration: number
-    paused: boolean
-    volume: number
-    muted: boolean
-  }
 }

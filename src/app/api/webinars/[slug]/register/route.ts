@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         title: true,
         description: true,
         thumbnailUrl: true,
-        duration: true,
+        videoDuration: true,
         status: true,
         scheduleConfig: {
           select: {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         title: webinar.title,
         description: webinar.description,
         thumbnailUrl: webinar.thumbnailUrl,
-        duration: webinar.duration,
+        duration: webinar.videoDuration,
       },
       sessions: availability.sessions.map((s) => ({
         id: s.id,

@@ -25,7 +25,7 @@ export function LanguageSwitcher({ darkBg = false, compact = false }: LanguageSw
 
   const switchLocale = (newLocale: Locale) => {
     setStoredLocale(newLocale)
-    const segments = pathname.split('/')
+    const segments = (pathname || '/').split('/')
     segments[1] = newLocale
     router.push(segments.join('/'))
   }

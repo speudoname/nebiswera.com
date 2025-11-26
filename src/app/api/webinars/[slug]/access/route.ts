@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         scheduleConfig: true,
         interactions: {
           where: { enabled: true },
-          orderBy: { triggerTime: 'asc' },
+          orderBy: { triggersAt: 'asc' },
         },
       },
     })
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         // For scheduled sessions, check if we're within the viewing window
         const now = new Date()
         const sessionStart = new Date(session.scheduledAt)
-        const sessionEnd = new Date(sessionStart.getTime() + (webinar.duration || 60) * 60 * 1000)
+        const sessionEnd = new Date(sessionStart.getTime() + (webinar.videoDuration || 60) * 60 * 1000)
 
         // Allow joining 5 minutes early
         const earlyAccess = new Date(sessionStart.getTime() - 5 * 60 * 1000)
@@ -112,9 +112,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const interactions = webinar.interactions.map((i) => ({
       id: i.id,
       type: i.type,
-      triggerTime: i.triggerTime,
+      triggerTime: i.triggersAt,
       title: i.title,
-      config: i.config,
+      config: i.content,
     }))
 
     return NextResponse.json({
@@ -130,8 +130,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         id: webinar.id,
         title: webinar.title,
         description: webinar.description,
-        videoUid: webinar.videoUid,
-        duration: webinar.duration,
+        videoUid: webinar.cloudflareVideoUid,
+        duration: webinar.videoDuration,
         thumbnailUrl: webinar.thumbnailUrl,
       },
       playback: {

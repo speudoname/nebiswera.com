@@ -35,7 +35,7 @@ export function UserProfileDropdown({ user, signOutAction }: UserProfileDropdown
 
   const switchLocale = (newLocale: Locale) => {
     setStoredLocale(newLocale)
-    const segments = pathname.split('/')
+    const segments = (pathname || '/').split('/')
     segments[1] = newLocale
     router.push(segments.join('/'))
     setIsOpen(false)

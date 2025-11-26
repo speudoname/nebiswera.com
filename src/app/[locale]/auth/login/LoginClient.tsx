@@ -15,7 +15,7 @@ function LoginContent() {
   const locale = useLocale()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || `/${locale}/dashboard`
+  const callbackUrl = searchParams?.get('callbackUrl') || `/${locale}/dashboard`
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({

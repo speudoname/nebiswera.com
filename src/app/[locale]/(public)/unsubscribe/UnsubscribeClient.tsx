@@ -83,7 +83,7 @@ export function UnsubscribeClient() {
   const locale = useLocale() as Locale
   const t = content[locale]
   const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  const token = searchParams?.get('token')
 
   const [status, setStatus] = useState<Status>('loading')
   const [maskedEmail, setMaskedEmail] = useState<string>('')

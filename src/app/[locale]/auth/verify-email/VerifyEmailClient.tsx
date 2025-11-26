@@ -14,7 +14,7 @@ function VerifyEmailContent() {
   const errors = useTranslations('auth.errors')
   const locale = useLocale()
   const searchParams = useSearchParams()
-  const token = searchParams.get('token')
+  const token = searchParams?.get('token')
   const { status: sessionStatus, update } = useSession()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('')

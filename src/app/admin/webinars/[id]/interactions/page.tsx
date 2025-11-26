@@ -13,7 +13,7 @@ export default async function InteractionsPage({ params }: PageProps) {
     where: { id },
     include: {
       interactions: {
-        orderBy: { triggerTime: 'asc' },
+        orderBy: { triggersAt: 'asc' },
       },
     },
   })
@@ -39,15 +39,15 @@ export default async function InteractionsPage({ params }: PageProps) {
 
       <InteractionsEditor
         webinarId={id}
-        videoDuration={webinar.duration || 3600}
-        videoUid={webinar.videoUid || ''}
+        videoDuration={webinar.videoDuration || 3600}
+        videoUid={webinar.cloudflareVideoUid || ''}
         initialInteractions={webinar.interactions.map((i) => ({
           id: i.id,
           type: i.type,
-          triggerTime: i.triggerTime,
+          triggerTime: i.triggersAt,
           duration: i.duration,
           title: i.title,
-          config: i.config as Record<string, unknown>,
+          config: i.content as Record<string, unknown>,
           pauseVideo: i.pauseVideo,
           required: i.required,
           showOnReplay: i.showOnReplay,

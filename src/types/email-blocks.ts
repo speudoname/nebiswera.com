@@ -1,6 +1,6 @@
 // Email Block Types for Visual Email Builder
 
-export type BlockType = 'text' | 'button' | 'image' | 'divider' | 'spacer' | 'social' | 'columns'
+export type BlockType = 'text' | 'button' | 'image' | 'divider' | 'spacer' | 'social'
 
 export interface BaseBlock {
   id: string
@@ -60,13 +60,6 @@ export interface SocialBlock extends BaseBlock {
   mode?: 'horizontal' | 'vertical'
 }
 
-export interface ColumnsBlock extends BaseBlock {
-  type: 'columns'
-  columns: {
-    blocks: EmailBlock[]
-  }[]
-}
-
 export type EmailBlock =
   | TextBlock
   | ButtonBlock
@@ -74,7 +67,6 @@ export type EmailBlock =
   | DividerBlock
   | SpacerBlock
   | SocialBlock
-  | ColumnsBlock
 
 export interface EmailDesign {
   blocks: EmailBlock[]

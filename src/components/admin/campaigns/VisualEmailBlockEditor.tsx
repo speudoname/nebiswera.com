@@ -75,7 +75,7 @@ export const VisualEmailBlockEditor = forwardRef<any, VisualEmailBlockEditorProp
       const newDesign = {
         ...design,
         blocks: design.blocks.map(block =>
-          block.id === id ? { ...block, ...updates } : block
+          block.id === id ? { ...block, ...updates } as EmailBlock : block
         ),
       }
       pushHistory(newDesign)

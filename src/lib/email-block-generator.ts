@@ -87,10 +87,6 @@ function generateBlockMJML(block: EmailBlock): string {
 ${socialLinks}
         </mj-social>`
 
-    case 'columns':
-      // For now, we'll skip columns implementation (can add later)
-      return '        <!-- Columns not yet implemented -->'
-
     default:
       return ''
   }

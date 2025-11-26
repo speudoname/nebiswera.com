@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { createDirectUploadUrl, getVideo } from '@/lib/cloudflare-stream'
+import { prisma } from '@/lib/db'
+import {
+  createPresignedUploadUrl,
+  getWebinarOriginalKey,
+  getPublicUrl,
+} from '@/lib/storage/r2'
 import type { NextRequest } from 'next/server'
 
-// POST /api/admin/webinars/upload - Get a direct upload URL for Cloudflare Stream
+// POST /api/admin/webinars/upload - Get a presigned URL for R2 upload
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -11,22 +16,70 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { webinarId, webinarTitle } = body
+    const { webinarId, fileName, fileSize, contentType } = body
 
-    // Create direct upload URL
-    // This URL can be used with TUS protocol for resumable uploads
-    const { uploadURL, uid } = await createDirectUploadUrl({
-      maxDurationSeconds: 3600 * 3, // 3 hours max duration
-      meta: {
-        webinarId: webinarId || '',
-        name: webinarTitle || 'Webinar Video',
+    if (!webinarId) {
+      return NextResponse.json({ error: 'Webinar ID is required' }, { status: 400 })
+    }
+
+    // Verify webinar exists
+    const webinar = await prisma.webinar.findUnique({
+      where: { id: webinarId },
+    })
+
+    if (!webinar) {
+      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+    }
+
+    // Get file extension from filename or default to mp4
+    const extension = fileName?.split('.').pop()?.toLowerCase() || 'mp4'
+    const key = getWebinarOriginalKey(webinarId, extension)
+    const mimeType = contentType || 'video/mp4'
+
+    // Create presigned upload URL (valid for 2 hours for large uploads)
+    const uploadUrl = await createPresignedUploadUrl(key, mimeType, 7200)
+    const originalUrl = getPublicUrl(key)
+
+    // Create or update processing job
+    const job = await prisma.videoProcessingJob.upsert({
+      where: { webinarId },
+      create: {
+        webinarId,
+        status: 'PENDING',
+        progress: 0,
+        originalUrl,
+        originalSize: fileSize ? BigInt(fileSize) : null,
       },
-      requireSignedURLs: false, // We'll handle access control at our app level
+      update: {
+        status: 'PENDING',
+        progress: 0,
+        originalUrl,
+        originalSize: fileSize ? BigInt(fileSize) : null,
+        error: null,
+        startedAt: null,
+        completedAt: null,
+        hlsUrl: null,
+        thumbnailUrl: null,
+        duration: null,
+      },
+    })
+
+    // Update webinar video status
+    await prisma.webinar.update({
+      where: { id: webinarId },
+      data: {
+        videoStatus: 'processing',
+        hlsUrl: null,
+        thumbnailUrl: null,
+        videoDuration: null,
+      },
     })
 
     return NextResponse.json({
-      uploadURL,
-      videoUid: uid,
+      uploadUrl,
+      originalUrl,
+      jobId: job.id,
+      key,
     })
   } catch (error) {
     console.error('Failed to create upload URL:', error)
@@ -37,36 +90,90 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET /api/admin/webinars/upload?uid=xxx - Get video status
+// PUT /api/admin/webinars/upload - Confirm upload is complete and trigger processing
+export async function PUT(request: NextRequest) {
+  if (!(await isAdmin(request))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { webinarId, jobId } = body
+
+    if (!webinarId || !jobId) {
+      return NextResponse.json({ error: 'Webinar ID and Job ID are required' }, { status: 400 })
+    }
+
+    // Update job status to indicate upload is complete and ready for processing
+    const job = await prisma.videoProcessingJob.update({
+      where: { id: jobId },
+      data: {
+        status: 'PENDING',
+        updatedAt: new Date(),
+      },
+    })
+
+    // The worker will poll for PENDING jobs and process them
+
+    return NextResponse.json({
+      success: true,
+      jobId: job.id,
+      status: job.status,
+      message: 'Upload confirmed. Video is queued for processing.',
+    })
+  } catch (error) {
+    console.error('Failed to confirm upload:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to confirm upload' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET /api/admin/webinars/upload?webinarId=xxx - Get video processing status
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { searchParams } = new URL(request.url)
-  const uid = searchParams.get('uid')
+  const webinarId = searchParams.get('webinarId')
 
-  if (!uid) {
-    return NextResponse.json({ error: 'Video UID required' }, { status: 400 })
+  if (!webinarId) {
+    return NextResponse.json({ error: 'Webinar ID required' }, { status: 400 })
   }
 
   try {
-    const video = await getVideo(uid)
+    const job = await prisma.videoProcessingJob.findUnique({
+      where: { webinarId },
+    })
 
-    if (!video) {
-      return NextResponse.json({ error: 'Video not found' }, { status: 404 })
+    if (!job) {
+      return NextResponse.json({ error: 'No video processing job found' }, { status: 404 })
     }
 
+    const webinar = await prisma.webinar.findUnique({
+      where: { id: webinarId },
+      select: {
+        hlsUrl: true,
+        thumbnailUrl: true,
+        videoDuration: true,
+        videoStatus: true,
+      },
+    })
+
     return NextResponse.json({
-      uid: video.uid,
-      status: video.status.state,
-      pctComplete: video.status.pctComplete,
-      readyToStream: video.readyToStream,
-      duration: video.duration,
-      thumbnail: video.thumbnail,
-      playback: video.playback,
-      size: video.size,
-      dimensions: video.input,
+      jobId: job.id,
+      status: job.status,
+      progress: job.progress,
+      originalUrl: job.originalUrl,
+      hlsUrl: job.hlsUrl || webinar?.hlsUrl,
+      thumbnailUrl: job.thumbnailUrl || webinar?.thumbnailUrl,
+      duration: job.duration || webinar?.videoDuration,
+      error: job.error,
+      startedAt: job.startedAt,
+      completedAt: job.completedAt,
+      videoStatus: webinar?.videoStatus,
     })
   } catch (error) {
     console.error('Failed to get video status:', error)

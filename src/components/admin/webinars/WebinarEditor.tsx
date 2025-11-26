@@ -36,9 +36,11 @@ interface WebinarData {
   timezone: string
   completionPercent: number
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-  cloudflareVideoId?: string
+  cloudflareVideoId?: string // Legacy
+  hlsUrl?: string // R2 HLS URL
   videoDuration?: number
   thumbnailUrl?: string
+  videoStatus?: string // 'processing' | 'ready' | 'failed'
   landingPagePath?: string
   thankYouPagePath?: string
 }
@@ -553,51 +555,106 @@ function VideoTab({
   webinarId?: string
   onSave: () => Promise<void>
 }) {
-  const accountId = process.env.NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID
-
   const handleUploadComplete = async (videoData: {
     videoUid: string
     duration: number
     thumbnail: string
+    hlsUrl?: string
   }) => {
-    onChange('cloudflareVideoId', videoData.videoUid)
+    if (videoData.hlsUrl) {
+      onChange('hlsUrl', videoData.hlsUrl)
+    }
     onChange('videoDuration', videoData.duration)
     onChange('thumbnailUrl', videoData.thumbnail)
+    onChange('videoStatus', 'ready')
 
     // Auto-save after video upload
     await onSave()
   }
 
+  const hasVideo = data.hlsUrl || data.cloudflareVideoId
+  const isProcessing = data.videoStatus === 'processing'
+
   return (
     <Card variant="raised" padding="lg">
       <h3 className="text-lg font-semibold text-text-primary mb-4">Webinar Video</h3>
 
-      {data.cloudflareVideoId ? (
+      {/* Video status badge */}
+      {data.videoStatus && (
+        <div className="mb-4">
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              data.videoStatus === 'ready'
+                ? 'bg-green-100 text-green-700'
+                : data.videoStatus === 'processing'
+                ? 'bg-yellow-100 text-yellow-700'
+                : data.videoStatus === 'failed'
+                ? 'bg-red-100 text-red-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            {data.videoStatus === 'ready' && 'Video Ready'}
+            {data.videoStatus === 'processing' && 'Processing...'}
+            {data.videoStatus === 'failed' && 'Processing Failed'}
+          </span>
+        </div>
+      )}
+
+      {hasVideo && !isProcessing ? (
         <div className="space-y-4">
-          <div className="aspect-video bg-black rounded-neu overflow-hidden">
-            <iframe
-              src={`https://iframe.cloudflarestream.com/${data.cloudflareVideoId}`}
-              className="w-full h-full"
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-              allowFullScreen
-            />
+          {/* Video preview */}
+          <div className="aspect-video bg-black rounded-neu overflow-hidden relative">
+            {data.hlsUrl ? (
+              <video
+                controls
+                className="w-full h-full"
+                poster={data.thumbnailUrl}
+              >
+                <source src={data.hlsUrl} type="application/x-mpegURL" />
+                Your browser does not support HLS video playback.
+              </video>
+            ) : data.cloudflareVideoId ? (
+              <iframe
+                src={`https://iframe.cloudflarestream.com/${data.cloudflareVideoId}`}
+                className="w-full h-full"
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                allowFullScreen
+              />
+            ) : null}
           </div>
 
+          {/* Video info */}
           <div className="flex items-center justify-between text-sm text-text-muted">
-            <span>Video ID: {data.cloudflareVideoId}</span>
-            {data.videoDuration && (
+            <span>
+              {data.hlsUrl ? 'HLS Stream' : `Video ID: ${data.cloudflareVideoId}`}
+            </span>
+            {data.videoDuration && data.videoDuration > 0 && (
               <span>
                 Duration: {Math.floor(data.videoDuration / 60)}:{(data.videoDuration % 60).toString().padStart(2, '0')}
               </span>
             )}
           </div>
 
+          {/* Thumbnail preview */}
+          {data.thumbnailUrl && (
+            <div className="flex items-center gap-4">
+              <img
+                src={data.thumbnailUrl}
+                alt="Thumbnail"
+                className="w-32 h-18 rounded object-cover"
+              />
+              <span className="text-sm text-text-muted">Auto-generated thumbnail</span>
+            </div>
+          )}
+
           <Button
             variant="secondary"
             onClick={() => {
+              onChange('hlsUrl', '')
               onChange('cloudflareVideoId', '')
               onChange('videoDuration', 0)
               onChange('thumbnailUrl', '')
+              onChange('videoStatus', '')
             }}
           >
             Remove Video
@@ -613,26 +670,35 @@ function VideoTab({
       )}
 
       <div className="mt-6 pt-6 border-t border-neu-dark">
-        <h4 className="font-medium text-text-primary mb-4">Manual Video ID Entry</h4>
+        <h4 className="font-medium text-text-primary mb-4">Manual Video URL Entry</h4>
         <p className="text-sm text-text-muted mb-4">
-          If you've already uploaded a video to Cloudflare Stream, enter the video ID here.
+          If you've already processed a video, you can enter the HLS URL directly.
         </p>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <Input
-            label="Cloudflare Video ID"
-            value={data.cloudflareVideoId || ''}
-            onChange={(e) => onChange('cloudflareVideoId', e.target.value)}
-            placeholder="e.g., abc123def456"
+            label="HLS URL (master.m3u8)"
+            value={data.hlsUrl || ''}
+            onChange={(e) => onChange('hlsUrl', e.target.value)}
+            placeholder="e.g., https://cdn.nebiswera.com/webinars/processed/xxx/master.m3u8"
           />
 
-          <Input
-            label="Duration (seconds)"
-            type="number"
-            value={data.videoDuration || ''}
-            onChange={(e) => onChange('videoDuration', parseInt(e.target.value) || 0)}
-            placeholder="e.g., 3600"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Thumbnail URL"
+              value={data.thumbnailUrl || ''}
+              onChange={(e) => onChange('thumbnailUrl', e.target.value)}
+              placeholder="e.g., https://cdn.nebiswera.com/.../thumbnail.jpg"
+            />
+
+            <Input
+              label="Duration (seconds)"
+              type="number"
+              value={data.videoDuration || ''}
+              onChange={(e) => onChange('videoDuration', parseInt(e.target.value) || 0)}
+              placeholder="e.g., 3600"
+            />
+          </div>
         </div>
       </div>
     </Card>

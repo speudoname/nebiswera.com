@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import * as tus from 'tus-js-client'
 import { Button } from '@/components/ui'
 import { Upload, X, Loader2, CheckCircle, AlertCircle, Video } from 'lucide-react'
 
@@ -12,6 +11,7 @@ interface VideoUploaderProps {
     videoUid: string
     duration: number
     thumbnail: string
+    hlsUrl?: string
   }) => void
   onError?: (error: string) => void
 }
@@ -27,55 +27,76 @@ export function VideoUploader({
   const [status, setStatus] = useState<UploadStatus>('idle')
   const [progress, setProgress] = useState(0)
   const [processingProgress, setProcessingProgress] = useState(0)
+  const [processingStatus, setProcessingStatus] = useState<string>('PENDING')
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
-  const [videoUid, setVideoUid] = useState<string | null>(null)
+  const [jobId, setJobId] = useState<string | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadRef = useRef<tus.Upload | null>(null)
+  const xhrRef = useRef<XMLHttpRequest | null>(null)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  const pollVideoStatus = useCallback(async (uid: string) => {
+  // Poll for video processing status
+  const pollVideoStatus = useCallback(async (wId: string) => {
     setStatus('processing')
     setProcessingProgress(0)
+    setProcessingStatus('PENDING')
 
-    const maxAttempts = 120 // 10 minutes max (5s intervals)
+    const maxAttempts = 360 // 30 minutes max (5s intervals)
     let attempts = 0
 
-    while (attempts < maxAttempts) {
+    const poll = async () => {
+      if (attempts >= maxAttempts) {
+        setError('Video processing timed out. The worker may not be running.')
+        setStatus('error')
+        onError?.('Video processing timed out')
+        return
+      }
+
       try {
-        const res = await fetch(`/api/admin/webinars/upload?uid=${uid}`)
+        const res = await fetch(`/api/admin/webinars/upload?webinarId=${wId}`)
         const data = await res.json()
 
-        if (data.status === 'ready' && data.readyToStream) {
+        if (data.error) {
+          // Job not found yet, or other error - keep polling
+          if (data.error === 'No video processing job found') {
+            attempts++
+            pollingRef.current = setTimeout(poll, 5000)
+            return
+          }
+          throw new Error(data.error)
+        }
+
+        setProcessingStatus(data.status)
+        setProcessingProgress(data.progress || 0)
+
+        if (data.status === 'COMPLETED') {
           setStatus('complete')
           onUploadComplete({
-            videoUid: uid,
-            duration: Math.round(data.duration),
-            thumbnail: data.thumbnail,
+            videoUid: wId, // Using webinarId as reference
+            duration: data.duration || 0,
+            thumbnail: data.thumbnailUrl || '',
+            hlsUrl: data.hlsUrl || '',
           })
           return
         }
 
-        if (data.status === 'error') {
-          throw new Error('Video processing failed')
+        if (data.status === 'FAILED') {
+          throw new Error(data.error || 'Video processing failed')
         }
 
-        if (data.pctComplete) {
-          setProcessingProgress(data.pctComplete)
-        }
-
+        // Still processing, continue polling
         attempts++
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        pollingRef.current = setTimeout(poll, 5000)
       } catch (err) {
         console.error('Error polling video status:', err)
-        attempts++
-        await new Promise(resolve => setTimeout(resolve, 5000))
+        setError(err instanceof Error ? err.message : 'Error checking processing status')
+        setStatus('error')
+        onError?.(err instanceof Error ? err.message : 'Error checking processing status')
       }
     }
 
-    setError('Video processing timed out. Please try again.')
-    setStatus('error')
-    onError?.('Video processing timed out')
+    poll()
   }, [onUploadComplete, onError])
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,18 +116,25 @@ export function VideoUploader({
       return
     }
 
+    if (!webinarId) {
+      setError('Please save the webinar first before uploading video')
+      return
+    }
+
     setFileName(file.name)
     setError(null)
     setStatus('getting-url')
 
     try {
-      // Get direct upload URL from our API
+      // Get presigned upload URL from our API
       const urlRes = await fetch('/api/admin/webinars/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           webinarId,
-          webinarTitle: webinarTitle || file.name,
+          fileName: file.name,
+          fileSize: file.size,
+          contentType: file.type,
         }),
       })
 
@@ -115,40 +143,67 @@ export function VideoUploader({
         throw new Error(errData.error || 'Failed to get upload URL')
       }
 
-      const { uploadURL, videoUid: uid } = await urlRes.json()
-      setVideoUid(uid)
+      const { uploadUrl, jobId: jId } = await urlRes.json()
+      setJobId(jId)
 
-      // Start TUS upload
+      // Upload directly to R2 using presigned URL
       setStatus('uploading')
       setProgress(0)
 
-      const upload = new tus.Upload(file, {
-        endpoint: uploadURL,
-        uploadUrl: uploadURL, // Direct upload URL from Cloudflare
-        chunkSize: 50 * 1024 * 1024, // 50MB chunks
-        retryDelays: [0, 1000, 3000, 5000],
-        metadata: {
-          filename: file.name,
-          filetype: file.type,
-        },
-        onError: (err) => {
-          console.error('Upload error:', err)
-          setError(err.message || 'Upload failed')
-          setStatus('error')
-          onError?.(err.message || 'Upload failed')
-        },
-        onProgress: (bytesUploaded, bytesTotal) => {
-          const percentage = Math.round((bytesUploaded / bytesTotal) * 100)
+      const xhr = new XMLHttpRequest()
+      xhrRef.current = xhr
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentage = Math.round((event.loaded / event.total) * 100)
           setProgress(percentage)
-        },
-        onSuccess: () => {
-          // Upload complete, now wait for processing
-          pollVideoStatus(uid)
-        },
+        }
       })
 
-      uploadRef.current = upload
-      upload.start()
+      xhr.addEventListener('load', async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Upload complete, confirm with backend and start polling
+          try {
+            const confirmRes = await fetch('/api/admin/webinars/upload', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ webinarId, jobId: jId }),
+            })
+
+            if (!confirmRes.ok) {
+              const errData = await confirmRes.json()
+              throw new Error(errData.error || 'Failed to confirm upload')
+            }
+
+            // Start polling for processing status
+            pollVideoStatus(webinarId)
+          } catch (err) {
+            console.error('Confirm error:', err)
+            setError(err instanceof Error ? err.message : 'Failed to confirm upload')
+            setStatus('error')
+            onError?.(err instanceof Error ? err.message : 'Failed to confirm upload')
+          }
+        } else {
+          setError(`Upload failed with status ${xhr.status}`)
+          setStatus('error')
+          onError?.(`Upload failed with status ${xhr.status}`)
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        setError('Upload failed. Please check your connection and try again.')
+        setStatus('error')
+        onError?.('Upload failed')
+      })
+
+      xhr.addEventListener('abort', () => {
+        setStatus('idle')
+        setProgress(0)
+      })
+
+      xhr.open('PUT', uploadUrl)
+      xhr.setRequestHeader('Content-Type', file.type)
+      xhr.send(file)
     } catch (err) {
       console.error('Upload setup error:', err)
       setError(err instanceof Error ? err.message : 'Failed to start upload')
@@ -158,8 +213,11 @@ export function VideoUploader({
   }
 
   const handleCancel = () => {
-    if (uploadRef.current) {
-      uploadRef.current.abort()
+    if (xhrRef.current) {
+      xhrRef.current.abort()
+    }
+    if (pollingRef.current) {
+      clearTimeout(pollingRef.current)
     }
     setStatus('idle')
     setProgress(0)
@@ -171,11 +229,27 @@ export function VideoUploader({
   }
 
   const handleRetry = () => {
+    if (pollingRef.current) {
+      clearTimeout(pollingRef.current)
+    }
     setStatus('idle')
     setProgress(0)
     setError(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
+    }
+  }
+
+  const getProcessingStatusText = () => {
+    switch (processingStatus) {
+      case 'PENDING':
+        return 'Queued for processing...'
+      case 'PROCESSING':
+        return processingProgress > 0
+          ? `Processing: ${processingProgress}%`
+          : 'Processing video...'
+      default:
+        return 'Processing...'
     }
   }
 
@@ -204,6 +278,11 @@ export function VideoUploader({
           <p className="text-sm text-text-muted">
             Supported formats: MP4, MOV, MKV, WebM, AVI
           </p>
+          {!webinarId && (
+            <p className="text-sm text-amber-600 mt-4">
+              Save the webinar first before uploading video
+            </p>
+          )}
         </div>
       )}
 
@@ -215,7 +294,7 @@ export function VideoUploader({
               <span className="font-medium text-text-primary">
                 {status === 'getting-url' && 'Preparing upload...'}
                 {status === 'uploading' && `Uploading: ${fileName}`}
-                {status === 'processing' && 'Processing video...'}
+                {status === 'processing' && getProcessingStatusText()}
               </span>
             </div>
             {status === 'uploading' && (
@@ -239,10 +318,21 @@ export function VideoUploader({
           </div>
           <p className="text-sm text-text-muted text-right">
             {status === 'uploading' && `${progress}% uploaded`}
-            {status === 'processing' && processingProgress > 0
-              ? `${processingProgress}% processed`
-              : 'Processing...'}
+            {status === 'processing' && (
+              processingStatus === 'PENDING'
+                ? 'Waiting for worker to start processing...'
+                : processingProgress > 0
+                  ? `${processingProgress}% transcoded`
+                  : 'Transcoding to HLS format...'
+            )}
           </p>
+
+          {status === 'processing' && (
+            <p className="text-xs text-text-muted mt-2">
+              Video is being transcoded to multiple qualities (480p, 720p, 1080p).
+              This may take several minutes depending on video length.
+            </p>
+          )}
         </div>
       )}
 
@@ -251,8 +341,10 @@ export function VideoUploader({
           <div className="flex items-center gap-3">
             <CheckCircle className="w-6 h-6 text-green-600" />
             <div>
-              <h4 className="font-medium text-green-800">Upload Complete!</h4>
-              <p className="text-sm text-green-600">{fileName}</p>
+              <h4 className="font-medium text-green-800">Video Ready!</h4>
+              <p className="text-sm text-green-600">
+                {fileName} - Transcoded to multiple quality levels
+              </p>
             </div>
           </div>
         </div>

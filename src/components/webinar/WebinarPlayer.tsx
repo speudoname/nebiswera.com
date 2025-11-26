@@ -1,14 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Stream, StreamPlayerApi } from '@cloudflare/stream-react'
+import Hls from 'hls.js'
 
 interface WebinarPlayerProps {
-  videoUid: string
+  videoUid?: string // Legacy Cloudflare Stream ID
+  hlsUrl?: string // R2 HLS URL
   playbackMode: 'simulated_live' | 'on_demand' | 'replay'
   allowSeeking: boolean
   startPosition: number
   duration?: number
+  poster?: string
   onTimeUpdate?: (currentTime: number, progress: number) => void
   onVideoEnd?: () => void
   onVideoStart?: () => void
@@ -17,28 +19,132 @@ interface WebinarPlayerProps {
 
 export function WebinarPlayer({
   videoUid,
+  hlsUrl,
   playbackMode,
   allowSeeking,
   startPosition,
   duration,
+  poster,
   onTimeUpdate,
   onVideoEnd,
   onVideoStart,
   onError,
 }: WebinarPlayerProps) {
-  const streamRef = useRef<StreamPlayerApi | undefined>(undefined)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const hlsRef = useRef<Hls | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [videoDuration, setVideoDuration] = useState(duration || 0)
   const [isLoading, setIsLoading] = useState(true)
   const [hasStarted, setHasStarted] = useState(false)
   const lastReportedTime = useRef(0)
+  const lastValidTime = useRef(0)
+
+  // Determine video source type
+  const isHLS = !!hlsUrl
+  const videoSource = hlsUrl || (videoUid ? `https://customer-71c315d5a485ec66.cloudflarestream.com/${videoUid}/manifest/video.m3u8` : '')
+
+  // Initialize HLS player
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || !videoSource) return
+
+    // Clean up previous HLS instance
+    if (hlsRef.current) {
+      hlsRef.current.destroy()
+      hlsRef.current = null
+    }
+
+    setIsLoading(true)
+
+    // Check if browser supports HLS natively (Safari)
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = videoSource
+      return
+    }
+
+    // Use HLS.js for other browsers
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        startLevel: -1, // Auto quality selection
+        capLevelOnFPSDrop: true,
+        capLevelToPlayerSize: true,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+      })
+
+      hlsRef.current = hls
+      hls.attachMedia(video)
+
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        hls.loadSource(videoSource)
+      })
+
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        // Ready to play
+      })
+
+      hls.on(Hls.Events.ERROR, (_, data) => {
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.error('HLS network error:', data)
+              hls.startLoad()
+              break
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.error('HLS media error:', data)
+              hls.recoverMediaError()
+              break
+            default:
+              console.error('HLS fatal error:', data)
+              onError?.(`Video playback error: ${data.details}`)
+              hls.destroy()
+              break
+          }
+        }
+      })
+
+      return () => {
+        hls.destroy()
+        hlsRef.current = null
+      }
+    } else if (!video.canPlayType('application/vnd.apple.mpegurl')) {
+      onError?.('HLS is not supported in this browser')
+    }
+  }, [videoSource, onError])
+
+  // Handle video loaded
+  const handleLoadedData = useCallback(() => {
+    setIsLoading(false)
+    const video = videoRef.current
+    if (!video) return
+
+    const dur = video.duration || 0
+    setVideoDuration(dur)
+
+    // Set start position for on-demand/replay
+    if (startPosition > 0 && allowSeeking) {
+      video.currentTime = startPosition
+    }
+
+    // For simulated live, calculate current position
+    if (playbackMode === 'simulated_live' && startPosition > 0) {
+      video.currentTime = Math.min(startPosition, dur)
+      lastValidTime.current = video.currentTime
+    }
+
+    // Auto-play
+    video.play().catch(() => {
+      // Autoplay was prevented
+    })
+  }, [startPosition, allowSeeking, playbackMode])
 
   // Handle time updates
   const handleTimeUpdate = useCallback(() => {
-    if (!streamRef.current) return
+    const video = videoRef.current
+    if (!video) return
 
-    const time = streamRef.current.currentTime || 0
+    const time = video.currentTime || 0
     setCurrentTime(time)
 
     // Report progress every 5 seconds
@@ -47,27 +153,12 @@ export function WebinarPlayer({
       const progress = videoDuration > 0 ? (time / videoDuration) * 100 : 0
       onTimeUpdate?.(time, progress)
     }
-  }, [videoDuration, onTimeUpdate])
 
-  // Handle video loaded
-  const handleLoadedData = useCallback(() => {
-    setIsLoading(false)
-    if (streamRef.current) {
-      const dur = streamRef.current.duration || 0
-      setVideoDuration(dur)
-
-      // Set start position for on-demand/replay
-      if (startPosition > 0 && allowSeeking) {
-        streamRef.current.currentTime = startPosition
-      }
-
-      // For simulated live, calculate current position
-      if (playbackMode === 'simulated_live' && startPosition > 0) {
-        // Don't allow seeking back, just set the time
-        streamRef.current.currentTime = Math.min(startPosition, dur)
-      }
+    // For simulated live, update last valid time
+    if (playbackMode === 'simulated_live' && time > lastValidTime.current) {
+      lastValidTime.current = time
     }
-  }, [startPosition, allowSeeking, playbackMode])
+  }, [videoDuration, onTimeUpdate, playbackMode])
 
   // Handle play
   const handlePlay = useCallback(() => {
@@ -89,28 +180,28 @@ export function WebinarPlayer({
     onError?.('Video playback error')
   }, [onError])
 
-  // Track last valid time for simulated live (to prevent seeking back)
-  const lastValidTime = useRef(0)
+  // Prevent seeking backwards in simulated live mode
+  const handleSeeking = useCallback(() => {
+    const video = videoRef.current
+    if (!video || allowSeeking || playbackMode !== 'simulated_live') return
 
-  // Update last valid time for simulated live mode
-  useEffect(() => {
-    if (playbackMode === 'simulated_live' && currentTime > lastValidTime.current) {
-      lastValidTime.current = currentTime
+    if (video.currentTime < lastValidTime.current - 1) {
+      video.currentTime = lastValidTime.current
     }
-  }, [playbackMode, currentTime])
-
-  // Handle seeking for simulated live (called on every time update)
-  useEffect(() => {
-    if (!streamRef.current || allowSeeking || playbackMode !== 'simulated_live') return
-
-    // If someone tries to seek backwards, push them back forward
-    if (currentTime < lastValidTime.current - 1) {
-      streamRef.current.currentTime = lastValidTime.current
-    }
-  }, [allowSeeking, playbackMode, currentTime])
+  }, [allowSeeking, playbackMode])
 
   // Calculate progress percentage
   const progressPercent = videoDuration > 0 ? (currentTime / videoDuration) * 100 : 0
+
+  const togglePlayPause = () => {
+    const video = videoRef.current
+    if (!video) return
+    if (isPlaying) {
+      video.pause()
+    } else {
+      video.play()
+    }
+  }
 
   return (
     <div className="relative w-full h-full bg-black rounded-lg overflow-hidden">
@@ -124,21 +215,21 @@ export function WebinarPlayer({
         </div>
       )}
 
-      {/* Cloudflare Stream Player */}
-      <div className={`w-full h-full ${!allowSeeking ? 'pointer-events-none' : ''}`}>
-        <Stream
-          streamRef={streamRef}
-          src={videoUid}
-          controls={allowSeeking}
-          autoplay
-          onLoadedData={handleLoadedData}
-          onPlay={handlePlay}
-          onPause={() => setIsPlaying(false)}
-          onTimeUpdate={handleTimeUpdate}
-          onEnded={handleEnded}
-          onError={handleError}
-        />
-      </div>
+      {/* Video Element */}
+      <video
+        ref={videoRef}
+        className={`w-full h-full ${!allowSeeking ? 'pointer-events-none' : ''}`}
+        poster={poster}
+        controls={allowSeeking}
+        playsInline
+        onLoadedData={handleLoadedData}
+        onPlay={handlePlay}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={handleTimeUpdate}
+        onSeeking={handleSeeking}
+        onEnded={handleEnded}
+        onError={handleError}
+      />
 
       {/* Custom controls for simulated live (no seeking) */}
       {!allowSeeking && !isLoading && (
@@ -146,15 +237,7 @@ export function WebinarPlayer({
           <div className="flex items-center gap-4">
             {/* Play/Pause button */}
             <button
-              onClick={() => {
-                if (streamRef.current) {
-                  if (isPlaying) {
-                    streamRef.current.pause()
-                  } else {
-                    streamRef.current.play()
-                  }
-                }
-              }}
+              onClick={togglePlayPause}
               className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
             >
               {isPlaying ? (

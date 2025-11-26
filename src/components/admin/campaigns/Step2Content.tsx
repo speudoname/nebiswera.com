@@ -8,11 +8,6 @@ import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
 import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
 
-// Import Easy Email CSS (order matters!)
-import 'easy-email-editor/lib/style.css'
-import 'easy-email-extensions/lib/style.css'
-import '@arco-themes/react-easy-email-theme/css/arco.css' // Required for SimpleLayout DOM structure
-
 interface Step2ContentProps {
   data: CampaignData
   onUpdate: (updates: Partial<CampaignData>) => void

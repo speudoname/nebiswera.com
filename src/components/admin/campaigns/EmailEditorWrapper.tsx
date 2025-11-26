@@ -1,72 +1,6 @@
 'use client'
 
-import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
-import dynamic from 'next/dynamic'
-import { AdvancedType } from 'easy-email-core'
-import type { ExtensionProps } from 'easy-email-extensions'
-
-// Dynamically import Easy Email Editor to avoid SSR issues
-const EmailEditor = dynamic(
-  () => import('easy-email-editor').then((mod) => mod.EmailEditor),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-[600px] bg-neu-base rounded-neu">
-        <div className="text-text-muted">Loading email editor...</div>
-      </div>
-    ),
-  }
-)
-
-const EmailEditorProvider = dynamic(
-  () => import('easy-email-editor').then((mod) => mod.EmailEditorProvider),
-  { ssr: false }
-)
-
-const StandardLayout = dynamic(
-  () => import('easy-email-extensions').then((mod) => mod.StandardLayout),
-  { ssr: false }
-)
-
-// Block categories for the editor (official pattern)
-const categories: ExtensionProps['categories'] = [
-  {
-    label: 'Content',
-    active: true,
-    blocks: [
-      { type: AdvancedType.TEXT },
-      { type: AdvancedType.IMAGE },
-      { type: AdvancedType.BUTTON },
-      { type: AdvancedType.DIVIDER },
-      { type: AdvancedType.SPACER },
-      { type: AdvancedType.NAVBAR },
-      { type: AdvancedType.SOCIAL },
-    ],
-  },
-  {
-    label: 'Layout',
-    active: true,
-    displayType: 'column',
-    blocks: [
-      {
-        title: '1 column',
-        payload: [['100%']],
-      },
-      {
-        title: '2 columns',
-        payload: [['50%', '50%'], ['33%', '67%'], ['67%', '33%']],
-      },
-      {
-        title: '3 columns',
-        payload: [['33.33%', '33.33%', '33.33%']],
-      },
-      {
-        title: '4 columns',
-        payload: [['25%', '25%', '25%', '25%']],
-      },
-    ],
-  },
-]
+import { useRef, useImperativeHandle, forwardRef, useEffect, useState } from 'react'
 
 interface EmailEditorWrapperProps {
   designJson?: any
@@ -76,172 +10,135 @@ interface EmailEditorWrapperProps {
 
 export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
   ({ designJson, onReady, onChange }, ref) => {
-    const valuesRef = useRef<any>(null)
+    const iframeRef = useRef<HTMLIFrameElement>(null)
+    const [isReady, setIsReady] = useState(false)
+    const pendingDesign = useRef<any>(null)
+
+    // Listen for messages from iframe
+    useEffect(() => {
+      const handleMessage = (event: MessageEvent) => {
+        // Security: only accept messages from same origin
+        if (event.origin !== window.location.origin) return
+
+        const { type, payload } = event.data
+
+        switch (type) {
+          case 'EDITOR_READY':
+            setIsReady(true)
+            // Load initial design if provided
+            if (designJson && iframeRef.current) {
+              iframeRef.current.contentWindow?.postMessage(
+                { type: 'LOAD_TEMPLATE', payload: designJson },
+                window.location.origin
+              )
+            }
+            onReady?.()
+            break
+
+          case 'DESIGN_EXPORTED':
+            const { design, html, text } = payload
+            onChange?.(design, html, text)
+            break
+
+          case 'DESIGN_ERROR':
+            console.error('Email editor error:', payload.error)
+            break
+        }
+      }
+
+      window.addEventListener('message', handleMessage)
+      return () => window.removeEventListener('message', handleMessage)
+    }, [designJson, onReady, onChange])
 
     // Expose exportHtml method to parent via ref
     useImperativeHandle(ref, () => ({
       exportHtml: async () => {
-        if (!valuesRef.current) {
-          throw new Error('Editor not ready')
-        }
-
-        try {
-          // Get the current values from the ref
-          const values = valuesRef.current
-
-          // Convert JSON to MJML
-          const JsonToMjmlFunc = (await import('easy-email-core')).JsonToMjml
-          const mjml = JsonToMjmlFunc(values.content)
-
-          // Convert MJML to HTML
-          const mjmlTransform = (await import('mjml-browser')).default
-          const { html } = mjmlTransform(mjml, {
-            beautify: true,
-            validationLevel: 'soft',
-          })
-
-          // Auto-generate plain text from HTML
-          const text = htmlToPlainText(html)
-
-          return {
-            design: values,
-            html: html,
-            text: text,
+        return new Promise((resolve, reject) => {
+          if (!isReady || !iframeRef.current) {
+            reject(new Error('Editor not ready'))
+            return
           }
-        } catch (error) {
-          console.error('Failed to export from Easy Email:', error)
-          throw error
-        }
+
+          // Set up one-time listener for the response
+          const handleResponse = (event: MessageEvent) => {
+            if (event.origin !== window.location.origin) return
+
+            const { type, payload } = event.data
+
+            if (type === 'DESIGN_EXPORTED') {
+              window.removeEventListener('message', handleResponse)
+              resolve(payload)
+            } else if (type === 'DESIGN_ERROR') {
+              window.removeEventListener('message', handleResponse)
+              reject(new Error(payload.error))
+            }
+          }
+
+          window.addEventListener('message', handleResponse)
+
+          // Request design export from iframe
+          iframeRef.current.contentWindow?.postMessage(
+            { type: 'GET_DESIGN' },
+            window.location.origin
+          )
+
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            window.removeEventListener('message', handleResponse)
+            reject(new Error('Export timeout'))
+          }, 5000)
+        })
       },
     }))
 
-    // Call onReady after a short delay to ensure editor is mounted
+    // Load template when designJson changes
     useEffect(() => {
-      const timer = setTimeout(() => {
-        onReady?.()
-      }, 1000)
-      return () => clearTimeout(timer)
-    }, [onReady])
-
-    // Default MJML template for new campaigns
-    const defaultTemplate = designJson || {
-      subject: '',
-      subTitle: '',
-      content: {
-        type: 'page',
-        data: {
-          value: {
-            breakpoint: '480px',
-            headAttributes: '',
-            'font-size': '14px',
-            'line-height': '1.7',
-            headStyles: [],
-            fonts: [],
-            responsive: true,
-            'font-family':
-              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-            'text-color': '#000000',
-          },
-        },
-        attributes: {
-          'background-color': '#efeeea',
-          width: '600px',
-        },
-        children: [
-          {
-            type: 'advanced_section',
-            data: {
-              value: {
-                noWrap: false,
-              },
-            },
-            attributes: {
-              padding: '20px 0px',
-              'background-color': '#ffffff',
-            },
-            children: [
-              {
-                type: 'advanced_column',
-                data: {
-                  value: {},
-                },
-                attributes: {
-                  padding: '0px 20px',
-                  border: 'none',
-                  'vertical-align': 'top',
-                },
-                children: [
-                  {
-                    type: 'advanced_text',
-                    data: {
-                      value: {
-                        content:
-                          '<h1 style="text-align: center;">Welcome!</h1><p style="text-align: center;">Start designing your email campaign here.</p><p style="text-align: center;">You can add images, buttons, and more using the tools on the left.</p>',
-                      },
-                    },
-                    attributes: {
-                      padding: '10px 25px',
-                      align: 'left',
-                    },
-                    children: [],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    }
+      if (isReady && designJson && iframeRef.current) {
+        iframeRef.current.contentWindow?.postMessage(
+          { type: 'LOAD_TEMPLATE', payload: designJson },
+          window.location.origin
+        )
+      }
+    }, [designJson, isReady])
 
     return (
-      <div style={{ height: '600px', width: '100%' }}>
-        <EmailEditorProvider
-          data={defaultTemplate}
-          height={'600px'}
-          autoComplete
-          dashed={false}
-        >
-          {({ values }) => {
-            // Store the latest values in the ref so exportHtml can access them
-            valuesRef.current = values
-            return <EmailEditor />
+      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
+        {!isReady && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px',
+            }}
+          >
+            <div style={{ color: '#666' }}>Loading email editor...</div>
+          </div>
+        )}
+        <iframe
+          ref={iframeRef}
+          src="/email-editor/index.html"
+          style={{
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            borderRadius: '8px',
+            display: isReady ? 'block' : 'none',
           }}
-        </EmailEditorProvider>
+          title="Email Editor"
+        />
       </div>
     )
   }
 )
 
 EmailEditorWrapper.displayName = 'EmailEditorWrapper'
-
-// Utility function to convert HTML to plain text
-function htmlToPlainText(html: string): string {
-  // Remove script and style tags and their content
-  let text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-
-  // Replace <br> and </p> with newlines
-  text = text.replace(/<br\s*\/?>/gi, '\n')
-  text = text.replace(/<\/p>/gi, '\n\n')
-
-  // Remove all HTML tags
-  text = text.replace(/<[^>]+>/g, '')
-
-  // Decode HTML entities
-  text = text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-
-  // Remove excessive whitespace
-  text = text.replace(/\n\s*\n\s*\n/g, '\n\n')
-  text = text.trim()
-
-  return text
-}
 
 // Export the exportHtml method type for parent components
 export type EmailEditorRef = {

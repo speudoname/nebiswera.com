@@ -9,7 +9,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["public", "crm"]
+  schemas  = ["public", "crm", "webinar"]
 }
 
 // ===========================================
@@ -590,4 +590,547 @@ enum SuppressionReason {
   MANUAL_SUPPRESSION
 
   @@schema("crm")
+}
+
+// ===========================================
+// Webinar Schema - Webinar Platform
+// ===========================================
+
+model Webinar {
+  id                String        @id @default(cuid())
+
+  // Basic info
+  title             String
+  slug              String        @unique
+  description       String?       @db.Text
+
+  // Video (Cloudflare Stream)
+  cloudflareVideoId String?       // Cloudflare Stream video ID
+  cloudflareVideoUid String?      // Cloudflare Stream video UID (for signed URLs)
+  videoDuration     Int?          // Duration in seconds
+  thumbnailUrl      String?
+
+  // Pages (manually built, referenced here)
+  landingPagePath   String?       // e.g., "/webinar/ai-masterclass"
+  thankYouPagePath  String?       // e.g., "/webinar/ai-masterclass/thank-you"
+
+  // Settings
+  status            WebinarStatus @default(DRAFT)
+  timezone          String        @default("Asia/Tbilisi")
+
+  // Presenter info (shown on landing/room)
+  presenterName     String?
+  presenterTitle    String?
+  presenterAvatar   String?
+  presenterBio      String?       @db.Text
+
+  // Completion settings
+  completionPercent Int           @default(80) // % watched to count as "completed"
+
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  publishedAt       DateTime?
+
+  // Relations
+  scheduleConfig    WebinarScheduleConfig?
+  sessions          WebinarSession[]
+  interactions      WebinarInteraction[]
+  registrations     WebinarRegistration[]
+  notifications     WebinarNotification[]
+  analyticsEvents   WebinarAnalyticsEvent[]
+  chatMessages      WebinarChatMessage[]
+
+  @@index([status])
+  @@index([slug])
+  @@index([createdAt])
+  @@schema("webinar")
+  @@map("webinars")
+}
+
+enum WebinarStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("webinar")
+}
+
+// Schedule configuration (like eWebinar's Schedule tab)
+model WebinarScheduleConfig {
+  id                    String    @id @default(cuid())
+  webinarId             String    @unique
+  webinar               Webinar   @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  // Event type
+  eventType             WebinarEventType @default(RECURRING)
+
+  // Date range
+  startsAt              DateTime
+  endsAt                DateTime? // null = never ends
+
+  // Recurring schedule (if eventType = RECURRING)
+  recurringDays         Int[]     // 0=Sun, 1=Mon, etc. [1,3,5] = Mon,Wed,Fri
+  recurringTimes        String[]  // ["09:00", "14:00", "18:00"] in webinar timezone
+
+  // Specific dates (if eventType = SPECIFIC_DATES)
+  specificDates         DateTime[]
+
+  // On-demand settings
+  onDemandEnabled       Boolean   @default(false)
+  onDemandUngated       Boolean   @default(false) // No registration required
+
+  // Just-in-time settings
+  justInTimeEnabled     Boolean   @default(false)
+  justInTimeMinutes     Int       @default(15) // "Starting in X minutes"
+
+  // Replay settings
+  replayEnabled         Boolean   @default(true)
+  replayUngated         Boolean   @default(false)
+  replayExpiresAfterDays Int?     // Days after session, null = never expires
+
+  // Availability display
+  maxSessionsToShow     Int       @default(3)
+  blackoutDates         DateTime[]
+
+  // Timezone handling
+  useAttendeeTimezone   Boolean   @default(false) // false = use webinar's fixed timezone
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@schema("webinar")
+  @@map("webinar_schedule_configs")
+}
+
+enum WebinarEventType {
+  RECURRING       // Every week on specific days/times
+  ONE_TIME        // Single event
+  SPECIFIC_DATES  // Multiple specific dates
+  ON_DEMAND_ONLY  // No scheduled sessions, only on-demand
+
+  @@schema("webinar")
+}
+
+// Individual webinar session (generated from schedule or manually created)
+model WebinarSession {
+  id            String          @id @default(cuid())
+  webinarId     String
+  webinar       Webinar         @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  scheduledAt   DateTime
+  type          WebinarSessionType
+
+  // Stats (denormalized for quick access)
+  registrationCount Int         @default(0)
+  attendeeCount     Int         @default(0)
+
+  createdAt     DateTime        @default(now())
+
+  registrations WebinarRegistration[]
+
+  @@index([webinarId, scheduledAt])
+  @@index([scheduledAt])
+  @@schema("webinar")
+  @@map("webinar_sessions")
+}
+
+enum WebinarSessionType {
+  SCHEDULED     // Regular scheduled session
+  JUST_IN_TIME  // Dynamic "starting soon" session
+  ON_DEMAND     // Watch immediately
+  REPLAY        // Replay of past session
+
+  @@schema("webinar")
+}
+
+// User registration for a webinar
+model WebinarRegistration {
+  id              String                @id @default(cuid())
+
+  webinarId       String
+  webinar         Webinar               @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  sessionId       String?               // null for on-demand
+  session         WebinarSession?       @relation(fields: [sessionId], references: [id])
+
+  // Contact info
+  email           String
+  firstName       String?
+  lastName        String?
+
+  // Link to CRM contact (if exists)
+  contactId       String?               // References Contact in crm schema
+
+  // Access
+  accessToken     String                @unique @default(cuid()) // For unique watch link
+
+  // Session type they registered for
+  sessionType     WebinarSessionType
+
+  // Attendance tracking
+  status          WebinarRegistrationStatus @default(REGISTERED)
+  joinedAt        DateTime?
+  leftAt          DateTime?
+  lastActiveAt    DateTime?             // Last heartbeat
+  watchTimeSeconds Int                  @default(0)
+  maxVideoPosition Int                  @default(0) // Furthest point watched (seconds)
+  completedAt     DateTime?             // Watched past completion threshold
+
+  // Engagement (calculated)
+  engagementScore Float?
+  chatMessageCount Int                  @default(0)
+  pollResponseCount Int                 @default(0)
+  ctaClickCount   Int                   @default(0)
+
+  // UTM tracking
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmContent      String?
+  utmTerm         String?
+
+  // Timestamps
+  registeredAt    DateTime              @default(now())
+
+  // Relations
+  analyticsEvents WebinarAnalyticsEvent[]
+  chatMessages    WebinarChatMessage[]
+  pollResponses   WebinarPollResponse[]
+  interactionEvents WebinarInteractionEvent[]
+
+  @@unique([webinarId, email, sessionId])
+  @@index([accessToken])
+  @@index([email])
+  @@index([webinarId, status])
+  @@index([contactId])
+  @@schema("webinar")
+  @@map("webinar_registrations")
+}
+
+enum WebinarRegistrationStatus {
+  REGISTERED    // Signed up, hasn't attended yet
+  ATTENDING     // Currently watching
+  ATTENDED      // Watched but didn't complete
+  COMPLETED     // Watched past completion threshold
+  MISSED        // Didn't show up for scheduled session
+
+  @@schema("webinar")
+}
+
+// ===========================================
+// Webinar Interactions (Polls, CTAs, etc.)
+// ===========================================
+
+model WebinarInteraction {
+  id              String              @id @default(cuid())
+  webinarId       String
+  webinar         Webinar             @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  type            WebinarInteractionType
+  triggersAt      Int                 // Seconds into video when this appears
+  duration        Int?                // How long visible (null = until dismissed)
+
+  // Content
+  title           String
+  description     String?             @db.Text
+  content         Json                // Type-specific content (options, url, etc.)
+
+  // Behavior
+  pauseVideo      Boolean             @default(false) // Pause video when shown
+  required        Boolean             @default(false) // Must interact to continue
+  showOnReplay    Boolean             @default(true)  // Show in replay mode
+  dismissable     Boolean             @default(true)  // Can user close it
+
+  // Positioning
+  position        WebinarInteractionPosition @default(BOTTOM_RIGHT)
+
+  // Stats (denormalized)
+  viewCount       Int                 @default(0)
+  actionCount     Int                 @default(0)
+
+  // Ordering (for same timestamp)
+  sortOrder       Int                 @default(0)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  pollResponses   WebinarPollResponse[]
+  events          WebinarInteractionEvent[]
+
+  @@index([webinarId, triggersAt])
+  @@schema("webinar")
+  @@map("webinar_interactions")
+}
+
+enum WebinarInteractionType {
+  POLL            // Multiple choice question
+  QUESTION        // Open-ended Q&A prompt
+  CTA             // Call to action button/card
+  DOWNLOAD        // Downloadable resource
+  FEEDBACK        // Rating/emoji feedback
+  TIP             // Info tooltip/notification
+  SPECIAL_OFFER   // Timed offer with countdown
+
+  @@schema("webinar")
+}
+
+enum WebinarInteractionPosition {
+  TOP_LEFT
+  TOP_RIGHT
+  BOTTOM_LEFT
+  BOTTOM_RIGHT
+  CENTER
+  SIDEBAR
+  FULL_OVERLAY
+
+  @@schema("webinar")
+}
+
+// Poll responses
+model WebinarPollResponse {
+  id              String              @id @default(cuid())
+  interactionId   String
+  interaction     WebinarInteraction  @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  registrationId  String
+  registration    WebinarRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  // Response data
+  selectedOptions Int[]               // For polls: indices of selected options
+  textResponse    String?             @db.Text // For open questions
+  rating          Int?                // For feedback (1-5 or emoji index)
+
+  respondedAt     DateTime            @default(now())
+
+  @@unique([interactionId, registrationId])
+  @@index([interactionId])
+  @@schema("webinar")
+  @@map("webinar_poll_responses")
+}
+
+// Track all interaction events (views, clicks, dismissals)
+model WebinarInteractionEvent {
+  id              String              @id @default(cuid())
+  interactionId   String
+  interaction     WebinarInteraction  @relation(fields: [interactionId], references: [id], onDelete: Cascade)
+
+  registrationId  String
+  registration    WebinarRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  eventType       WebinarInteractionEventType
+  metadata        Json?               // Extra data (clicked URL, etc.)
+
+  createdAt       DateTime            @default(now())
+
+  @@index([interactionId, eventType])
+  @@index([registrationId])
+  @@schema("webinar")
+  @@map("webinar_interaction_events")
+}
+
+enum WebinarInteractionEventType {
+  VIEWED          // Interaction was shown
+  CLICKED         // CTA/link clicked
+  DISMISSED       // User closed it
+  DOWNLOADED      // Download initiated
+
+  @@schema("webinar")
+}
+
+// ===========================================
+// Webinar Chat
+// ===========================================
+
+model WebinarChatMessage {
+  id              String              @id @default(cuid())
+  webinarId       String
+  webinar         Webinar             @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  registrationId  String?             // null = system/moderator/simulated
+  registration    WebinarRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+
+  // For simulated chat (pre-recorded messages)
+  isSimulated     Boolean             @default(false)
+  appearsAt       Int?                // Seconds into video (for simulated)
+
+  // Message content
+  senderName      String
+  message         String              @db.Text
+
+  // Message type/role
+  isFromModerator Boolean             @default(false)
+  isPrivateReply  Boolean             @default(false) // Only visible to original sender
+  replyToId       String?             // ID of message being replied to
+
+  // Moderation
+  isHidden        Boolean             @default(false)
+  hiddenBy        String?             // Admin who hid it
+  hiddenAt        DateTime?
+
+  createdAt       DateTime            @default(now())
+
+  @@index([webinarId, createdAt])
+  @@index([webinarId, appearsAt])
+  @@index([registrationId])
+  @@schema("webinar")
+  @@map("webinar_chat_messages")
+}
+
+// ===========================================
+// Webinar Notifications
+// ===========================================
+
+model WebinarNotification {
+  id              String              @id @default(cuid())
+  webinarId       String
+  webinar         Webinar             @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  type            WebinarNotificationType
+  trigger         WebinarNotificationTrigger
+
+  // Timing (for reminders/follow-ups)
+  triggerMinutes  Int?                // Minutes before/after event
+
+  // Email content
+  subject         String
+  bodyHtml        String              @db.Text
+  bodyText        String?             @db.Text
+
+  // Settings
+  enabled         Boolean             @default(true)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Track sent notifications
+  sentNotifications WebinarNotificationSent[]
+
+  @@index([webinarId, trigger])
+  @@schema("webinar")
+  @@map("webinar_notifications")
+}
+
+enum WebinarNotificationType {
+  CONFIRMATION    // Right after registration
+  REMINDER        // Before webinar
+  FOLLOW_UP       // After webinar
+
+  @@schema("webinar")
+}
+
+enum WebinarNotificationTrigger {
+  // Confirmations
+  REGISTERED_SCHEDULED    // Registered for scheduled session
+  REGISTERED_REPLAY       // Registered for replay
+  REGISTERED_ON_DEMAND    // Registered for on-demand
+
+  // Reminders (triggerMinutes before scheduledAt)
+  REMINDER_BEFORE         // X minutes before start
+
+  // Follow-ups (triggerMinutes after session ended)
+  FOLLOW_UP_ATTENDED      // Attended the webinar
+  FOLLOW_UP_COMPLETED     // Watched past completion threshold
+  FOLLOW_UP_MISSED        // Didn't show up
+  FOLLOW_UP_LEFT_EARLY    // Left before completion
+
+  @@schema("webinar")
+}
+
+// Track sent notification instances
+model WebinarNotificationSent {
+  id              String              @id @default(cuid())
+  notificationId  String
+  notification    WebinarNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  registrationId  String
+  email           String
+  scheduledFor    DateTime
+  sentAt          DateTime?
+  status          WebinarNotificationSentStatus @default(PENDING)
+  error           String?
+
+  @@unique([notificationId, registrationId])
+  @@index([scheduledFor, status])
+  @@schema("webinar")
+  @@map("webinar_notifications_sent")
+}
+
+enum WebinarNotificationSentStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+
+  @@schema("webinar")
+}
+
+// ===========================================
+// Webinar Analytics
+// ===========================================
+
+model WebinarAnalyticsEvent {
+  id              String              @id @default(cuid())
+  webinarId       String
+  webinar         Webinar             @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  registrationId  String?
+  registration    WebinarRegistration? @relation(fields: [registrationId], references: [id], onDelete: SetNull)
+
+  // Event info
+  eventType       WebinarAnalyticsEventType
+  videoPosition   Int?                // Seconds into video
+  metadata        Json?               // Event-specific data
+
+  // Session context
+  sessionId       String?
+  sessionType     WebinarSessionType?
+
+  // Client info (for debugging)
+  userAgent       String?
+  ipAddress       String?
+
+  createdAt       DateTime            @default(now())
+
+  @@index([webinarId, eventType])
+  @@index([webinarId, createdAt])
+  @@index([registrationId, createdAt])
+  @@schema("webinar")
+  @@map("webinar_analytics_events")
+}
+
+enum WebinarAnalyticsEventType {
+  // Page events
+  LANDING_PAGE_VIEW
+  REGISTRATION_STARTED
+  REGISTRATION_COMPLETED
+
+  // Attendance events
+  JOINED_WAITING_ROOM
+  WEBINAR_STARTED
+  WEBINAR_ENDED
+  LEFT_EARLY
+  REJOINED
+
+  // Engagement events
+  CHAT_SENT
+  POLL_ANSWERED
+  CTA_CLICKED
+  DOWNLOAD_CLICKED
+  QUESTION_SUBMITTED
+  FEEDBACK_GIVEN
+  REACTION_SENT
+
+  // Video events
+  VIDEO_HEARTBEAT     // Sent every 30 seconds
+  VIDEO_BUFFERING
+  VIDEO_ERROR
+  VIDEO_QUALITY_CHANGE
+
+  // Replay events
+  REPLAY_STARTED
+  REPLAY_SEEKED
+  REPLAY_COMPLETED
+
+  @@schema("webinar")
 }

@@ -71,7 +71,7 @@ export const MailyEditor = forwardRef<MailyEditorRef, MailyEditorProps>(
     }), [editor])
 
     return (
-      <div className="maily-editor-wrapper border border-neu-dark rounded-neu overflow-hidden">
+      <div className="maily-editor-wrapper min-h-[500px] max-h-[700px] overflow-auto">
         <Editor
           onCreate={handleEditorReady}
           onUpdate={setEditor}

@@ -75,6 +75,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       cloudflareVideoUid,
       videoDuration,
       thumbnailUrl,
+      hlsUrl,
+      videoStatus,
       landingPagePath,
       thankYouPagePath,
       status,
@@ -95,6 +97,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (cloudflareVideoUid !== undefined) updateData.cloudflareVideoUid = cloudflareVideoUid
     if (videoDuration !== undefined) updateData.videoDuration = videoDuration
     if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl
+    if (hlsUrl !== undefined) updateData.hlsUrl = hlsUrl
+    if (videoStatus !== undefined) updateData.videoStatus = videoStatus
     if (landingPagePath !== undefined) updateData.landingPagePath = landingPagePath
     if (thankYouPagePath !== undefined) updateData.thankYouPagePath = thankYouPagePath
     if (timezone !== undefined) updateData.timezone = timezone

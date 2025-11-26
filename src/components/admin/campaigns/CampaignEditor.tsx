@@ -210,9 +210,9 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
       {/* Step Indicator */}
       <div className="mb-8">
         <nav aria-label="Progress">
-          <ol className="flex items-center">
+          <div className="flex items-center">
             {STEPS.map((step, index) => (
-              <li
+              <div
                 key={step.id}
                 className={`relative ${
                   index !== STEPS.length - 1 ? 'flex-1 pr-8' : ''
@@ -258,9 +258,9 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
                     }`}
                   />
                 )}
-              </li>
+              </div>
             ))}
-          </ol>
+          </div>
         </nav>
       </div>
 

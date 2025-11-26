@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useImperativeHandle, forwardRef } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Easy Email Editor to avoid SSR issues
@@ -29,19 +29,29 @@ interface EmailEditorWrapperProps {
 
 export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
   ({ designJson, onReady, onChange }, ref) => {
-    const emailEditorRef = useRef<any>(null)
+    const valuesRef = useRef<any>(null)
 
     // Expose exportHtml method to parent via ref
     useImperativeHandle(ref, () => ({
       exportHtml: async () => {
-        if (!emailEditorRef.current) {
+        if (!valuesRef.current) {
           throw new Error('Editor not ready')
         }
 
         try {
-          // Get the current values from Easy Email
-          const values = emailEditorRef.current.getValues()
-          const html = emailEditorRef.current.getHtml()
+          // Get the current values from the ref
+          const values = valuesRef.current
+
+          // Convert JSON to MJML
+          const JsonToMjmlFunc = (await import('easy-email-core')).JsonToMjml
+          const mjml = JsonToMjmlFunc(values.content)
+
+          // Convert MJML to HTML
+          const mjmlTransform = (await import('mjml-browser')).default
+          const { html } = mjmlTransform(mjml, {
+            beautify: true,
+            validationLevel: 'soft',
+          })
 
           // Auto-generate plain text from HTML
           const text = htmlToPlainText(html)
@@ -58,10 +68,13 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
       },
     }))
 
-    const handleLoad = () => {
-      console.log('Easy Email editor loaded')
-      onReady?.()
-    }
+    // Call onReady after a short delay to ensure editor is mounted
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        onReady?.()
+      }, 1000)
+      return () => clearTimeout(timer)
+    }, [onReady])
 
     // Default MJML template for new campaigns
     const defaultTemplate = designJson || {
@@ -73,8 +86,8 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
           value: {
             breakpoint: '480px',
             headAttributes: '',
-            font-size: '14px',
-            line-height: '1.7',
+            'font-size': '14px',
+            'line-height': '1.7',
             headStyles: [],
             fonts: [],
             responsive: true,
@@ -138,10 +151,10 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
         <EmailEditorProvider
           data={defaultTemplate}
           height="600px"
-          onLoad={handleLoad}
-          ref={emailEditorRef}
         >
           {({ values }) => {
+            // Store the latest values in the ref so exportHtml can access them
+            valuesRef.current = values
             return <EmailEditor />
           }}
         </EmailEditorProvider>

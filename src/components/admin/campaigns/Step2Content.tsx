@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui'
-import { FileText, Copy, FileImage, Save } from 'lucide-react'
+import { FileText, Copy, FileImage, Save, Eye } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
@@ -62,8 +62,8 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
   }
 
   const handleTemplateSelect = (template: EmailTemplate) => {
-    // Load template HTML into Unlayer
-    // Since Unlayer expects design JSON, we'll load the HTML as raw content
+    // Load template HTML into Easy Email editor
+    // Since Easy Email expects design JSON (MJML structure), we'll load the HTML as raw content
     // Users can then edit it in the visual editor
     onUpdate({
       htmlContent: template.htmlContent,

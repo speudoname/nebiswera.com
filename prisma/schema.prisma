@@ -431,7 +431,7 @@ model Campaign {
   // Content
   htmlContent     String         @db.Text
   textContent     String         @db.Text
-  designJson      Json?          // Unlayer editor design JSON for editing
+  designJson      Json?          // Easy Email editor design JSON (MJML structure) for editing
 
   // Sender info
   fromName        String

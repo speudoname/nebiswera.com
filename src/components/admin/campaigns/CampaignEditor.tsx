@@ -19,7 +19,7 @@ export interface CampaignData {
   replyTo: string
   htmlContent: string
   textContent: string
-  designJson?: any  // Unlayer editor design JSON for editing
+  designJson?: any  // Easy Email editor design JSON (MJML structure) for editing
   targetType: 'ALL_CONTACTS' | 'SEGMENT' | 'TAG' | 'REGISTERED_USERS' | 'CUSTOM_FILTER'
   targetCriteria: any
   scheduledAt: string | null

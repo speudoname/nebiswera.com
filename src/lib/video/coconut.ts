@@ -87,50 +87,15 @@ export async function createTranscodingJob(config: CoconutJobConfig): Promise<Co
         offset: '10%', // Take thumbnail at 10% of video duration
       },
       // HLS adaptive streaming with multiple qualities
+      // Variants are strings in format: "container:resolution::options"
       'httpstream': {
         hls: {
           path: `/${outputPath}/hls`,
         },
         variants: [
-          // 480p - SD
-          {
-            name: '480p',
-            video: {
-              height: 480,
-              codec: 'h264',
-              bitrate: '1000k',
-            },
-            audio: {
-              codec: 'aac',
-              bitrate: '96k',
-            },
-          },
-          // 720p - HD
-          {
-            name: '720p',
-            video: {
-              height: 720,
-              codec: 'h264',
-              bitrate: '2500k',
-            },
-            audio: {
-              codec: 'aac',
-              bitrate: '128k',
-            },
-          },
-          // 1080p - Full HD
-          {
-            name: '1080p',
-            video: {
-              height: 1080,
-              codec: 'h264',
-              bitrate: '5000k',
-            },
-            audio: {
-              codec: 'aac',
-              bitrate: '128k',
-            },
-          },
+          'mp4:480p::quality=3,maxrate=1000k',  // SD
+          'mp4:720p::quality=4,maxrate=2500k',  // HD
+          'mp4:1080p::quality=4,maxrate=5000k', // Full HD
         ],
       },
     },

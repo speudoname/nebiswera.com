@@ -1,6 +1,124 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import '@maily-to/core/style.css';
+
+@config '../../tailwind.config.ts';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+/**
+ * UTILITY CLASSES FOR TYPOGRAPHY VARIANTS
+ *
+ * Use these when you need to override the default styles.
+ */
+
+@utility display-2xl {
+  /* ==========================================================================
+     DISPLAY HEADINGS (Mobile-first: for hero/landing sections)
+     ========================================================================== */
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-none tracking-tight;
+}
+
+@utility display-xl {
+  @apply text-3xl md:text-4xl lg:text-5xl font-bold leading-none tracking-tight;
+}
+
+@utility display-lg {
+  @apply text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight;
+}
+
+@utility hero-title {
+  /* Hero title - main landing page headline */
+  @apply text-5xl md:text-5xl font-bold tracking-tight;
+  line-height: 1.25;
+}
+
+@utility eyebrow {
+  /* Eyebrow - small text above headlines */
+  @apply text-sm md:text-base font-medium tracking-tight uppercase;
+}
+
+@utility hero-subtitle {
+  /* Hero subtitle */
+  @apply text-xl md:text-xl lg:text-3xl text-text-secondary;
+}
+
+@utility text-muted {
+  /* Text color variants */
+  @apply text-text-muted;
+}
+
+@utility text-secondary {
+  @apply text-text-secondary;
+}
+
+@utility text-body-lg {
+  /* Text size variants (when you need to override) */
+  @apply text-lg leading-relaxed;
+}
+
+@utility text-body-sm {
+  @apply text-sm leading-normal;
+}
+
+@utility text-body-xs {
+  @apply text-xs leading-normal;
+}
+
+@utility no-margin {
+  /* Remove margin utility */
+  @apply mb-0;
+}
+
+@utility label {
+  /* Label styles */
+  @apply text-sm font-medium text-text-primary;
+}
+
+@utility label-lg {
+  @apply text-base font-medium text-text-primary;
+}
+
+@utility label-sm {
+  @apply text-xs font-medium text-text-muted tracking-wide uppercase;
+}
+
+@utility caption {
+  /* Caption/helper text */
+  @apply text-xs text-text-muted leading-normal;
+}
+
+@utility caption-error {
+  @apply text-xs text-primary-600 leading-normal;
+}
+
+/* Text shadow utilities */
+@utility text-shadow-hero {
+  text-shadow: 2px 2px 8px rgba(74, 48, 96, 0.4);
+}
+
+@utility text-shadow-hero-lg {
+  text-shadow: 3px 3px 12px rgba(74, 48, 96, 0.5);
+}
+
+@utility text-shadow-none {
+  text-shadow: none;
+}
 
 /**
  * GLOBAL TYPOGRAPHY STYLES
@@ -147,94 +265,6 @@
 
   blockquote {
     @apply border-l-4 border-primary-300 pl-4 italic text-text-secondary my-4;
-  }
-}
-
-/**
- * UTILITY CLASSES FOR TYPOGRAPHY VARIANTS
- *
- * Use these when you need to override the default styles.
- */
-
-@layer components {
-  /* ==========================================================================
-     DISPLAY HEADINGS (Mobile-first: for hero/landing sections)
-     ========================================================================== */
-  .display-2xl {
-    @apply text-4xl md:text-5xl lg:text-6xl font-bold leading-none tracking-tight;
-  }
-
-  .display-xl {
-    @apply text-3xl md:text-4xl lg:text-5xl font-bold leading-none tracking-tight;
-  }
-
-  .display-lg {
-    @apply text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight;
-  }
-
-  /* Hero title - main landing page headline */
-  .hero-title {
-    @apply text-5xl md:text-5xl font-bold tracking-tight;
-    line-height: 1.25;
-  }
-
-  /* Eyebrow - small text above headlines */
-  .eyebrow {
-    @apply text-sm md:text-base font-medium tracking-tight uppercase;
-  }
-
-  /* Hero subtitle */
-  .hero-subtitle {
-    @apply text-xl md:text-xl lg:text-3xl text-text-secondary;
-  }
-
-  /* Text color variants */
-  .text-muted {
-    @apply text-text-muted;
-  }
-
-  .text-secondary {
-    @apply text-text-secondary;
-  }
-
-  /* Text size variants (when you need to override) */
-  .text-body-lg {
-    @apply text-lg leading-relaxed;
-  }
-
-  .text-body-sm {
-    @apply text-sm leading-normal;
-  }
-
-  .text-body-xs {
-    @apply text-xs leading-normal;
-  }
-
-  /* Remove margin utility */
-  .no-margin {
-    @apply mb-0;
-  }
-
-  /* Label styles */
-  .label {
-    @apply text-sm font-medium text-text-primary;
-  }
-
-  .label-lg {
-    @apply text-base font-medium text-text-primary;
-  }
-
-  .label-sm {
-    @apply text-xs font-medium text-text-muted tracking-wide uppercase;
-  }
-
-  /* Caption/helper text */
-  .caption {
-    @apply text-xs text-text-muted leading-normal;
-  }
-
-  .caption-error {
-    @apply text-xs text-primary-600 leading-normal;
   }
 }
 

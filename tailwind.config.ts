@@ -1,5 +1,4 @@
 import type { Config } from 'tailwindcss'
-import plugin from 'tailwindcss/plugin'
 
 /**
  * Tailwind Configuration
@@ -17,17 +16,6 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './node_modules/@maily-to/core/**/*.{js,ts,jsx,tsx}',
-  ],
-  // Safelist ensures these classes are always generated regardless of detection
-  safelist: [
-    'shadow-neu-darkbg',
-    'shadow-neu-darkbg-sm',
-    'shadow-neu-darkbg-md',
-    'shadow-neu-darkbg-lg',
-    'shadow-neu-darkbg-inset',
-    'shadow-neu-darkbg-inset-sm',
-    'shadow-neu-darkbg-hover',
-    'shadow-neu-darkbg-pressed',
   ],
   theme: {
     extend: {
@@ -229,19 +217,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    // Text shadow plugin
-    plugin(function({ matchUtilities, theme }) {
-      matchUtilities(
-        {
-          'text-shadow': (value) => ({
-            textShadow: value,
-          }),
-        },
-        { values: theme('textShadow') }
-      )
-    }),
-  ],
+  plugins: [],
 }
 
 export default config

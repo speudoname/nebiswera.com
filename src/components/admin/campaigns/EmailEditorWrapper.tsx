@@ -194,25 +194,20 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
     }
 
     return (
-      <EmailEditorProvider
-        data={defaultTemplate}
-        height={'600px'}
-        autoComplete
-        dashed={false}
-      >
-        {({ values }) => {
-          // Store the latest values in the ref so exportHtml can access them
-          valuesRef.current = values
-          return (
-            <StandardLayout
-              categories={categories}
-              showSourceCode={false}
-            >
-              <EmailEditor />
-            </StandardLayout>
-          )
-        }}
-      </EmailEditorProvider>
+      <div style={{ height: '600px', width: '100%' }}>
+        <EmailEditorProvider
+          data={defaultTemplate}
+          height={'600px'}
+          autoComplete
+          dashed={false}
+        >
+          {({ values }) => {
+            // Store the latest values in the ref so exportHtml can access them
+            valuesRef.current = values
+            return <EmailEditor />
+          }}
+        </EmailEditorProvider>
+      </div>
     )
   }
 )

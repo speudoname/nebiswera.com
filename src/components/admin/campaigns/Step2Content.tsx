@@ -173,8 +173,7 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
         </div>
       </div>
 
-      {/* Image Uploader */}
-      <ImageUploader />
+      {/* Image Uploader - Now a floating panel */}
 
       {/* Variable Reference Panel */}
       <div className="bg-blue-50 border border-blue-200 rounded-neu p-4">
@@ -232,6 +231,9 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
           <li>• Click &quot;Save & Compile&quot; before moving to the next step</li>
         </ul>
       </div>
+
+      {/* Floating Image Uploader */}
+      <ImageUploader />
     </div>
   )
 }

@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { EmailStatus } from '@prisma/client'
 
-// Postmark webhook events (same as transactional)
+// Postmark webhook events
 interface PostmarkDeliveryEvent {
   RecordType: 'Delivery'
   MessageID: string
   Recipient: string
   DeliveredAt: string
   Tag?: string
+  Metadata?: Record<string, string>
 }
 
 interface PostmarkBounceEvent {
@@ -20,6 +21,7 @@ interface PostmarkBounceEvent {
   Email: string
   BouncedAt: string
   Description: string
+  Metadata?: Record<string, string>
 }
 
 interface PostmarkSpamComplaintEvent {
@@ -27,6 +29,7 @@ interface PostmarkSpamComplaintEvent {
   MessageID: string
   Email: string
   BouncedAt: string
+  Metadata?: Record<string, string>
 }
 
 interface PostmarkOpenEvent {
@@ -35,6 +38,7 @@ interface PostmarkOpenEvent {
   Recipient: string
   ReceivedAt: string
   FirstOpen: boolean
+  Metadata?: Record<string, string>
 }
 
 interface PostmarkClickEvent {
@@ -44,6 +48,17 @@ interface PostmarkClickEvent {
   ReceivedAt: string
   ClickLocation: string
   OriginalLink: string
+  Metadata?: Record<string, string>
+}
+
+interface PostmarkSubscriptionChangeEvent {
+  RecordType: 'SubscriptionChange'
+  MessageID: string
+  Recipient: string
+  SuppressSending: boolean
+  SuppressionReason?: string
+  ChangedAt: string
+  Metadata?: Record<string, string>
 }
 
 type PostmarkEvent =
@@ -52,16 +67,15 @@ type PostmarkEvent =
   | PostmarkSpamComplaintEvent
   | PostmarkOpenEvent
   | PostmarkClickEvent
+  | PostmarkSubscriptionChangeEvent
 
 /**
  * Verify Basic HTTP Authentication for Marketing Webhooks
- * Uses separate credentials from transactional webhooks
  */
 function verifyBasicAuth(request: Request): boolean {
   const webhookUsername = process.env.POSTMARK_MARKETING_WEBHOOK_USERNAME
   const webhookPassword = process.env.POSTMARK_MARKETING_WEBHOOK_PASSWORD
 
-  // If no credentials configured, skip authentication (not recommended for production)
   if (!webhookUsername || !webhookPassword) {
     return true
   }
@@ -71,17 +85,50 @@ function verifyBasicAuth(request: Request): boolean {
     return false
   }
 
-  // Decode the base64 credentials
-  const base64Credentials = authHeader.slice(6) // Remove "Basic "
+  const base64Credentials = authHeader.slice(6)
   const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8')
   const [username, password] = credentials.split(':')
 
   return username === webhookUsername && password === webhookPassword
 }
 
+/**
+ * Get campaign recipient by message ID
+ */
+async function getCampaignRecipient(messageId: string) {
+  return prisma.campaignRecipient.findFirst({
+    where: { messageId },
+    include: { campaign: true },
+  })
+}
+
+/**
+ * Update contact marketing status
+ */
+async function updateContactStatus(
+  email: string,
+  status: 'UNSUBSCRIBED' | 'SUPPRESSED',
+  reason?: 'HARD_BOUNCE' | 'SPAM_COMPLAINT' | 'MANUAL_SUPPRESSION'
+) {
+  const updateData: Record<string, unknown> = {
+    marketingStatus: status,
+  }
+
+  if (status === 'UNSUBSCRIBED') {
+    updateData.unsubscribedAt = new Date()
+  } else if (status === 'SUPPRESSED' && reason) {
+    updateData.suppressionReason = reason
+    updateData.suppressedAt = new Date()
+  }
+
+  await prisma.contact.updateMany({
+    where: { email },
+    data: updateData,
+  })
+}
+
 export async function POST(request: Request) {
   try {
-    // Verify Basic HTTP Authentication
     if (!verifyBasicAuth(request)) {
       console.warn('Invalid marketing webhook authentication')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -94,47 +141,102 @@ export async function POST(request: Request) {
       where: { messageId: event.MessageID },
     })
 
-    if (!emailLog) {
-      // Email not found in our logs - might be from a different system
-      return NextResponse.json({ received: true, processed: false })
-    }
+    // Get campaign recipient if this is a campaign email
+    const campaignRecipient = await getCampaignRecipient(event.MessageID)
+    const campaignId = campaignRecipient?.campaignId
 
-    // Update the email log based on the event type
     switch (event.RecordType) {
       case 'Delivery':
-        await prisma.emailLog.update({
-          where: { messageId: event.MessageID },
-          data: {
-            status: EmailStatus.DELIVERED,
-            deliveredAt: new Date(event.DeliveredAt),
-          },
-        })
+        // Update email log
+        if (emailLog) {
+          await prisma.emailLog.update({
+            where: { messageId: event.MessageID },
+            data: {
+              status: EmailStatus.DELIVERED,
+              deliveredAt: new Date(event.DeliveredAt),
+            },
+          })
+        }
+
+        // Update campaign recipient and stats
+        if (campaignRecipient && campaignId) {
+          await prisma.campaignRecipient.update({
+            where: { id: campaignRecipient.id },
+            data: {
+              status: 'DELIVERED',
+              deliveredAt: new Date(event.DeliveredAt),
+            },
+          })
+
+          await prisma.campaign.update({
+            where: { id: campaignId },
+            data: { deliveredCount: { increment: 1 } },
+          })
+        }
         break
 
       case 'Bounce':
-        await prisma.emailLog.update({
-          where: { messageId: event.MessageID },
-          data: {
-            status: EmailStatus.BOUNCED,
-            bouncedAt: new Date(event.BouncedAt),
-            bounceType: `${event.Type} (${event.TypeCode}): ${event.Name}`,
-          },
-        })
+        // Update email log
+        if (emailLog) {
+          await prisma.emailLog.update({
+            where: { messageId: event.MessageID },
+            data: {
+              status: EmailStatus.BOUNCED,
+              bouncedAt: new Date(event.BouncedAt),
+              bounceType: `${event.Type} (${event.TypeCode}): ${event.Name}`,
+            },
+          })
+        }
+
+        // Update campaign recipient and stats
+        if (campaignRecipient && campaignId) {
+          await prisma.campaignRecipient.update({
+            where: { id: campaignRecipient.id },
+            data: {
+              bouncedAt: new Date(event.BouncedAt),
+              error: `${event.Type}: ${event.Description}`,
+            },
+          })
+
+          await prisma.campaign.update({
+            where: { id: campaignId },
+            data: { bouncedCount: { increment: 1 } },
+          })
+        }
+
+        // Suppress contact for hard bounces (TypeCode 1 = HardBounce)
+        if (event.TypeCode === 1) {
+          await updateContactStatus(event.Email, 'SUPPRESSED', 'HARD_BOUNCE')
+        }
         break
 
       case 'SpamComplaint':
-        await prisma.emailLog.update({
-          where: { messageId: event.MessageID },
-          data: {
-            status: EmailStatus.SPAM_COMPLAINT,
-            bouncedAt: new Date(event.BouncedAt),
-          },
-        })
+        // Update email log
+        if (emailLog) {
+          await prisma.emailLog.update({
+            where: { messageId: event.MessageID },
+            data: {
+              status: EmailStatus.SPAM_COMPLAINT,
+              bouncedAt: new Date(event.BouncedAt),
+            },
+          })
+        }
+
+        // Update campaign stats
+        if (campaignId) {
+          await prisma.campaign.update({
+            where: { id: campaignId },
+            data: { bouncedCount: { increment: 1 } },
+          })
+        }
+
+        // Always suppress contact on spam complaint
+        await updateContactStatus(event.Email, 'SUPPRESSED', 'SPAM_COMPLAINT')
         break
 
       case 'Open':
-        // Only update to OPENED if it hasn't bounced
-        if (emailLog.status !== EmailStatus.BOUNCED && emailLog.status !== EmailStatus.SPAM_COMPLAINT) {
+        // Only update email log to OPENED if not bounced
+        if (emailLog && emailLog.status !== EmailStatus.BOUNCED && emailLog.status !== EmailStatus.SPAM_COMPLAINT) {
           await prisma.emailLog.update({
             where: { messageId: event.MessageID },
             data: {
@@ -143,22 +245,83 @@ export async function POST(request: Request) {
             },
           })
         }
+
+        // Update campaign recipient and stats (only count first open)
+        if (campaignRecipient && campaignId && event.FirstOpen) {
+          await prisma.campaignRecipient.update({
+            where: { id: campaignRecipient.id },
+            data: { openedAt: new Date(event.ReceivedAt) },
+          })
+
+          await prisma.campaign.update({
+            where: { id: campaignId },
+            data: { openedCount: { increment: 1 } },
+          })
+        }
         break
 
       case 'Click':
-        // Track clicks in metadata (could be expanded later)
-        const currentMetadata = (emailLog.metadata as Record<string, unknown>) || {}
-        const clicks = (currentMetadata.clicks as Array<{ link: string; at: string }>) || []
-        clicks.push({
-          link: event.OriginalLink,
-          at: event.ReceivedAt,
-        })
-        await prisma.emailLog.update({
-          where: { messageId: event.MessageID },
-          data: {
-            metadata: { ...currentMetadata, clicks },
-          },
-        })
+        // Track click in email log metadata
+        if (emailLog) {
+          const currentMetadata = (emailLog.metadata as Record<string, unknown>) || {}
+          const clicks = (currentMetadata.clicks as Array<{ link: string; at: string }>) || []
+          clicks.push({
+            link: event.OriginalLink,
+            at: event.ReceivedAt,
+          })
+          await prisma.emailLog.update({
+            where: { messageId: event.MessageID },
+            data: {
+              metadata: { ...currentMetadata, clicks },
+            },
+          })
+        }
+
+        // Update campaign recipient and stats
+        if (campaignRecipient && campaignId) {
+          // Only count first click for campaign stats
+          const isFirstClick = !campaignRecipient.clickedAt
+
+          await prisma.campaignRecipient.update({
+            where: { id: campaignRecipient.id },
+            data: {
+              clickedAt: campaignRecipient.clickedAt || new Date(event.ReceivedAt),
+            },
+          })
+
+          if (isFirstClick) {
+            await prisma.campaign.update({
+              where: { id: campaignId },
+              data: { clickedCount: { increment: 1 } },
+            })
+          }
+
+          // Track per-link clicks
+          await trackLinkClick(campaignId, event.OriginalLink, campaignRecipient.id)
+        }
+        break
+
+      case 'SubscriptionChange':
+        // Update campaign stats if this is from unsubscribe
+        if (event.SuppressSending && campaignId) {
+          await prisma.campaign.update({
+            where: { id: campaignId },
+            data: { unsubscribedCount: { increment: 1 } },
+          })
+
+          // Update recipient
+          if (campaignRecipient) {
+            await prisma.campaignRecipient.update({
+              where: { id: campaignRecipient.id },
+              data: { unsubscribedAt: new Date(event.ChangedAt) },
+            })
+          }
+        }
+
+        // Update contact status
+        if (event.SuppressSending) {
+          await updateContactStatus(event.Recipient, 'UNSUBSCRIBED')
+        }
         break
     }
 
@@ -169,5 +332,71 @@ export async function POST(request: Request) {
       { error: 'Webhook processing failed' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Track link click in CampaignLink table
+ */
+async function trackLinkClick(
+  campaignId: string,
+  url: string,
+  recipientId: string
+) {
+  try {
+    // Find or create the link record
+    let link = await prisma.campaignLink.findFirst({
+      where: {
+        campaignId,
+        url,
+      },
+    })
+
+    if (!link) {
+      link = await prisma.campaignLink.create({
+        data: {
+          campaignId,
+          url,
+          clickCount: 0,
+          uniqueClickCount: 0,
+        },
+      })
+    }
+
+    // Check if this recipient already clicked this link
+    const existingClick = await prisma.campaignLinkClick.findFirst({
+      where: {
+        linkId: link.id,
+        recipientId,
+      },
+    })
+
+    if (existingClick) {
+      // Just increment total clicks
+      await prisma.campaignLink.update({
+        where: { id: link.id },
+        data: { clickCount: { increment: 1 } },
+      })
+    } else {
+      // New unique click
+      await prisma.campaignLinkClick.create({
+        data: {
+          linkId: link.id,
+          recipientId,
+          clickedAt: new Date(),
+        },
+      })
+
+      await prisma.campaignLink.update({
+        where: { id: link.id },
+        data: {
+          clickCount: { increment: 1 },
+          uniqueClickCount: { increment: 1 },
+        },
+      })
+    }
+  } catch (error) {
+    // Don't fail the webhook for link tracking errors
+    console.error('Link tracking error:', error)
   }
 }

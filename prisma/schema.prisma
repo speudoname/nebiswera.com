@@ -267,6 +267,13 @@ model Contact {
   // Status
   status        ContactStatus @default(ACTIVE)
 
+  // Marketing preferences
+  marketingStatus   MarketingStatus    @default(SUBSCRIBED)
+  unsubscribedAt    DateTime?
+  unsubscribeReason String?
+  suppressionReason SuppressionReason?
+  suppressedAt      DateTime?
+
   // Metadata
   customFields  Json?         // Flexible key-value storage for future needs
   notes         String?       @db.Text
@@ -275,12 +282,14 @@ model Contact {
   updatedAt     DateTime      @updatedAt
 
   // Relations
-  tags          ContactTag[]
-  activities    ContactActivity[]
+  tags               ContactTag[]
+  activities         ContactActivity[]
+  campaignRecipients CampaignRecipient[]
 
   @@index([email])
   @@index([source])
   @@index([status])
+  @@index([marketingStatus])
   @@index([createdAt])
   @@schema("crm")
   @@map("contacts")
@@ -405,6 +414,179 @@ enum ActivityType {
   EMAIL_BOUNCED  // Email bounced
   IMPORTED       // Imported from file
   NOTE_ADDED     // Note added
+
+  @@schema("crm")
+}
+
+// ===========================================
+// Email Marketing Campaigns
+// ===========================================
+
+model Campaign {
+  id              String         @id @default(cuid())
+  name            String         // Internal name for reference
+  subject         String
+  previewText     String?        // Preview snippet shown in email clients
+
+  // Content
+  htmlContent     String         @db.Text
+  textContent     String         @db.Text
+
+  // Sender info
+  fromName        String
+  fromEmail       String
+  replyTo         String?
+
+  // Status
+  status          CampaignStatus @default(DRAFT)
+
+  // Targeting
+  targetType      TargetType
+  targetCriteria  Json?          // Flexible: {segmentId, tagIds[], filters}
+
+  // Scheduling
+  scheduledAt     DateTime?      // null = manual trigger
+  scheduledTz     String         @default("Asia/Tbilisi") // Timezone for scheduling
+  sendingStartedAt DateTime?
+  completedAt     DateTime?
+
+  // Stats (denormalized for dashboard)
+  totalRecipients   Int          @default(0)
+  sentCount         Int          @default(0)
+  deliveredCount    Int          @default(0)
+  openedCount       Int          @default(0)
+  clickedCount      Int          @default(0)
+  bouncedCount      Int          @default(0)
+  unsubscribedCount Int          @default(0)
+
+  createdBy       String         // Admin user ID
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  recipients      CampaignRecipient[]
+  links           CampaignLink[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@schema("crm")
+  @@map("campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT           // Being edited
+  SCHEDULED       // Waiting for scheduledAt
+  SENDING         // Currently sending
+  PAUSED          // Manually paused mid-send
+  COMPLETED       // All recipients processed
+  CANCELLED       // Cancelled before completion
+
+  @@schema("crm")
+}
+
+enum TargetType {
+  ALL_CONTACTS      // Everyone with marketingStatus = SUBSCRIBED
+  SEGMENT           // Specific segment
+  TAG               // One or more tags
+  REGISTERED_USERS  // Users with accounts
+  CUSTOM_FILTER     // Custom query
+
+  @@schema("crm")
+}
+
+// Individual recipient queue for a campaign
+model CampaignRecipient {
+  id              String          @id @default(cuid())
+  campaignId      String
+  campaign        Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId       String
+  contact         Contact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  email           String
+
+  // Snapshot of personalization at send time
+  variables       Json?           // {firstName, lastName, email, ...}
+
+  status          RecipientStatus @default(PENDING)
+  messageId       String?         // Postmark MessageID for tracking
+  sentAt          DateTime?
+  error           String?         // Error message if failed
+
+  // Engagement tracking (from webhooks)
+  deliveredAt     DateTime?
+  openedAt        DateTime?
+  clickedAt       DateTime?
+  bouncedAt       DateTime?
+  unsubscribedAt  DateTime?
+
+  // Link click tracking
+  linkClicks      CampaignLinkClick[]
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+  @@index([messageId])
+  @@schema("crm")
+  @@map("campaign_recipients")
+}
+
+enum RecipientStatus {
+  PENDING         // Queued for sending
+  SENT            // Sent to Postmark
+  DELIVERED       // Delivery confirmed
+  FAILED          // Send failed
+  SKIPPED         // Skipped (invalid, suppressed, etc.)
+
+  @@schema("crm")
+}
+
+// Track individual link clicks per campaign
+model CampaignLink {
+  id               String   @id @default(cuid())
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  url              String   // Original URL
+  clickCount       Int      @default(0)
+  uniqueClickCount Int      @default(0)
+
+  // Individual clicks stored in CampaignLinkClick
+  clicks      CampaignLinkClick[]
+
+  @@unique([campaignId, url])
+  @@index([campaignId])
+  @@schema("crm")
+  @@map("campaign_links")
+}
+
+// Individual click events
+model CampaignLinkClick {
+  id          String            @id @default(cuid())
+  linkId      String
+  link        CampaignLink      @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   CampaignRecipient @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  clickedAt   DateTime          @default(now())
+
+  @@unique([linkId, recipientId])
+  @@index([linkId])
+  @@index([recipientId])
+  @@schema("crm")
+  @@map("campaign_link_clicks")
+}
+
+// Marketing subscription status
+enum MarketingStatus {
+  SUBSCRIBED      // Can receive marketing emails
+  UNSUBSCRIBED    // Opted out
+  SUPPRESSED      // Bounced or complained - cannot send
+
+  @@schema("crm")
+}
+
+// Reason for suppression
+enum SuppressionReason {
+  HARD_BOUNCE
+  SPAM_COMPLAINT
+  MANUAL_SUPPRESSION
 
   @@schema("crm")
 }

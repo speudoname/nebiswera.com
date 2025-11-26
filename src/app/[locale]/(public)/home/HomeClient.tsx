@@ -35,9 +35,9 @@ export function HomeClient() {
   }
 
   return (
-    <section className="pt-6 pb-16 md:pt-12 md:pb-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
+    <section className="pt-4 pb-16 md:pt-8 md:pb-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
     <div className="flex-1 flex items-center justify-center">
-      <div className="text-center py-2 md:py-4 max-w-3xl">
+      <div className="text-center max-w-3xl">
         <p className="eyebrow mb-4 md:mb-4">
           <span className="text-primary-600">{t('eyebrowStart')}</span>
           <span className="text-text-secondary"> {t('eyebrowEmphasis')} </span>

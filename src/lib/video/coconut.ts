@@ -75,6 +75,7 @@ export async function createTranscodingJob(config: CoconutJobConfig): Promise<Co
     notification: {
       type: 'http',
       url: getWebhookUrl(),
+      events: true, // Send all events including progress updates
       metadata: {
         webinarId: config.webinarId,
       },

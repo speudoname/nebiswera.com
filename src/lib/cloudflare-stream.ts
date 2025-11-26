@@ -2,6 +2,9 @@
 // Docs: https://developers.cloudflare.com/stream/
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.R2_ACCOUNT_ID // Same account ID as R2
+// Prefer scoped API Token over Global API Key (better security)
+const CLOUDFLARE_STREAM_TOKEN = process.env.CLOUDFLARE_STREAM_TOKEN
+// Fallback to Global API Key (not recommended but works)
 const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY
 const CLOUDFLARE_EMAIL = process.env.CLOUDFLARE_EMAIL
 
@@ -46,15 +49,26 @@ interface TusUploadResponse {
 }
 
 function getAuthHeaders(): HeadersInit {
-  if (!CLOUDFLARE_API_KEY || !CLOUDFLARE_EMAIL) {
-    throw new Error('Missing Cloudflare API credentials')
+  // Prefer scoped API Token (recommended for security)
+  if (CLOUDFLARE_STREAM_TOKEN) {
+    return {
+      'Authorization': `Bearer ${CLOUDFLARE_STREAM_TOKEN}`,
+      'Content-Type': 'application/json',
+    }
   }
 
-  return {
-    'X-Auth-Email': CLOUDFLARE_EMAIL,
-    'X-Auth-Key': CLOUDFLARE_API_KEY,
-    'Content-Type': 'application/json',
+  // Fallback to Global API Key (works but gives full account access)
+  if (CLOUDFLARE_API_KEY && CLOUDFLARE_EMAIL) {
+    return {
+      'X-Auth-Email': CLOUDFLARE_EMAIL,
+      'X-Auth-Key': CLOUDFLARE_API_KEY,
+      'Content-Type': 'application/json',
+    }
   }
+
+  throw new Error(
+    'Missing Cloudflare credentials. Set CLOUDFLARE_STREAM_TOKEN (recommended) or CLOUDFLARE_API_KEY + CLOUDFLARE_EMAIL'
+  )
 }
 
 /**

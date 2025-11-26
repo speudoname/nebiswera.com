@@ -12,6 +12,7 @@
     "@arco-themes/react-easy-email-theme": "^0.0.3",
     "@auth/prisma-adapter": "^2.11.1",
     "@aws-sdk/client-s3": "^3.939.0",
+    "@cloudflare/stream-react": "^1.9.3",
     "@prisma/client": "5",
     "bcryptjs": "^3.0.3",
     "easy-email-editor": "^4.16.3",

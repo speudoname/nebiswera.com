@@ -627,6 +627,9 @@ model Webinar {
   // Completion settings
   completionPercent Int           @default(80) // % watched to count as "completed"
 
+  // Chat settings
+  chatEnabled       Boolean       @default(true)
+
   // Timestamps
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -783,7 +786,9 @@ model WebinarRegistration {
   pollResponseCount Int                 @default(0)
   ctaClickCount   Int                   @default(0)
 
-  // UTM tracking
+  // Registration source and tracking
+  timezone        String                @default("UTC")
+  source          String?               // e.g., "direct", "email", "social"
   utmSource       String?
   utmMedium       String?
   utmCampaign     String?
@@ -791,6 +796,7 @@ model WebinarRegistration {
   utmTerm         String?
 
   // Timestamps
+  attendedAt      DateTime?             // When they first joined
   registeredAt    DateTime              @default(now())
 
   // Relations
@@ -837,6 +843,7 @@ model WebinarInteraction {
   content         Json                // Type-specific content (options, url, etc.)
 
   // Behavior
+  enabled         Boolean             @default(true)  // Whether interaction is active
   pauseVideo      Boolean             @default(false) // Pause video when shown
   required        Boolean             @default(false) // Must interact to continue
   showOnReplay    Boolean             @default(true)  // Show in replay mode
@@ -931,6 +938,7 @@ model WebinarInteractionEvent {
 
 enum WebinarInteractionEventType {
   VIEWED          // Interaction was shown
+  RESPONDED       // User responded to poll/feedback
   CLICKED         // CTA/link clicked
   DISMISSED       // User closed it
   DOWNLOADED      // Download initiated
@@ -1104,6 +1112,7 @@ enum WebinarAnalyticsEventType {
   LANDING_PAGE_VIEW
   REGISTRATION_STARTED
   REGISTRATION_COMPLETED
+  REGISTRATION            // Backwards compat alias
 
   // Attendance events
   JOINED_WAITING_ROOM
@@ -1111,6 +1120,7 @@ enum WebinarAnalyticsEventType {
   WEBINAR_ENDED
   LEFT_EARLY
   REJOINED
+  ATTENDANCE              // First joined the webinar
 
   // Engagement events
   CHAT_SENT

@@ -76,3 +76,31 @@ export async function sendPasswordResetEmail(email: string, token: string, local
 
   return result
 }
+
+/**
+ * Generic email send function for custom emails
+ */
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+}: {
+  to: string
+  subject: string
+  html: string
+  text?: string
+}) {
+  const { client, fromAddress, fromName, streamName } = await getEmailClient()
+
+  const result = await client.sendEmail({
+    From: `${fromName} <${fromAddress}>`,
+    To: to,
+    Subject: subject,
+    MessageStream: streamName,
+    HtmlBody: html,
+    TextBody: text || html.replace(/<[^>]*>/g, ''),
+  })
+
+  return result
+}

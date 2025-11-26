@@ -123,7 +123,7 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
         )}
         <iframe
           ref={iframeRef}
-          src="/email-editor/index.html"
+          src="/email-editor"
           style={{
             width: '100%',
             height: '100%',

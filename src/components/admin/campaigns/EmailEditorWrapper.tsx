@@ -1,17 +1,25 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useImperativeHandle, forwardRef } from 'react'
 import dynamic from 'next/dynamic'
 
-// Dynamically import EmailEditor to avoid SSR issues
-const EmailEditor = dynamic(() => import('react-email-editor'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-[600px] bg-neu-base rounded-neu">
-      <div className="text-text-muted">Loading email editor...</div>
-    </div>
-  ),
-})
+// Dynamically import Easy Email Editor to avoid SSR issues
+const EmailEditor = dynamic(
+  () => import('easy-email-editor').then((mod) => mod.EmailEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-[600px] bg-neu-base rounded-neu">
+        <div className="text-text-muted">Loading email editor...</div>
+      </div>
+    ),
+  }
+)
+
+const EmailEditorProvider = dynamic(
+  () => import('easy-email-editor').then((mod) => mod.EmailEditorProvider),
+  { ssr: false }
+)
 
 interface EmailEditorWrapperProps {
   designJson?: any
@@ -19,83 +27,130 @@ interface EmailEditorWrapperProps {
   onChange?: (design: any, html: string, text: string) => void
 }
 
-export function EmailEditorWrapper({
-  designJson,
-  onReady,
-  onChange,
-}: EmailEditorWrapperProps) {
-  const emailEditorRef = useRef<any>(null)
+export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
+  ({ designJson, onReady, onChange }, ref) => {
+    const emailEditorRef = useRef<any>(null)
 
-  // Load design when editor is ready
-  useEffect(() => {
-    if (emailEditorRef.current?.editor && designJson) {
-      emailEditorRef.current.editor.loadDesign(designJson)
-    }
-  }, [designJson])
+    // Expose exportHtml method to parent via ref
+    useImperativeHandle(ref, () => ({
+      exportHtml: async () => {
+        if (!emailEditorRef.current) {
+          throw new Error('Editor not ready')
+        }
 
-  const handleLoad = () => {
-    console.log('Email editor loaded')
-    if (designJson && emailEditorRef.current?.editor) {
-      emailEditorRef.current.editor.loadDesign(designJson)
+        try {
+          // Get the current values from Easy Email
+          const values = emailEditorRef.current.getValues()
+          const html = emailEditorRef.current.getHtml()
+
+          // Auto-generate plain text from HTML
+          const text = htmlToPlainText(html)
+
+          return {
+            design: values,
+            html: html,
+            text: text,
+          }
+        } catch (error) {
+          console.error('Failed to export from Easy Email:', error)
+          throw error
+        }
+      },
+    }))
+
+    const handleLoad = () => {
+      console.log('Easy Email editor loaded')
+      onReady?.()
     }
-    onReady?.()
+
+    // Default MJML template for new campaigns
+    const defaultTemplate = designJson || {
+      subject: '',
+      subTitle: '',
+      content: {
+        type: 'page',
+        data: {
+          value: {
+            breakpoint: '480px',
+            headAttributes: '',
+            font-size: '14px',
+            line-height: '1.7',
+            headStyles: [],
+            fonts: [],
+            responsive: true,
+            'font-family':
+              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            'text-color': '#000000',
+          },
+        },
+        attributes: {
+          'background-color': '#efeeea',
+          width: '600px',
+        },
+        children: [
+          {
+            type: 'advanced_section',
+            data: {
+              value: {
+                noWrap: false,
+              },
+            },
+            attributes: {
+              padding: '20px 0px',
+              'background-color': '#ffffff',
+            },
+            children: [
+              {
+                type: 'advanced_column',
+                data: {
+                  value: {},
+                },
+                attributes: {
+                  padding: '0px 20px',
+                  border: 'none',
+                  'vertical-align': 'top',
+                },
+                children: [
+                  {
+                    type: 'advanced_text',
+                    data: {
+                      value: {
+                        content:
+                          '<h1 style="text-align: center;">Welcome!</h1><p style="text-align: center;">Start designing your email campaign here.</p><p style="text-align: center;">You can add images, buttons, and more using the tools on the left.</p>',
+                      },
+                    },
+                    attributes: {
+                      padding: '10px 25px',
+                      align: 'left',
+                    },
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    }
+
+    return (
+      <div className="w-full h-[600px] border-2 border-neu-dark rounded-neu overflow-hidden">
+        <EmailEditorProvider
+          data={defaultTemplate}
+          height="600px"
+          onLoad={handleLoad}
+          ref={emailEditorRef}
+        >
+          {({ values }) => {
+            return <EmailEditor />
+          }}
+        </EmailEditorProvider>
+      </div>
+    )
   }
+)
 
-  // Method to export HTML and design
-  const exportHtml = (): Promise<{ design: any; html: string; text: string }> => {
-    return new Promise((resolve, reject) => {
-      if (!emailEditorRef.current?.editor) {
-        reject(new Error('Editor not ready'))
-        return
-      }
-
-      emailEditorRef.current.editor.exportHtml((data: any) => {
-        const { design, html } = data
-
-        // Auto-generate plain text from HTML
-        const text = htmlToPlainText(html)
-
-        resolve({ design, html, text })
-      })
-    })
-  }
-
-  // Expose exportHtml method to parent via ref
-  useEffect(() => {
-    if (emailEditorRef.current) {
-      emailEditorRef.current.exportHtml = exportHtml
-    }
-  }, [])
-
-  return (
-    <div className="w-full h-[600px]">
-      <EmailEditor
-        ref={emailEditorRef}
-        onLoad={handleLoad}
-        options={{
-          displayMode: 'email',
-          appearance: {
-            theme: 'light',
-          },
-          features: {
-            preview: true,
-            undoRedo: true,
-          },
-          tools: {
-            // Enable commonly used tools
-            text: { enabled: true },
-            image: { enabled: true },
-            button: { enabled: true },
-            divider: { enabled: true },
-            html: { enabled: true },
-            video: { enabled: true },
-            social: { enabled: true },
-          },
-        }}
-      />
-    </div>
-  )
-}
+EmailEditorWrapper.displayName = 'EmailEditorWrapper'
 
 // Utility function to convert HTML to plain text
 function htmlToPlainText(html: string): string {
@@ -128,6 +183,5 @@ function htmlToPlainText(html: string): string {
 
 // Export the exportHtml method type for parent components
 export type EmailEditorRef = {
-  editor: any
   exportHtml: () => Promise<{ design: any; html: string; text: string }>
 }

@@ -282,3 +282,22 @@
     transform: translateY(0);
   }
 }
+
+/* Maily.to editor fixes */
+.maily-editor-wrapper {
+  overflow: visible !important;
+  min-height: 600px;
+}
+
+.maily-editor-wrapper > div {
+  overflow: visible !important;
+}
+
+/* Ensure Maily.to toolbar and add section buttons are visible */
+#mly-editor {
+  overflow: visible !important;
+}
+
+#mly-editor > div {
+  overflow: visible !important;
+}

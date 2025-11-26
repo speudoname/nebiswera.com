@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui'
 import { Save, AlertCircle } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
@@ -51,7 +51,7 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
   }, [campaignId, data.designJson])
 
   // Auto-save to localStorage
-  const handleAutoSave = () => {
+  const handleAutoSave = useCallback(() => {
     if (!editorRef.current) {
       console.log('❌ Editor ref not available')
       return
@@ -74,17 +74,17 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
       console.error('❌ Failed to auto-save:', e)
       setAutoSaveStatus('unsaved')
     }
-  }
+  }, [campaignId])
 
   // Trigger auto-save with debounce
-  const triggerAutoSave = () => {
+  const triggerAutoSave = useCallback(() => {
     console.log('🔄 Trigger auto-save called')
     setAutoSaveStatus('unsaved')
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current)
     }
     autoSaveTimeoutRef.current = setTimeout(handleAutoSave, 2000)
-  }
+  }, [handleAutoSave])
 
   // Save to database
   const handleSaveToDatabase = async () => {

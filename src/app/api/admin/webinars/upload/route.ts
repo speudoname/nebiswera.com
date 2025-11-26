@@ -176,9 +176,15 @@ export async function GET(request: NextRequest) {
         const coconutStatus = await getJobStatus(job.coconutJobId)
         console.log(`Coconut status for ${job.coconutJobId}:`, coconutStatus.status, `progress: ${coconutStatus.progress}%`)
 
-        // Get progress - Coconut returns progress at top level or might be 100 for completed jobs
-        const coconutProgress = coconutStatus.progress ??
-          (coconutStatus.status === 'completed' || coconutStatus.status === 'job.completed' ? 100 : 0)
+        // Get progress - Coconut may return progress as number, string, or undefined
+        let coconutProgress = 0
+        if (coconutStatus.progress !== undefined && coconutStatus.progress !== null) {
+          // Handle string like "50%" or number like 50
+          const progressStr = String(coconutStatus.progress).replace('%', '')
+          coconutProgress = parseInt(progressStr, 10) || 0
+        } else if (coconutStatus.status === 'completed' || coconutStatus.status === 'job.completed') {
+          coconutProgress = 100
+        }
 
         // Update progress from Coconut if changed
         if (coconutProgress !== job.progress) {

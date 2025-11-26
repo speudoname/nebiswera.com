@@ -33,39 +33,52 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
   // Load from localStorage on mount
   useEffect(() => {
     const savedContent = localStorage.getItem(getAutoSaveKey(campaignId))
+    console.log('🔍 Checking localStorage for key:', getAutoSaveKey(campaignId))
+    console.log('📦 Found saved content:', savedContent ? 'Yes' : 'No')
+    console.log('📝 Current data.designJson:', data.designJson ? 'Exists' : 'Empty')
+
     if (savedContent && !data.designJson) {
       try {
         const parsed = JSON.parse(savedContent)
+        console.log('✅ Loading from localStorage:', parsed)
         if (editorRef.current && parsed.designJson) {
           editorRef.current.setContent(parsed.designJson)
         }
       } catch (e) {
-        console.error('Failed to load auto-saved content:', e)
+        console.error('❌ Failed to load auto-saved content:', e)
       }
     }
   }, [campaignId, data.designJson])
 
   // Auto-save to localStorage
   const handleAutoSave = () => {
-    if (!editorRef.current) return
+    if (!editorRef.current) {
+      console.log('❌ Editor ref not available')
+      return
+    }
 
+    console.log('💾 Starting auto-save...')
     setAutoSaveStatus('saving')
     const content = editorRef.current.getContent()
+    console.log('📄 Content to save:', content?.substring(0, 100))
 
     try {
-      localStorage.setItem(getAutoSaveKey(campaignId), JSON.stringify({
+      const saveData = {
         designJson: content,
         timestamp: new Date().toISOString(),
-      }))
+      }
+      localStorage.setItem(getAutoSaveKey(campaignId), JSON.stringify(saveData))
+      console.log('✅ Saved to localStorage with key:', getAutoSaveKey(campaignId))
       setAutoSaveStatus('saved')
     } catch (e) {
-      console.error('Failed to auto-save:', e)
+      console.error('❌ Failed to auto-save:', e)
       setAutoSaveStatus('unsaved')
     }
   }
 
   // Trigger auto-save with debounce
   const triggerAutoSave = () => {
+    console.log('🔄 Trigger auto-save called')
     setAutoSaveStatus('unsaved')
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current)
@@ -185,7 +198,7 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
         </div>
       </div>
 
-      {/* Maily.to Editor with better styling */}
+      {/* Maily.to Editor - Remove all container constraints */}
       <div className="bg-white rounded-neu border-2 border-neu-dark shadow-neu">
         <div className="p-4 bg-neu-base border-b-2 border-neu-dark">
           <p className="text-sm text-text-muted flex items-center gap-2">
@@ -193,17 +206,16 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
             Changes are auto-saved every 2 seconds. Click &quot;Save & Compile&quot; to finalize and generate HTML.
           </p>
         </div>
-        <div className="p-4">
-          <MailyEditor
-            ref={editorRef}
-            initialContent={initialMailyContent}
-            onReady={() => {
-              console.log('Maily editor ready')
-              setAutoSaveStatus('saved')
-            }}
-            onChange={triggerAutoSave}
-          />
-        </div>
+        {/* Completely remove wrapper - let Maily.to control its own layout */}
+        <MailyEditor
+          ref={editorRef}
+          initialContent={initialMailyContent}
+          onReady={() => {
+            console.log('✅ Maily editor ready')
+            setAutoSaveStatus('saved')
+          }}
+          onChange={triggerAutoSave}
+        />
       </div>
 
       {/* Tips */}

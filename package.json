@@ -23,6 +23,7 @@
     "rate-limiter-flexible": "^8.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-email-editor": "^1.7.11",
     "zod": "^4.1.12"
   },
   "devDependencies": {

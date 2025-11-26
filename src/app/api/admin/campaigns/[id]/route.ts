@@ -77,6 +77,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       previewText,
       htmlContent,
       textContent,
+      designJson,
       fromName,
       fromEmail,
       replyTo,
@@ -94,6 +95,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (previewText !== undefined) updateData.previewText = previewText
     if (htmlContent !== undefined) updateData.htmlContent = htmlContent
     if (textContent !== undefined) updateData.textContent = textContent
+    if (designJson !== undefined) updateData.designJson = designJson
     if (fromName !== undefined) updateData.fromName = fromName
     if (fromEmail !== undefined) updateData.fromEmail = fromEmail
     if (replyTo !== undefined) updateData.replyTo = replyTo

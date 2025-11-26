@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui'
-import { Code, FileText, Eye, Copy, FileImage } from 'lucide-react'
+import { Code, FileText, Eye, Copy, FileImage, Save } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
+import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
 
 interface Step2ContentProps {
   data: CampaignData
@@ -17,54 +18,65 @@ const VARIABLES = [
   { key: '{{firstName}}', label: 'First Name', description: 'With fallback: {{firstName|there}}' },
   { key: '{{lastName}}', label: 'Last Name', description: 'With fallback: {{lastName|Friend}}' },
   { key: '{{fullName}}', label: 'Full Name', description: 'firstName + lastName or email' },
-  { key: '{{{ pm:unsubscribe }}}', label: 'Unsubscribe Link', description: 'Required for CAN-SPAM compliance' },
 ]
 
 export function Step2Content({ data, onUpdate }: Step2ContentProps) {
-  const [activeTab, setActiveTab] = useState<'html' | 'text'>('html')
-  const [showPreview, setShowPreview] = useState(false)
+  const [activeTab, setActiveTab] = useState<'editor' | 'text'>('editor')
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const emailEditorRef = useRef<EmailEditorRef>(null)
+
+  // Auto-save from editor when switching tabs or on interval
+  const handleSaveFromEditor = async () => {
+    if (!emailEditorRef.current?.exportHtml) return
+
+    setSaving(true)
+    try {
+      const { design, html, text } = await emailEditorRef.current.exportHtml()
+
+      // Ensure unsubscribe link is present
+      const hasUnsubscribeLink = html.includes('{{{ pm:unsubscribe }}}') || html.includes('{{unsubscribe}}')
+
+      if (!hasUnsubscribeLink) {
+        // Append unsubscribe link at the end
+        const htmlWithUnsubscribe = html.replace('</body>', '<footer style="text-align:center;padding:20px;font-size:12px;color:#666;"><a href="{{{ pm:unsubscribe }}}">Unsubscribe</a></footer></body>')
+        const textWithUnsubscribe = text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}'
+
+        onUpdate({
+          designJson: design,
+          htmlContent: htmlWithUnsubscribe,
+          textContent: textWithUnsubscribe,
+        })
+      } else {
+        onUpdate({
+          designJson: design,
+          htmlContent: html,
+          textContent: text,
+        })
+      }
+    } catch (error) {
+      console.error('Failed to export from editor:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleTemplateSelect = (template: EmailTemplate) => {
+    // Load template HTML into Unlayer
+    // Since Unlayer expects design JSON, we'll load the HTML as raw content
+    // Users can then edit it in the visual editor
     onUpdate({
       htmlContent: template.htmlContent,
       textContent: template.textContent,
+      designJson: null, // Clear design JSON when loading raw HTML template
       ...(template.suggestedSubject && !data.subject ? { subject: template.suggestedSubject } : {}),
       ...(template.suggestedPreviewText && !data.previewText ? { previewText: template.suggestedPreviewText } : {}),
     })
   }
 
   const insertVariable = (variable: string) => {
-    if (activeTab === 'html') {
-      const textarea = document.getElementById('htmlContent') as HTMLTextAreaElement
-      if (textarea) {
-        const start = textarea.selectionStart
-        const end = textarea.selectionEnd
-        const text = data.htmlContent
-        const newText = text.substring(0, start) + variable + text.substring(end)
-        onUpdate({ htmlContent: newText })
-
-        // Set cursor position after inserted variable
-        setTimeout(() => {
-          textarea.focus()
-          textarea.setSelectionRange(start + variable.length, start + variable.length)
-        }, 0)
-      }
-    } else {
-      const textarea = document.getElementById('textContent') as HTMLTextAreaElement
-      if (textarea) {
-        const start = textarea.selectionStart
-        const end = textarea.selectionEnd
-        const text = data.textContent
-        const newText = text.substring(0, start) + variable + text.substring(end)
-        onUpdate({ textContent: newText })
-
-        setTimeout(() => {
-          textarea.focus()
-          textarea.setSelectionRange(start + variable.length, start + variable.length)
-        }, 0)
-      }
-    }
+    // For now, show a tooltip telling users to use the editor's text tool
+    alert(`To insert ${variable}, use the text block in the visual editor and type it directly. Variables like {{firstName}} will be replaced when sending.`)
   }
 
   const generatePlainText = () => {
@@ -72,8 +84,14 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
     const text = data.htmlContent
       .replace(/<style[^>]*>.*?<\/style>/gi, '')
       .replace(/<script[^>]*>.*?<\/script>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s\s+/g, ' ')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
       .trim()
     onUpdate({ textContent: text })
   }
@@ -84,106 +102,101 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <div>
           <h2 className="text-2xl font-bold text-text-primary mb-2">Email Content</h2>
           <p className="text-text-muted">
-            Craft your email content using HTML and plain text
+            Design your email with the visual editor
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => setShowTemplatePicker(true)}
-        >
-          <FileImage className="w-4 h-4 mr-2" />
-          Choose Template
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setShowTemplatePicker(true)}
+          >
+            <FileImage className="w-4 h-4 mr-2" />
+            Choose Template
+          </Button>
+          {activeTab === 'editor' && (
+            <Button
+              variant="primary"
+              onClick={handleSaveFromEditor}
+              loading={saving}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Save Design
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Variable Insertion Panel */}
-      <div className="bg-neu-base rounded-neu p-4 border-2 border-neu-dark">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-text-primary">Available Variables</h3>
-          <span className="text-xs text-text-muted">Click to insert</span>
-        </div>
+      {/* Variable Reference Panel */}
+      <div className="bg-blue-50 border border-blue-200 rounded-neu p-4">
+        <h3 className="text-sm font-medium text-blue-900 mb-2">📝 Personalization Variables</h3>
+        <p className="text-xs text-blue-800 mb-2">
+          Type these variables directly in your email content to personalize for each recipient:
+        </p>
         <div className="flex flex-wrap gap-2">
           {VARIABLES.map((v) => (
-            <button
+            <code
               key={v.key}
-              type="button"
-              onClick={() => insertVariable(v.key)}
-              className="group relative px-3 py-1.5 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-neu text-xs font-mono transition-colors"
+              className="px-2 py-1 bg-blue-100 text-blue-900 rounded text-xs font-mono"
               title={v.description}
             >
-              {v.label}
-              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                {v.key}
-              </span>
-            </button>
+              {v.key}
+            </code>
           ))}
+          <code className="px-2 py-1 bg-red-100 text-red-900 rounded text-xs font-mono">
+            {'{{{ pm:unsubscribe }}}'} (Required)
+          </code>
         </div>
       </div>
 
       {/* Editor Tabs */}
       <div>
-        <div className="flex items-center justify-between border-b border-neu-dark mb-4">
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab('html')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                activeTab === 'html'
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-text-muted hover:text-text-primary'
-              }`}
-            >
-              <Code className="w-4 h-4" />
-              HTML Version
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('text')}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
-                activeTab === 'text'
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-text-muted hover:text-text-primary'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              Plain Text Version
-            </button>
-          </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowPreview(!showPreview)}
+        <div className="flex items-center gap-4 border-b border-neu-dark mb-4">
+          <button
+            type="button"
+            onClick={() => {
+              handleSaveFromEditor()
+              setActiveTab('editor')
+            }}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+              activeTab === 'editor'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-text-muted hover:text-text-primary'
+            }`}
           >
-            <Eye className="w-4 h-4 mr-2" />
-            {showPreview ? 'Hide' : 'Show'} Preview
-          </Button>
+            <Eye className="w-4 h-4" />
+            Visual Editor
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              handleSaveFromEditor()
+              setActiveTab('text')
+            }}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+              activeTab === 'text'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-text-muted hover:text-text-primary'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Plain Text Version
+          </button>
         </div>
 
-        {activeTab === 'html' ? (
+        {activeTab === 'editor' ? (
           <div>
-            <label className="block text-body-sm font-medium text-secondary mb-2">
-              HTML Content *
-            </label>
-            <textarea
-              id="htmlContent"
-              value={data.htmlContent}
-              onChange={(e) => onUpdate({ htmlContent: e.target.value })}
-              rows={20}
-              placeholder="<html>
-<body>
-  <h1>Hello {{firstName|there}}!</h1>
-  <p>Your email content here...</p>
-
-  <footer>
-    <a href='{{{ pm:unsubscribe }}}'>Unsubscribe</a>
-  </footer>
-</body>
-</html>"
-              className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-4 py-3 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none font-mono"
-              required
+            <EmailEditorWrapper
+              ref={emailEditorRef}
+              designJson={data.designJson}
+              onReady={() => {
+                // If we have HTML but no design, user can start editing HTML
+                if (data.htmlContent && !data.designJson) {
+                  console.log('Loaded existing HTML content')
+                }
+              }}
             />
-            <p className="text-xs text-text-muted mt-2">
-              ⚠️ Must include unsubscribe link: <code className="bg-neu-base px-1 rounded">{'{{{ pm:unsubscribe }}}'}</code>
+            <p className="text-xs text-text-muted mt-3">
+              💡 Click "Save Design" to export your design before moving to the next step
             </p>
           </div>
         ) : (
@@ -223,26 +236,15 @@ Unsubscribe: {{{ pm:unsubscribe }}}"
         )}
       </div>
 
-      {/* Preview */}
-      {showPreview && (
-        <div className="bg-white border-2 border-neu-dark rounded-neu p-6">
-          <h3 className="text-sm font-medium text-text-primary mb-4">Preview (HTML)</h3>
-          <div
-            className="prose max-w-none"
-            dangerouslySetInnerHTML={{ __html: data.htmlContent }}
-          />
-        </div>
-      )}
-
       {/* Tips */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-neu p-4">
         <h3 className="text-sm font-medium text-yellow-900 mb-2">✏️ Content Tips</h3>
         <ul className="text-xs text-yellow-800 space-y-1">
-          <li>• Always include an unsubscribe link (required by law)</li>
-          <li>• Use variables to personalize content (e.g., Hi {`{{firstName}}`}!)</li>
-          <li>• Keep your content concise and scannable</li>
-          <li>• Test your email on different devices before sending</li>
-          <li>• Add alt text to images for accessibility</li>
+          <li>• Unsubscribe link is automatically added if missing</li>
+          <li>• Use personalization variables in text blocks (e.g., Hi {`{{firstName}}`}!)</li>
+          <li>• Click "Save Design" before moving to next step</li>
+          <li>• Design once, send to thousands - all personalized!</li>
+          <li>• Mobile-responsive design is built-in</li>
         </ul>
       </div>
 

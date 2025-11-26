@@ -19,6 +19,7 @@ export interface CampaignData {
   replyTo: string
   htmlContent: string
   textContent: string
+  designJson?: any  // Unlayer editor design JSON for editing
   targetType: 'ALL_CONTACTS' | 'SEGMENT' | 'TAG' | 'REGISTERED_USERS' | 'CUSTOM_FILTER'
   targetCriteria: any
   scheduledAt: string | null
@@ -51,6 +52,7 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
     replyTo: initialData?.replyTo || '',
     htmlContent: initialData?.htmlContent || '',
     textContent: initialData?.textContent || '',
+    designJson: initialData?.designJson || null,
     targetType: initialData?.targetType || 'ALL_CONTACTS',
     targetCriteria: initialData?.targetCriteria || null,
     scheduledAt: initialData?.scheduledAt || null,
@@ -122,6 +124,7 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
           replyTo: data.replyTo || data.fromEmail,
           htmlContent: data.htmlContent,
           textContent: data.textContent,
+          designJson: data.designJson || null,
           targetType: data.targetType,
           targetCriteria: data.targetCriteria,
           scheduledAt: data.scheduledAt,

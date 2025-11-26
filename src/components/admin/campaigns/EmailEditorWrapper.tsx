@@ -152,7 +152,9 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
       <div className="w-full h-[600px] border-2 border-neu-dark rounded-neu overflow-hidden">
         <EmailEditorProvider
           data={defaultTemplate}
-          height="600px"
+          height={'600px'}
+          autoComplete
+          dashed={false}
         >
           {({ values }) => {
             // Store the latest values in the ref so exportHtml can access them

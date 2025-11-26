@@ -7,7 +7,7 @@ import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
 import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
-import { TipTapEditor, type TipTapEditorRef } from './TipTapEditor'
+import { MailerLiteEditor, type MailerLiteEditorRef } from './MailerLiteEditor'
 import { wrapHtmlInMJML } from '@/lib/tiptap-to-mjml'
 
 interface Step2ContentProps {
@@ -27,7 +27,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
   const [activeTab, setActiveTab] = useState<'editor' | 'text'>('editor')
   const [saving, setSaving] = useState(false)
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
-  const visualEditorRef = useRef<TipTapEditorRef>(null)
+  const visualEditorRef = useRef<MailerLiteEditorRef>(null)
   const codeEditorRef = useRef<EmailEditorRef>(null)
 
   // Save from editor
@@ -242,13 +242,13 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
           <div>
             {editorMode === 'visual' ? (
               <>
-                <TipTapEditor
+                <MailerLiteEditor
                   ref={visualEditorRef}
                   initialContent={initialTipTapContent}
-                  onReady={() => console.log('TipTap editor ready')}
+                  onReady={() => console.log('MailerLite editor ready')}
                 />
                 <p className="text-xs text-text-muted mt-3">
-                  💡 Use toolbar buttons for formatting, add images and links, click "Save & Compile" when done
+                  💡 Click the "+" button to insert components (buttons, images, dividers), use toolbar for text formatting
                 </p>
               </>
             ) : (
@@ -303,11 +303,10 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <ul className="text-xs text-yellow-800 space-y-1">
           {editorMode === 'visual' ? (
             <>
-              <li>• Use toolbar buttons for text formatting (bold, italic, underline, etc.)</li>
-              <li>• Add headings, lists, links, images, and dividers</li>
-              <li>• Change text alignment and colors</li>
-              <li>• Undo/Redo available in the toolbar</li>
-              <li>• Type personalization variables directly (they'll work in the final email)</li>
+              <li>• Click the "+" button on the left to insert buttons, images, dividers, or spacers</li>
+              <li>• Use toolbar for text formatting (bold, italic, headings, alignment, lists)</li>
+              <li>• Type personalization variables directly ({{firstName}}, {{email}}, etc.)</li>
+              <li>• Click on inserted components to edit their properties</li>
               <li>• Click "Save & Compile" to convert to email-safe HTML</li>
             </>
           ) : (

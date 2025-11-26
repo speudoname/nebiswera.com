@@ -63,6 +63,15 @@ export function generateTestimonialKey(testimonialId: string, filename: string):
   return `testimonials/${testimonialId}/${filename}`
 }
 
+/**
+ * Generate a unique key for email campaign images
+ */
+export function generateEmailImageKey(filename: string): string {
+  const timestamp = Date.now()
+  const random = crypto.randomBytes(8).toString('hex')
+  return `email-images/${timestamp}-${random}-${filename}`
+}
+
 // ===========================================
 // Webinar Video Storage
 // ===========================================

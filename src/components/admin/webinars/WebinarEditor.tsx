@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Input, Card } from '@/components/ui'
 import {
@@ -96,10 +96,18 @@ function generateSlug(title: string): string {
 
 export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<TabId>('basic')
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  // Get initial tab from URL or default to 'basic'
+  const tabFromUrl = searchParams?.get('tab') as TabId | null
+  const [activeTab, setActiveTab] = useState<TabId>(
+    tabFromUrl && tabs.some(t => t.id === tabFromUrl) ? tabFromUrl : 'basic'
+  )
   const [data, setData] = useState<WebinarData>(initialData || defaultData)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   // Track if user has manually edited these fields
   const [manuallyEditedFields, setManuallyEditedFields] = useState<Set<string>>(
     new Set(initialData?.slug ? ['slug'] : [])
@@ -107,8 +115,25 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
 
   const isNew = !webinarId
 
+  // Sync URL with tab state
+  useEffect(() => {
+    if (!searchParams || !pathname) return
+    const currentTab = searchParams.get('tab')
+    if (currentTab !== activeTab) {
+      const params = new URLSearchParams(searchParams.toString())
+      if (activeTab === 'basic') {
+        params.delete('tab')
+      } else {
+        params.set('tab', activeTab)
+      }
+      const newUrl = params.toString() ? `${pathname}?${params}` : pathname
+      router.replace(newUrl, { scroll: false })
+    }
+  }, [activeTab, pathname, router, searchParams])
+
   const handleChange = (field: keyof WebinarData, value: string | number) => {
     setData((prev) => ({ ...prev, [field]: value }))
+    setHasUnsavedChanges(true)
 
     // Auto-generate slug and page paths from title (unless manually edited)
     if (field === 'title') {
@@ -183,12 +208,42 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
       } else {
         // Stay on page, show success
         setData({ ...data, ...savedWebinar })
+        setHasUnsavedChanges(false)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save webinar')
     } finally {
       setSaving(false)
     }
+  }
+
+  // Handle tab switch with auto-save
+  const handleTabSwitch = async (newTab: TabId) => {
+    if (newTab === activeTab) return
+
+    // Auto-save if there are unsaved changes and we're not creating a new webinar
+    if (hasUnsavedChanges && !isNew && data.title.trim()) {
+      setSaving(true)
+      try {
+        const res = await fetch(`/api/admin/webinars/${webinarId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+
+        if (res.ok) {
+          const savedWebinar = await res.json()
+          setData({ ...data, ...savedWebinar })
+          setHasUnsavedChanges(false)
+        }
+      } catch (err) {
+        console.error('Auto-save failed:', err)
+      } finally {
+        setSaving(false)
+      }
+    }
+
+    setActiveTab(newTab)
   }
 
   const handlePublish = async () => {
@@ -231,6 +286,12 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
         </Link>
 
         <div className="flex items-center gap-3">
+          {hasUnsavedChanges && !isNew && (
+            <span className="text-sm text-amber-600 flex items-center gap-1">
+              <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+              Unsaved changes
+            </span>
+          )}
           {!isNew && data.status === 'DRAFT' && (
             <Button variant="secondary" onClick={handlePublish} disabled={saving}>
               Publish
@@ -286,7 +347,7 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
             return (
               <button
                 key={tab.id}
-                onClick={() => !isDisabled && setActiveTab(tab.id)}
+                onClick={() => !isDisabled && handleTabSwitch(tab.id)}
                 disabled={isDisabled}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id

@@ -8,6 +8,7 @@ import type { Editor as TiptapEditor } from '@tiptap/core'
 interface MailyEditorProps {
   initialContent?: string
   onReady?: () => void
+  onChange?: () => void
 }
 
 export interface MailyEditorRef {
@@ -17,7 +18,7 @@ export interface MailyEditorRef {
 }
 
 export const MailyEditor = forwardRef<MailyEditorRef, MailyEditorProps>(
-  ({ initialContent, onReady }, ref) => {
+  ({ initialContent, onReady, onChange }, ref) => {
     const [editor, setEditor] = useState<TiptapEditor | null>(null)
 
     const handleEditorReady = useCallback((editorInstance: TiptapEditor) => {
@@ -70,11 +71,16 @@ export const MailyEditor = forwardRef<MailyEditorRef, MailyEditorProps>(
       },
     }), [editor])
 
+    const handleEditorUpdate = (editorInstance: TiptapEditor) => {
+      setEditor(editorInstance)
+      onChange?.()
+    }
+
     return (
-      <div className="maily-editor-wrapper min-h-[500px] max-h-[700px] overflow-auto">
+      <div className="maily-editor-wrapper w-full h-full">
         <Editor
           onCreate={handleEditorReady}
-          onUpdate={setEditor}
+          onUpdate={handleEditorUpdate}
         />
       </div>
     )

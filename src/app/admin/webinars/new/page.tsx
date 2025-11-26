@@ -1,5 +1,7 @@
 import { WebinarEditor } from '@/components/admin/webinars/WebinarEditor'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'New Webinar - Admin',
   robots: 'noindex',

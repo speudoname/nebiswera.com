@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui'
 import { ChevronLeft, ChevronRight, Save, Send, Calendar } from 'lucide-react'
 import { Step1BasicInfo } from './Step1BasicInfo'
@@ -40,7 +40,9 @@ const STEPS = [
 
 export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps) {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState(1)
+  const searchParams = useSearchParams()
+  const stepParam = searchParams?.get('step')
+  const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam) : 1)
   const [saving, setSaving] = useState(false)
   const [loadingSettings, setLoadingSettings] = useState(true)
   const [campaignData, setCampaignData] = useState<CampaignData>({
@@ -176,18 +178,29 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
     }
   }
 
+  const updateURL = (step: number) => {
+    const baseUrl = campaignId
+      ? `/admin/campaigns/${campaignId}/edit`
+      : '/admin/campaigns/new'
+    router.replace(`${baseUrl}?step=${step}`, { scroll: false })
+  }
+
   const handleNext = async () => {
     // Auto-save when moving forward
     if (currentStep < 4) {
       const saved = await saveDraft()
       if (saved) {
-        setCurrentStep((prev) => prev + 1)
+        const nextStep = currentStep + 1
+        setCurrentStep(nextStep)
+        updateURL(nextStep)
       }
     }
   }
 
   const handleBack = () => {
-    setCurrentStep((prev) => prev - 1)
+    const prevStep = currentStep - 1
+    setCurrentStep(prevStep)
+    updateURL(prevStep)
   }
 
   const canProceed = () => {
@@ -276,7 +289,7 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
               <Step1BasicInfo data={campaignData} onUpdate={updateCampaignData} />
             )}
             {currentStep === 2 && (
-              <Step2Content data={campaignData} onUpdate={updateCampaignData} />
+              <Step2Content data={campaignData} onUpdate={updateCampaignData} campaignId={campaignId} />
             )}
             {currentStep === 3 && (
               <Step3Audience data={campaignData} onUpdate={updateCampaignData} />

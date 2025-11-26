@@ -248,7 +248,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
                   onReady={() => console.log('TipTap editor ready')}
                 />
                 <p className="text-xs text-text-muted mt-3">
-                  💡 Select text to format, use toolbar buttons for styling, add images and links
+                  💡 Use toolbar buttons for formatting, add images and links, click "Save & Compile" when done
                 </p>
               </>
             ) : (
@@ -303,9 +303,9 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <ul className="text-xs text-yellow-800 space-y-1">
           {editorMode === 'visual' ? (
             <>
-              <li>• Select text to see formatting options (bubble menu)</li>
-              <li>• Use toolbar buttons for quick formatting</li>
-              <li>• Add links, images, and dividers with toolbar buttons</li>
+              <li>• Use toolbar buttons for text formatting (bold, italic, underline, etc.)</li>
+              <li>• Add headings, lists, links, images, and dividers</li>
+              <li>• Change text alignment and colors</li>
               <li>• Undo/Redo available in the toolbar</li>
               <li>• Type personalization variables directly (they'll work in the final email)</li>
               <li>• Click "Save & Compile" to convert to email-safe HTML</li>

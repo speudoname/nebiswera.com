@@ -1,6 +1,6 @@
 'use client'
 
-import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
+import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
@@ -8,7 +8,7 @@ import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
 import Color from '@tiptap/extension-color'
-import TextStyle from '@tiptap/extension-text-style'
+import { TextStyle } from '@tiptap/extension-text-style'
 import { forwardRef, useImperativeHandle, useEffect } from 'react'
 import {
   Bold,
@@ -275,41 +275,6 @@ export const TipTapEditor = forwardRef<TipTapEditorRef, TipTapEditorProps>(
           </div>
         </div>
 
-        {/* Bubble Menu - appears on text selection */}
-        {editor && (
-          <BubbleMenu
-            editor={editor}
-            tippyOptions={{ duration: 100 }}
-            className="flex gap-1 bg-gray-900 text-white rounded-lg p-1 shadow-lg"
-          >
-            <BubbleButton
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              active={editor.isActive('bold')}
-              icon={<Bold className="w-4 h-4" />}
-            />
-            <BubbleButton
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              active={editor.isActive('italic')}
-              icon={<Italic className="w-4 h-4" />}
-            />
-            <BubbleButton
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              active={editor.isActive('underline')}
-              icon={<UnderlineIcon className="w-4 h-4" />}
-            />
-            <div className="w-px bg-gray-700 mx-1" />
-            <BubbleButton
-              onClick={addLink}
-              active={editor.isActive('link')}
-              icon={<LinkIcon className="w-4 h-4" />}
-            />
-            <BubbleButton
-              onClick={setColor}
-              icon={<span className="text-xs font-bold">A</span>}
-            />
-          </BubbleMenu>
-        )}
-
         {/* Editor Content */}
         <EditorContent editor={editor} className="bg-white" />
       </div>
@@ -344,29 +309,6 @@ function ToolbarButton({
           ? 'bg-primary-100 text-primary-700'
           : 'hover:bg-neu-light text-text-secondary'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {icon}
-    </button>
-  )
-}
-
-// Bubble Menu Button Component
-function BubbleButton({
-  onClick,
-  active,
-  icon,
-}: {
-  onClick: () => void
-  active?: boolean
-  icon: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`p-2 rounded transition-colors ${
-        active ? 'bg-white text-gray-900' : 'hover:bg-gray-800 text-white'
-      }`}
     >
       {icon}
     </button>

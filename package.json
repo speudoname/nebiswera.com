@@ -15,6 +15,7 @@
     "@cloudflare/stream-react": "^1.9.3",
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "5",
+    "@tiptap/extension-bubble-menu": "^3.11.0",
     "@tiptap/extension-color": "^3.11.0",
     "@tiptap/extension-image": "^3.11.0",
     "@tiptap/extension-link": "^3.11.0",

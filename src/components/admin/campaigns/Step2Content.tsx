@@ -219,8 +219,9 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              handleSaveFromEditor()
+            onClick={async () => {
+              // Auto-save and generate plain text when switching tabs
+              await handleSaveFromEditor()
               setActiveTab('text')
             }}
             className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
@@ -251,7 +252,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block text-body-sm font-medium text-secondary">
-                Plain Text Version *
+                Plain Text Version * (Auto-generated from HTML)
               </label>
               {data.htmlContent && (
                 <Button
@@ -260,7 +261,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
                   onClick={generatePlainText}
                 >
                   <Copy className="w-3 h-3 mr-1" />
-                  Generate from HTML
+                  Regenerate from HTML
                 </Button>
               )}
             </div>
@@ -269,16 +270,12 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
               value={data.textContent}
               onChange={(e) => onUpdate({ textContent: e.target.value })}
               rows={20}
-              placeholder="Hello {{firstName|there}}!
-
-Your plain text email content here...
-
-Unsubscribe: {{{ pm:unsubscribe }}}"
+              placeholder="Plain text will be auto-generated when you compile and save the MJML..."
               className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-4 py-3 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none font-mono"
               required
             />
             <p className="text-xs text-text-muted mt-2">
-              Plain text version for email clients that don't support HTML
+              This is automatically generated from your HTML. You can edit it manually if needed. Plain text version is for email clients that don't support HTML.
             </p>
           </div>
         )}

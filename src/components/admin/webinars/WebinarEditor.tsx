@@ -69,11 +69,25 @@ const tabs: { id: TabId; label: string; icon: React.ElementType; requiresId?: bo
   { id: 'analytics', label: 'Analytics', icon: BarChart3, requiresId: true },
 ]
 
-// Helper function to generate slug from title
+// Georgian to Latin transliteration map
+const georgianToLatin: Record<string, string> = {
+  'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z',
+  'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o',
+  'პ': 'p', 'ჟ': 'zh', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'p',
+  'ქ': 'k', 'ღ': 'gh', 'ყ': 'q', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'ts', 'ძ': 'dz',
+  'წ': 'ts', 'ჭ': 'ch', 'ხ': 'kh', 'ჯ': 'j', 'ჰ': 'h',
+}
+
+// Helper function to generate slug from title (converts Georgian to Latin)
 function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\u10D0-\u10FF]+/g, '-') // Keep Georgian letters and alphanumeric
+  // First transliterate Georgian characters to Latin
+  let transliterated = ''
+  for (const char of title.toLowerCase()) {
+    transliterated += georgianToLatin[char] || char
+  }
+
+  return transliterated
+    .replace(/[^a-z0-9]+/g, '-') // Only keep Latin alphanumeric
     .replace(/^-|-$/g, '')
     .substring(0, 60) // Limit length
 }

@@ -168,7 +168,7 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
                 srcDoc={htmlPreview}
                 className="w-full h-full border-0"
                 title="Email Preview"
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-scripts"
               />
             ) : (
               <div className="flex items-center justify-center h-full text-text-muted text-sm">

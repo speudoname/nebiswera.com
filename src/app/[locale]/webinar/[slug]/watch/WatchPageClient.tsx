@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { WebinarRoom } from '@/components/webinar/WebinarRoom'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { AlertTriangle, RefreshCw, Clock, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 interface WatchPageClientProps {
@@ -50,6 +50,7 @@ interface WebinarAccessData {
 export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
   const [data, setData] = useState<WebinarAccessData | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [errorType, setErrorType] = useState<'generic' | 'expired' | 'disabled' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [waitingRoom, setWaitingRoom] = useState<{ startsAt: string } | null>(null)
 
@@ -65,6 +66,16 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
             setIsLoading(false)
             return
           }
+          // Handle specific error types
+          if (result.replayExpired) {
+            setErrorType('expired')
+            throw new Error(result.error || 'Replay has expired')
+          }
+          if (result.replayDisabled) {
+            setErrorType('disabled')
+            throw new Error(result.error || 'Replay is not available')
+          }
+          setErrorType('generic')
           throw new Error(result.error || 'Failed to validate access')
         }
 
@@ -126,24 +137,61 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
 
   // Error state
   if (error || !data) {
+    const getErrorContent = () => {
+      if (errorType === 'expired') {
+        return {
+          icon: Clock,
+          iconColor: 'text-orange-500',
+          title: locale === 'ka' ? 'ჩანაწერის ვადა ამოიწურა' : 'Replay Has Expired',
+          description: locale === 'ka'
+            ? 'ამ ვებინარის ჩანაწერის ნახვის ვადა ამოიწურა.'
+            : 'The replay for this webinar is no longer available.',
+          showRetry: false,
+        }
+      }
+      if (errorType === 'disabled') {
+        return {
+          icon: XCircle,
+          iconColor: 'text-gray-500',
+          title: locale === 'ka' ? 'ჩანაწერი მიუწვდომელია' : 'Replay Unavailable',
+          description: locale === 'ka'
+            ? 'ამ ვებინარისთვის ჩანაწერი არ არის ხელმისაწვდომი.'
+            : 'Replay is not available for this webinar.',
+          showRetry: false,
+        }
+      }
+      return {
+        icon: AlertTriangle,
+        iconColor: 'text-red-500',
+        title: locale === 'ka' ? 'წვდომა შეუძლებელია' : 'Access Denied',
+        description: error || (locale === 'ka' ? 'ვებინარის ჩატვირთვა ვერ მოხერხდა' : 'Could not load webinar'),
+        showRetry: true,
+      }
+    }
+
+    const errorContent = getErrorContent()
+    const ErrorIcon = errorContent.icon
+
     return (
       <div className="min-h-screen bg-neu-base flex items-center justify-center p-8">
         <div className="bg-white rounded-xl shadow-neu-lg p-8 max-w-md text-center">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <ErrorIcon className={`w-12 h-12 ${errorContent.iconColor} mx-auto mb-4`} />
           <h1 className="text-xl font-semibold text-text-primary mb-2">
-            {locale === 'ka' ? 'წვდომა შეუძლებელია' : 'Access Denied'}
+            {errorContent.title}
           </h1>
           <p className="text-text-secondary mb-6">
-            {error || (locale === 'ka' ? 'ვებინარის ჩატვირთვა ვერ მოხერხდა' : 'Could not load webinar')}
+            {errorContent.description}
           </p>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="secondary"
-            className="flex items-center gap-2 mx-auto"
-          >
-            <RefreshCw className="w-4 h-4" />
-            {locale === 'ka' ? 'სცადეთ თავიდან' : 'Try Again'}
-          </Button>
+          {errorContent.showRetry && (
+            <Button
+              onClick={() => window.location.reload()}
+              variant="secondary"
+              className="flex items-center gap-2 mx-auto"
+            >
+              <RefreshCw className="w-4 h-4" />
+              {locale === 'ka' ? 'სცადეთ თავიდან' : 'Try Again'}
+            </Button>
+          )}
         </div>
       </div>
     )

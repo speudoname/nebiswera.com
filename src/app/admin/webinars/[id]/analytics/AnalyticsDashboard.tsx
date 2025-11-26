@@ -12,6 +12,8 @@ import {
   BarChart3,
   MousePointer,
   RefreshCw,
+  Award,
+  Star,
 } from 'lucide-react'
 
 interface AnalyticsData {
@@ -50,6 +52,11 @@ interface AnalyticsData {
     }>
     watchTimeDistribution: Array<{ bucket: string; count: number }>
     eventBreakdown: Array<{ type: string; count: number }>
+    scores: {
+      distribution: Array<{ label: string; count: number; percentage: number }>
+      averageScore: number
+      topEngaged: Array<{ email: string; score: number }>
+    }
   }
   attribution: {
     utm: Array<{
@@ -202,6 +209,82 @@ export function AnalyticsDashboard({ webinarId }: AnalyticsDashboardProps) {
           </div>
         </Card>
       </div>
+
+      {/* Engagement Scores */}
+      {engagement.scores && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card variant="raised" padding="md">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary-500" />
+              Engagement Score Distribution
+            </h3>
+            <div className="mb-4">
+              <div className="text-3xl font-bold text-text-primary">
+                {engagement.scores.averageScore}
+              </div>
+              <div className="text-sm text-text-secondary">Average Score</div>
+            </div>
+            <div className="space-y-2">
+              {engagement.scores.distribution.map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <span className="w-36 text-sm text-text-secondary truncate">{item.label}</span>
+                  <div className="flex-1 h-4 bg-neu-dark rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        item.label.includes('Highly') ? 'bg-green-500' :
+                        item.label.includes('Engaged') ? 'bg-blue-500' :
+                        item.label.includes('Moderate') ? 'bg-yellow-500' :
+                        item.label.includes('Low') ? 'bg-orange-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                  <span className="w-16 text-sm text-text-primary text-right">
+                    {item.count} ({item.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card variant="raised" padding="md">
+            <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-primary-500" />
+              Top Engaged Attendees
+            </h3>
+            {engagement.scores.topEngaged.length > 0 ? (
+              <div className="space-y-2">
+                {engagement.scores.topEngaged.map((person, index) => (
+                  <div key={person.email} className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
+                        index === 0 ? 'bg-yellow-500 text-yellow-900' :
+                        index === 1 ? 'bg-gray-300 text-gray-700' :
+                        index === 2 ? 'bg-amber-600 text-amber-100' :
+                        'bg-neu-dark text-text-secondary'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <span className="text-sm text-text-primary truncate max-w-[180px]">
+                        {person.email}
+                      </span>
+                    </div>
+                    <span className={`text-sm font-semibold ${
+                      person.score >= 80 ? 'text-green-500' :
+                      person.score >= 60 ? 'text-blue-500' :
+                      person.score >= 40 ? 'text-yellow-500' : 'text-orange-500'
+                    }`}>
+                      {person.score}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">No engagement data yet</p>
+            )}
+          </Card>
+        </div>
+      )}
 
       {/* Registration Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

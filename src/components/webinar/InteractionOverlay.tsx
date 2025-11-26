@@ -25,7 +25,7 @@ export function InteractionOverlay({
   onRespond,
 }: InteractionOverlayProps) {
   return (
-    <div className="absolute bottom-24 right-4 flex flex-col gap-4 max-w-sm z-20">
+    <div className="absolute bottom-4 md:bottom-24 left-4 right-4 md:left-auto md:right-4 flex flex-col gap-4 max-w-full md:max-w-sm z-20">
       {interactions.map((interaction) => (
         <InteractionCard
           key={interaction.id}

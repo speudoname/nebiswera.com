@@ -747,21 +747,24 @@ This queue-based approach will easily extend to your future automation system.
 ### Sprint 8: Analytics
 - [x] Analytics event ingestion API ✅
 - [x] Video heartbeat tracking (via watch progress) ✅
-- [ ] Engagement score calculation
+- [x] Engagement score calculation ✅ (2025-11-26)
 - [x] Admin analytics dashboard ✅
 - [x] Conversion funnel visualization ✅
 - [x] Per-interaction stats ✅
+- [x] Engagement score distribution & top engaged leaderboard ✅ (2025-11-26)
 
 ### Sprint 9: Replay System
 - [x] Replay room with seeking (same as on-demand) ✅
-- [ ] Mark sessions as replay-available (admin UI)
+- [x] Mark sessions as replay-available (admin UI in ScheduleConfigForm) ✅
 - [x] Replay registration flow ✅
-- [ ] Replay expiration logic
+- [x] Replay expiration logic ✅ (2025-11-26)
+- [x] Replay enabled/disabled check ✅ (2025-11-26)
+- [x] Localized error messages for expired/disabled replays ✅ (2025-11-26)
 
 ### Sprint 10: Polish & Testing
-- [ ] Error handling throughout
-- [ ] Loading states
-- [ ] Mobile responsiveness
+- [x] Error handling improvements ✅ (2025-11-26)
+- [x] Loading states (player, chat, room) ✅ (2025-11-26)
+- [x] Mobile responsiveness (interaction overlay, webinar room) ✅ (2025-11-26)
 - [ ] E2E testing of full flow
 - [ ] Performance optimization
 

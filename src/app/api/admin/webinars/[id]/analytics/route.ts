@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { getEngagementBreakdown, updateWebinarEngagementScores } from '@/lib/webinar/engagement'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -170,6 +171,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
 
+    // Get engagement score breakdown
+    const engagementBreakdown = await getEngagementBreakdown(id)
+
     // Event type breakdown
     const eventBreakdown = await prisma.webinarAnalyticsEvent.groupBy({
       by: ['eventType'],
@@ -237,6 +241,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           type: e.eventType,
           count: e._count.id,
         })),
+        scores: engagementBreakdown,
       },
       attribution: {
         utm: utmBreakdown.map((u) => ({

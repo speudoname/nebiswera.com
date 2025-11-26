@@ -43,6 +43,41 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const registration = validation.registration
 
+    // Check if replay access is allowed
+    if (registration.sessionType === 'REPLAY') {
+      // Check if replay is enabled for this webinar
+      if (webinar.scheduleConfig && !webinar.scheduleConfig.replayEnabled) {
+        return NextResponse.json({
+          error: 'Replay is not available for this webinar',
+          replayDisabled: true,
+        }, { status: 403 })
+      }
+
+      // Check if replay has expired
+      if (webinar.scheduleConfig?.replayExpiresAfterDays) {
+        const session = registration.sessionId
+          ? await prisma.webinarSession.findUnique({ where: { id: registration.sessionId } })
+          : null
+
+        if (session) {
+          const sessionEnd = new Date(
+            session.scheduledAt.getTime() + (webinar.videoDuration || 60) * 60 * 1000
+          )
+          const expirationDate = new Date(
+            sessionEnd.getTime() + webinar.scheduleConfig.replayExpiresAfterDays * 24 * 60 * 60 * 1000
+          )
+
+          if (new Date() > expirationDate) {
+            return NextResponse.json({
+              error: 'Replay has expired',
+              replayExpired: true,
+              expiredAt: expirationDate.toISOString(),
+            }, { status: 403 })
+          }
+        }
+      }
+    }
+
     // Check if session is still valid (for scheduled sessions)
     if (registration.sessionId) {
       const session = await prisma.webinarSession.findUnique({

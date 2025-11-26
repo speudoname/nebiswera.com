@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui'
-import { Code, FileText, Eye, Copy, FileImage, Save } from 'lucide-react'
+import { FileText, Copy, FileImage, Save } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'

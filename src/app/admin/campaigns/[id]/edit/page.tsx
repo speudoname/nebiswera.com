@@ -5,6 +5,9 @@ export const metadata = {
   robots: 'noindex',
 }
 
+// Disable static generation for this page (Maily.to editor requires client-side rendering)
+export const dynamic = 'force-dynamic'
+
 export default async function EditCampaignPage({
   params,
 }: {

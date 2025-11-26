@@ -2,13 +2,13 @@
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui'
-import { FileText, Copy, FileImage, Save, Eye, Code, Blocks } from 'lucide-react'
+import { FileText, Copy, FileImage, Save, Eye, Code, Type } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
 import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
-import { VisualEmailBlockEditor, type VisualEmailEditorRef } from './VisualEmailBlockEditor'
-import type { EmailDesign } from '@/types/email-blocks'
+import { TipTapEditor, type TipTapEditorRef } from './TipTapEditor'
+import { wrapHtmlInMJML } from '@/lib/tiptap-to-mjml'
 
 interface Step2ContentProps {
   data: CampaignData
@@ -27,7 +27,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
   const [activeTab, setActiveTab] = useState<'editor' | 'text'>('editor')
   const [saving, setSaving] = useState(false)
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
-  const visualEditorRef = useRef<VisualEmailEditorRef>(null)
+  const visualEditorRef = useRef<TipTapEditorRef>(null)
   const codeEditorRef = useRef<EmailEditorRef>(null)
 
   // Save from editor
@@ -37,29 +37,54 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
 
     setSaving(true)
     try {
-      const { design, html, text } = await editorRef.exportHtml()
+      if (editorMode === 'visual') {
+        // TipTap editor - wrap HTML in MJML and compile
+        const { design, html, text } = await editorRef.exportHtml()
+        const mjmlCode = wrapHtmlInMJML(html)
 
-      // Ensure unsubscribe link is present
-      const hasUnsubscribeLink = html.includes('{{{ pm:unsubscribe }}}') || html.includes('{{unsubscribe}}')
-
-      if (!hasUnsubscribeLink) {
-        const htmlWithUnsubscribe = html.replace(
-          '</body>',
-          '<div style="text-align:center;padding:20px;font-size:12px;color:#666;"><a href="{{{ pm:unsubscribe }}}" style="color:#8B5CF6;">Unsubscribe</a></div></body>'
-        )
-        const textWithUnsubscribe = text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}'
-
-        onUpdate({
-          designJson: design,
-          htmlContent: htmlWithUnsubscribe,
-          textContent: textWithUnsubscribe,
+        // Compile MJML to final HTML
+        const mjml = (await import('mjml-browser')).default
+        const result = mjml(mjmlCode, {
+          validationLevel: 'soft',
+          minify: false,
         })
-      } else {
+
+        if (result.errors && result.errors.length > 0) {
+          const errorMsg = result.errors[0].message
+          throw new Error(errorMsg)
+        }
+
         onUpdate({
-          designJson: design,
-          htmlContent: html,
+          designJson: design, // Store TipTap HTML
+          htmlContent: result.html, // Final compiled email HTML
           textContent: text,
         })
+      } else {
+        // Code editor - MJML code
+        const { design, html, text } = await editorRef.exportHtml()
+
+        // Ensure unsubscribe link is present
+        const hasUnsubscribeLink = html.includes('{{{ pm:unsubscribe }}}') || html.includes('{{unsubscribe}}')
+
+        if (!hasUnsubscribeLink) {
+          const htmlWithUnsubscribe = html.replace(
+            '</body>',
+            '<div style="text-align:center;padding:20px;font-size:12px;color:#666;"><a href="{{{ pm:unsubscribe }}}" style="color:#8B5CF6;">Unsubscribe</a></div></body>'
+          )
+          const textWithUnsubscribe = text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}'
+
+          onUpdate({
+            designJson: design,
+            htmlContent: htmlWithUnsubscribe,
+            textContent: textWithUnsubscribe,
+          })
+        } else {
+          onUpdate({
+            designJson: design,
+            htmlContent: html,
+            textContent: text,
+          })
+        }
       }
     } catch (error) {
       console.error('Failed to export from editor:', error)
@@ -95,18 +120,8 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
     onUpdate({ textContent: text })
   }
 
-  // Parse design JSON for visual editor
-  let initialDesign: EmailDesign | null = null
-  if (data.designJson) {
-    try {
-      const parsed = typeof data.designJson === 'string' ? JSON.parse(data.designJson) : data.designJson
-      if (parsed && typeof parsed === 'object' && 'blocks' in parsed) {
-        initialDesign = parsed
-      }
-    } catch (e) {
-      // Not block design, probably MJML code
-    }
-  }
+  // Get initial content for TipTap editor
+  const initialTipTapContent = data.designJson ? (typeof data.designJson === 'string' ? data.designJson : '') : ''
 
   return (
     <div className="space-y-6">
@@ -114,7 +129,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <div>
           <h2 className="text-2xl font-bold text-text-primary mb-2">Email Content</h2>
           <p className="text-text-muted">
-            {editorMode === 'visual' ? 'Build your email visually with blocks' : 'Write MJML code directly'}
+            {editorMode === 'visual' ? 'Write your email with rich text formatting' : 'Write MJML code directly'}
           </p>
         </div>
         <div className="flex gap-2">
@@ -132,7 +147,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
               loading={saving}
             >
               <Save className="w-4 h-4 mr-2" />
-              {editorMode === 'visual' ? 'Save Design' : 'Compile & Save'}
+              {editorMode === 'visual' ? 'Save & Compile' : 'Compile & Save'}
             </Button>
           )}
         </div>
@@ -143,7 +158,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <h3 className="text-sm font-medium text-blue-900 mb-2">📝 Personalization Variables</h3>
         <p className="text-xs text-blue-800 mb-2">
           {editorMode === 'visual'
-            ? 'Type these variables in text blocks to personalize for each recipient:'
+            ? 'Type these variables in your content to personalize for each recipient:'
             : 'Use these variables in your MJML code:'}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -176,7 +191,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <Blocks className="w-4 h-4" />
+              <Type className="w-4 h-4" />
               Visual
             </button>
             <button
@@ -204,7 +219,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
             }`}
           >
             <Eye className="w-4 h-4" />
-            {editorMode === 'visual' ? 'Visual Builder' : 'MJML Editor'}
+            {editorMode === 'visual' ? 'Rich Text Editor' : 'MJML Editor'}
           </button>
           <button
             type="button"
@@ -227,20 +242,20 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
           <div>
             {editorMode === 'visual' ? (
               <>
-                <VisualEmailBlockEditor
+                <TipTapEditor
                   ref={visualEditorRef}
-                  initialDesign={initialDesign}
-                  onReady={() => console.log('Visual editor ready')}
+                  initialContent={initialTipTapContent}
+                  onReady={() => console.log('TipTap editor ready')}
                 />
                 <p className="text-xs text-text-muted mt-3">
-                  💡 Drag blocks to reorder, click to edit inline, use the gear icon for detailed properties
+                  💡 Select text to format, use toolbar buttons for styling, add images and links
                 </p>
               </>
             ) : (
               <>
                 <EmailEditorWrapper
                   ref={codeEditorRef}
-                  initialMjml={typeof data.designJson === 'string' && !initialDesign ? data.designJson : undefined}
+                  initialMjml={typeof data.designJson === 'string' ? data.designJson : undefined}
                   onReady={() => console.log('Code editor ready')}
                 />
                 <p className="text-xs text-text-muted mt-3">
@@ -284,15 +299,16 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
 
       {/* Tips */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-neu p-4">
-        <h3 className="text-sm font-medium text-yellow-900 mb-2">✏️ Email Builder Tips</h3>
+        <h3 className="text-sm font-medium text-yellow-900 mb-2">✏️ Email Editor Tips</h3>
         <ul className="text-xs text-yellow-800 space-y-1">
           {editorMode === 'visual' ? (
             <>
-              <li>• Drag blocks to reorder them</li>
-              <li>• Click text/button to edit inline</li>
-              <li>• Use the gear icon for detailed styling options</li>
-              <li>• Undo/Redo available in the left sidebar</li>
-              <li>• Personalization variables work in text blocks</li>
+              <li>• Select text to see formatting options (bubble menu)</li>
+              <li>• Use toolbar buttons for quick formatting</li>
+              <li>• Add links, images, and dividers with toolbar buttons</li>
+              <li>• Undo/Redo available in the toolbar</li>
+              <li>• Type personalization variables directly (they'll work in the final email)</li>
+              <li>• Click "Save & Compile" to convert to email-safe HTML</li>
             </>
           ) : (
             <>
@@ -302,7 +318,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
               <li>• Learn more at <a href="https://mjml.io/documentation/" target="_blank" rel="noopener" className="underline">mjml.io</a></li>
             </>
           )}
-          <li>• Unsubscribe link is automatically added if missing</li>
+          <li>• Unsubscribe link is automatically added</li>
           <li>• Switch between Visual and Code modes anytime</li>
         </ul>
       </div>

@@ -44,6 +44,8 @@ export function VideoUploader({
 
     const maxAttempts = 360 // 30 minutes max (5s intervals)
     let attempts = 0
+    let consecutiveErrors = 0
+    const maxConsecutiveErrors = 5
 
     const poll = async () => {
       if (attempts >= maxAttempts) {
@@ -57,19 +59,21 @@ export function VideoUploader({
         const res = await fetch(`/api/admin/webinars/upload?webinarId=${wId}`)
         const data = await res.json()
 
-        if (data.error) {
-          // Job not found yet, or other error - keep polling
-          if (data.error === 'No video processing job found') {
-            attempts++
-            pollingRef.current = setTimeout(poll, 5000)
-            return
-          }
-          throw new Error(data.error)
+        // Reset consecutive error count on successful response
+        consecutiveErrors = 0
+
+        // Job not found yet - keep polling
+        if (data.error === 'No video processing job found') {
+          attempts++
+          pollingRef.current = setTimeout(poll, 5000)
+          return
         }
 
+        // Update status display
         setProcessingStatus(data.status)
         setProcessingProgress(data.progress || 0)
 
+        // Only stop on COMPLETED or FAILED status
         if (data.status === 'COMPLETED') {
           setStatus('complete')
           onUploadComplete({
@@ -82,21 +86,36 @@ export function VideoUploader({
         }
 
         if (data.status === 'FAILED') {
-          throw new Error(data.error || 'Video processing failed')
+          setError(data.error || 'Video processing failed')
+          setStatus('error')
+          onError?.(data.error || 'Video processing failed')
+          return
         }
 
-        // Still processing, continue polling
+        // For PENDING or PROCESSING status, continue polling
+        // Even if there's a transient error, worker may retry
         attempts++
         pollingRef.current = setTimeout(poll, 5000)
       } catch (err) {
         console.error('Error polling video status:', err)
-        setError(err instanceof Error ? err.message : 'Error checking processing status')
-        setStatus('error')
-        onError?.(err instanceof Error ? err.message : 'Error checking processing status')
+        consecutiveErrors++
+
+        // Only show error and stop after multiple consecutive failures
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          setError(err instanceof Error ? err.message : 'Error checking processing status')
+          setStatus('error')
+          onError?.(err instanceof Error ? err.message : 'Error checking processing status')
+          return
+        }
+
+        // Transient error, keep trying
+        attempts++
+        pollingRef.current = setTimeout(poll, 5000)
       }
     }
 
-    poll()
+    // Add initial delay to allow R2 eventual consistency
+    pollingRef.current = setTimeout(poll, 3000)
   }, [onUploadComplete, onError])
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

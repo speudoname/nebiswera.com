@@ -100,6 +100,10 @@ export default function AdminLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Maily.to email editor CSS - loaded directly to avoid PostCSS processing */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@maily-to/core@0.3.4/dist/index.css" />
+      </head>
       <body className={`${inter.variable} ${notoSansGeorgian.variable} font-sans`}>
         <SessionProvider>
           <AdminLayoutContent>{children}</AdminLayoutContent>

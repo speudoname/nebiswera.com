@@ -268,7 +268,7 @@ async function uploadDirectoryToR2(localDir, r2Prefix) {
 }
 
 /**
- * Download file from R2
+ * Download file from R2 using streams to minimize memory usage
  */
 async function downloadFromR2(r2Key, localPath) {
   const command = new GetObjectCommand({
@@ -279,7 +279,30 @@ async function downloadFromR2(r2Key, localPath) {
   const response = await s3Client.send(command)
   const writeStream = createWriteStream(localPath)
   await pipeline(response.Body, writeStream)
+
+  // Force garbage collection hint
+  if (global.gc) global.gc()
 }
+
+/**
+ * Get file size from R2 before downloading
+ */
+async function getR2FileSize(r2Key) {
+  try {
+    const command = new HeadObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: r2Key,
+    })
+    const response = await s3Client.send(command)
+    return response.ContentLength || 0
+  } catch {
+    return 0
+  }
+}
+
+// Max file size for Railway free tier (100MB)
+const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '100')
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 /**
  * Process a single job
@@ -295,6 +318,18 @@ async function processJob(job) {
     await fs.mkdir(jobDir, { recursive: true })
     await fs.mkdir(outputDir, { recursive: true })
 
+    // Extract R2 key from URL
+    const originalUrl = job.originalUrl
+    const r2Key = originalUrl.replace(R2_PUBLIC_URL + '/', '')
+
+    // Check file size before downloading
+    const fileSize = await getR2FileSize(r2Key)
+    console.log(`[${job.id}] File size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`)
+
+    if (fileSize > MAX_FILE_SIZE_BYTES) {
+      throw new Error(`Video file too large (${(fileSize / 1024 / 1024).toFixed(0)}MB). Max allowed: ${MAX_FILE_SIZE_MB}MB. Please upgrade to Railway paid tier for larger videos.`)
+    }
+
     // Update job status to PROCESSING
     await prisma.videoProcessingJob.update({
       where: { id: job.id },
@@ -305,9 +340,6 @@ async function processJob(job) {
       },
     })
 
-    // Extract R2 key from URL
-    const originalUrl = job.originalUrl
-    const r2Key = originalUrl.replace(R2_PUBLIC_URL + '/', '')
     const inputPath = path.join(jobDir, 'original.mp4')
 
     console.log(`[${job.id}] Downloading original from R2: ${r2Key}`)

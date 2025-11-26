@@ -112,24 +112,21 @@ async function transcodeQuality(inputPath, outputDir, quality, onProgress) {
   const segmentPattern = path.join(qualityDir, 'segment-%03d.ts')
 
   return new Promise((resolve, reject) => {
-    // Memory-efficient FFmpeg settings:
-    // - threads 2: Limit CPU/memory usage
-    // - preset medium: Better compression, less memory than 'fast'
-    // - bufsize: Limit encoding buffer
+    // FFmpeg settings optimized for speed:
+    // - preset ultrafast: Much faster encoding
+    // - no thread limit: Use all available CPUs
     const args = [
       '-i', inputPath,
-      '-threads', '2',
       '-vf', `scale=-2:${quality.height}`,
       '-c:v', 'libx264',
-      '-preset', 'medium',
-      '-crf', quality.crf.toString(),
-      '-maxrate', quality.bitrate,
-      '-bufsize', '1M',
+      '-preset', 'ultrafast',
+      '-crf', (quality.crf + 2).toString(), // Slightly higher CRF for ultrafast
       '-c:a', 'aac',
       '-b:a', quality.audioBitrate,
       '-hls_time', '6',
       '-hls_list_size', '0',
       '-hls_segment_filename', segmentPattern,
+      '-progress', 'pipe:1', // Output progress to stdout
       '-y',
       playlistPath
     ]
@@ -137,9 +134,27 @@ async function transcodeQuality(inputPath, outputDir, quality, onProgress) {
     const ffmpeg = spawn('ffmpeg', args)
     let lastProgress = 0
 
+    // Parse progress from stdout (using -progress pipe:1)
+    ffmpeg.stdout.on('data', (data) => {
+      const output = data.toString()
+      const lines = output.split('\n')
+      for (const line of lines) {
+        if (line.startsWith('out_time_ms=')) {
+          const ms = parseInt(line.split('=')[1])
+          if (!isNaN(ms)) {
+            const currentTime = Math.floor(ms / 1000000)
+            if (onProgress && currentTime > lastProgress) {
+              lastProgress = currentTime
+              onProgress(currentTime)
+            }
+          }
+        }
+      }
+    })
+
+    // Also parse stderr for time info (fallback)
     ffmpeg.stderr.on('data', (data) => {
       const output = data.toString()
-      // Parse progress from ffmpeg output
       const timeMatch = output.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/)
       if (timeMatch) {
         const hours = parseInt(timeMatch[1])

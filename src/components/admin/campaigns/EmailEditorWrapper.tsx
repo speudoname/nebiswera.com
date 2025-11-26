@@ -2,6 +2,8 @@
 
 import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import 'easy-email-editor/lib/style.css'
+import 'easy-email-extensions/lib/style.css'
 
 // Dynamically import Easy Email Editor to avoid SSR issues
 const EmailEditor = dynamic(

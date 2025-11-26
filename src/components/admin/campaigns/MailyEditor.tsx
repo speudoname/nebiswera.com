@@ -77,7 +77,7 @@ export const MailyEditor = forwardRef<MailyEditorRef, MailyEditorProps>(
     }
 
     return (
-      <div className="maily-editor-wrapper w-full h-full">
+      <div className="maily-editor-wrapper">
         <Editor
           onCreate={handleEditorReady}
           onUpdate={handleEditorUpdate}

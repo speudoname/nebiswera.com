@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Maily.to email editor styles */
+@import '@maily-to/core/style.css';
+
 /**
  * GLOBAL TYPOGRAPHY STYLES
  *

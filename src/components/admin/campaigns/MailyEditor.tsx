@@ -1,6 +1,5 @@
 'use client'
 
-import '@maily-to/core/style.css'
 import { Editor } from '@maily-to/core'
 import { render } from '@maily-to/render'
 import { forwardRef, useImperativeHandle, useState, useCallback } from 'react'

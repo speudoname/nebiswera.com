@@ -8,6 +8,10 @@ import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
 import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
 
+// Import Easy Email CSS
+import 'easy-email-editor/lib/style.css'
+import 'easy-email-extensions/lib/style.css'
+
 interface Step2ContentProps {
   data: CampaignData
   onUpdate: (updates: Partial<CampaignData>) => void

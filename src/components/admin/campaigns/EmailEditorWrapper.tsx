@@ -2,8 +2,6 @@
 
 import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import 'easy-email-editor/lib/style.css'
-import 'easy-email-extensions/lib/style.css'
 
 // Dynamically import Easy Email Editor to avoid SSR issues
 const EmailEditor = dynamic(
@@ -149,7 +147,10 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
     }
 
     return (
-      <div className="w-full h-[600px] border-2 border-neu-dark rounded-neu overflow-hidden">
+      <div className="w-full min-h-[600px] border-2 border-neu-dark rounded-neu">
+        <div className="p-4 bg-blue-100 text-blue-900">
+          Debug: EmailEditorWrapper is rendering
+        </div>
         <EmailEditorProvider
           data={defaultTemplate}
           height={'600px'}
@@ -159,7 +160,15 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
           {({ values }) => {
             // Store the latest values in the ref so exportHtml can access them
             valuesRef.current = values
-            return <EmailEditor />
+            console.log('EmailEditorProvider render, values:', values)
+            return (
+              <div>
+                <div className="p-2 bg-green-100 text-green-900">
+                  Debug: EmailEditor about to render
+                </div>
+                <EmailEditor />
+              </div>
+            )
           }}
         </EmailEditorProvider>
       </div>

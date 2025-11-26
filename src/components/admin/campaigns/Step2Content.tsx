@@ -145,7 +145,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <ul className="text-xs text-yellow-800 space-y-1">
           <li>• Use the toolbar to insert buttons, images, dividers, and other email components</li>
           <li>• Format text with bold, italic, headings, colors, alignment, and lists</li>
-          <li>• Type personalization variables directly ({{'{'}firstName{'}'}}, {{'{'}email{'}'}}, etc.)</li>
+          <li>• Type personalization variables directly (<code>{'{{firstName}}'}</code>, <code>{'{{email}}'}</code>, etc.)</li>
           <li>• Click on components to edit their properties (links, colors, spacing, etc.)</li>
           <li>• Maily.to uses modern email framework for responsive, email-safe HTML</li>
           <li>• Plain text version is automatically generated from your content</li>

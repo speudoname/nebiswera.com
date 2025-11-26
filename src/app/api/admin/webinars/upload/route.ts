@@ -185,8 +185,8 @@ export async function GET(request: NextRequest) {
           job = { ...job, progress: Math.round(coconutStatus.progress) }
         }
 
-        // Check if Coconut job completed
-        if (coconutStatus.status === 'completed') {
+        // Check if Coconut job completed (status can be 'completed' or 'job.completed')
+        if (coconutStatus.status === 'completed' || coconutStatus.status === 'job.completed') {
           const duration = coconutStatus.input?.metadata?.duration
             ? Math.round(coconutStatus.input.metadata.duration)
             : null
@@ -237,8 +237,8 @@ export async function GET(request: NextRequest) {
           })
         }
 
-        // Check if Coconut job failed
-        if (coconutStatus.status === 'failed') {
+        // Check if Coconut job failed (status can be 'failed' or 'job.failed')
+        if (coconutStatus.status === 'failed' || coconutStatus.status === 'job.failed') {
           const errorMessage = 'Coconut transcoding failed'
 
           await prisma.videoProcessingJob.update({

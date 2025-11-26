@@ -176,13 +176,22 @@ export async function GET(request: NextRequest) {
         const coconutStatus = await getJobStatus(job.coconutJobId)
         console.log(`Coconut status for ${job.coconutJobId}:`, coconutStatus.status, `progress: ${coconutStatus.progress}%`)
 
-        // Update progress from Coconut
-        if (coconutStatus.progress !== undefined && coconutStatus.progress !== job.progress) {
-          await prisma.videoProcessingJob.update({
-            where: { id: job.id },
-            data: { progress: Math.round(coconutStatus.progress) },
-          })
-          job = { ...job, progress: Math.round(coconutStatus.progress) }
+        // Get progress - Coconut returns progress at top level or might be 100 for completed jobs
+        const coconutProgress = coconutStatus.progress ??
+          (coconutStatus.status === 'completed' || coconutStatus.status === 'job.completed' ? 100 : 0)
+
+        // Update progress from Coconut if changed
+        if (coconutProgress !== job.progress) {
+          try {
+            await prisma.videoProcessingJob.update({
+              where: { id: job.id },
+              data: { progress: Math.round(coconutProgress) },
+            })
+          } catch (updateError) {
+            console.error('Failed to update progress:', updateError)
+            // Continue anyway - progress display is not critical
+          }
+          job = { ...job, progress: Math.round(coconutProgress) }
         }
 
         // Check if Coconut job completed (status can be 'completed' or 'job.completed')

@@ -2,6 +2,8 @@
 
 import { useRef, useImperativeHandle, forwardRef, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import { AdvancedType } from 'easy-email-core'
+import type { ExtensionProps } from 'easy-email-extensions'
 
 // Dynamically import Easy Email Editor to avoid SSR issues
 const EmailEditor = dynamic(
@@ -21,10 +23,50 @@ const EmailEditorProvider = dynamic(
   { ssr: false }
 )
 
-const SimpleLayout = dynamic(
-  () => import('easy-email-extensions').then((mod) => mod.SimpleLayout),
+const StandardLayout = dynamic(
+  () => import('easy-email-extensions').then((mod) => mod.StandardLayout),
   { ssr: false }
 )
+
+// Block categories for the editor (official pattern)
+const categories: ExtensionProps['categories'] = [
+  {
+    label: 'Content',
+    active: true,
+    blocks: [
+      { type: AdvancedType.TEXT },
+      { type: AdvancedType.IMAGE },
+      { type: AdvancedType.BUTTON },
+      { type: AdvancedType.DIVIDER },
+      { type: AdvancedType.SPACER },
+      { type: AdvancedType.NAVBAR },
+      { type: AdvancedType.SOCIAL },
+    ],
+  },
+  {
+    label: 'Layout',
+    active: true,
+    displayType: 'column',
+    blocks: [
+      {
+        title: '1 column',
+        payload: [['100%']],
+      },
+      {
+        title: '2 columns',
+        payload: [['50%', '50%'], ['33%', '67%'], ['67%', '33%']],
+      },
+      {
+        title: '3 columns',
+        payload: [['33.33%', '33.33%', '33.33%']],
+      },
+      {
+        title: '4 columns',
+        payload: [['25%', '25%', '25%', '25%']],
+      },
+    ],
+  },
+]
 
 interface EmailEditorWrapperProps {
   designJson?: any
@@ -162,9 +204,12 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
           // Store the latest values in the ref so exportHtml can access them
           valuesRef.current = values
           return (
-            <SimpleLayout>
+            <StandardLayout
+              categories={categories}
+              showSourceCode={false}
+            >
               <EmailEditor />
-            </SimpleLayout>
+            </StandardLayout>
           )
         }}
       </EmailEditorProvider>

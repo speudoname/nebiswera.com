@@ -80,8 +80,8 @@ export function HomeClient() {
               }}
               className={`absolute transition-all ${
                 !hasUnmuted
-                  ? 'bottom-6 right-6 bg-primary-500 text-white px-6 py-4 rounded-neu shadow-neu-md hover:shadow-neu-lg hover:bg-primary-600 active:shadow-neu-pressed'
-                  : 'bottom-4 right-4 bg-neu-base/90 backdrop-blur-sm text-text-primary rounded-full p-3 shadow-neu hover:shadow-neu-hover active:shadow-neu-pressed'
+                  ? 'top-6 right-6 bg-primary-500 text-white px-6 py-4 rounded-neu shadow-neu-md hover:shadow-neu-lg hover:bg-primary-600 active:shadow-neu-pressed'
+                  : 'top-4 right-4 bg-neu-base/90 backdrop-blur-sm text-text-primary rounded-full p-3 shadow-neu hover:shadow-neu-hover active:shadow-neu-pressed'
               }`}
               aria-label={isMuted ? 'Unmute video' : 'Mute video'}
             >

@@ -21,6 +21,11 @@ const EmailEditorProvider = dynamic(
   { ssr: false }
 )
 
+const SimpleLayout = dynamic(
+  () => import('easy-email-extensions').then((mod) => mod.SimpleLayout),
+  { ssr: false }
+)
+
 interface EmailEditorWrapperProps {
   designJson?: any
   onReady?: () => void
@@ -166,7 +171,9 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
                 <div className="p-2 bg-green-100 text-green-900">
                   Debug: EmailEditor about to render
                 </div>
-                <EmailEditor />
+                <SimpleLayout>
+                  <EmailEditor />
+                </SimpleLayout>
               </div>
             )
           }}

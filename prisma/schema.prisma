@@ -1166,6 +1166,9 @@ model VideoProcessingJob {
   originalUrl     String                // R2 URL of original file
   originalSize    BigInt?               // File size in bytes
 
+  // Coconut transcoding
+  coconutJobId    String?               // Coconut API job ID
+
   // Output (populated after processing)
   hlsUrl          String?               // R2 URL to master.m3u8
   thumbnailUrl    String?               // R2 URL to thumbnail
@@ -1182,6 +1185,7 @@ model VideoProcessingJob {
 
   @@index([status])
   @@index([createdAt])
+  @@index([coconutJobId])
   @@schema("webinar")
   @@map("video_processing_jobs")
 }

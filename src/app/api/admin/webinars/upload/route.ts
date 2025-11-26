@@ -6,6 +6,7 @@ import {
   getWebinarOriginalKey,
   getPublicUrl,
 } from '@/lib/storage/r2'
+import { createTranscodingJob, getHlsUrl, getThumbnailUrl } from '@/lib/video/coconut'
 import type { NextRequest } from 'next/server'
 
 // POST /api/admin/webinars/upload - Get a presigned URL for R2 upload
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/webinars/upload - Confirm upload is complete and trigger processing
+// PUT /api/admin/webinars/upload - Confirm upload is complete and trigger Coconut transcoding
 export async function PUT(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -104,22 +105,38 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Webinar ID and Job ID are required' }, { status: 400 })
     }
 
-    // Update job status to indicate upload is complete and ready for processing
+    // Get the job to access the original URL
+    const existingJob = await prisma.videoProcessingJob.findUnique({
+      where: { id: jobId },
+    })
+
+    if (!existingJob) {
+      return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+    }
+
+    // Create Coconut transcoding job
+    const coconutJob = await createTranscodingJob({
+      webinarId,
+      inputUrl: existingJob.originalUrl,
+    })
+
+    // Update job with Coconut job ID and set status to PROCESSING
     const job = await prisma.videoProcessingJob.update({
       where: { id: jobId },
       data: {
-        status: 'PENDING',
+        status: 'PROCESSING',
+        coconutJobId: coconutJob.id,
+        startedAt: new Date(),
         updatedAt: new Date(),
       },
     })
 
-    // The worker will poll for PENDING jobs and process them
-
     return NextResponse.json({
       success: true,
       jobId: job.id,
+      coconutJobId: coconutJob.id,
       status: job.status,
-      message: 'Upload confirmed. Video is queued for processing.',
+      message: 'Upload confirmed. Video is being transcoded by Coconut.',
     })
   } catch (error) {
     console.error('Failed to confirm upload:', error)

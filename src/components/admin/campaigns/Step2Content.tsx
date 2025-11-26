@@ -7,8 +7,7 @@ import { CampaignData } from './CampaignEditor'
 import { TemplatePicker } from './TemplatePicker'
 import type { EmailTemplate } from '@/lib/email-templates'
 import { EmailEditorWrapper, type EmailEditorRef } from './EmailEditorWrapper'
-import { MailerLiteEditor, type MailerLiteEditorRef } from './MailerLiteEditor'
-import { wrapHtmlInMJML } from '@/lib/tiptap-to-mjml'
+import { MailyEditor, type MailyEditorRef } from './MailyEditor'
 
 interface Step2ContentProps {
   data: CampaignData
@@ -27,7 +26,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
   const [activeTab, setActiveTab] = useState<'editor' | 'text'>('editor')
   const [saving, setSaving] = useState(false)
   const [showTemplatePicker, setShowTemplatePicker] = useState(false)
-  const visualEditorRef = useRef<MailerLiteEditorRef>(null)
+  const visualEditorRef = useRef<MailyEditorRef>(null)
   const codeEditorRef = useRef<EmailEditorRef>(null)
 
   // Save from editor
@@ -38,27 +37,31 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
     setSaving(true)
     try {
       if (editorMode === 'visual') {
-        // TipTap editor - wrap HTML in MJML and compile
+        // Maily.to editor - already renders to responsive HTML
         const { design, html, text } = await editorRef.exportHtml()
-        const mjmlCode = wrapHtmlInMJML(html)
 
-        // Compile MJML to final HTML
-        const mjml = (await import('mjml-browser')).default
-        const result = mjml(mjmlCode, {
-          validationLevel: 'soft',
-          minify: false,
-        })
+        // Ensure unsubscribe link is present
+        const hasUnsubscribeLink = html.includes('{{{ pm:unsubscribe }}}') || html.includes('{{unsubscribe}}')
 
-        if (result.errors && result.errors.length > 0) {
-          const errorMsg = result.errors[0].message
-          throw new Error(errorMsg)
+        if (!hasUnsubscribeLink) {
+          const htmlWithUnsubscribe = html.replace(
+            '</body>',
+            '<div style="text-align:center;padding:20px;font-size:12px;color:#666;"><a href="{{{ pm:unsubscribe }}}" style="color:#8B5CF6;">Unsubscribe</a></div></body>'
+          )
+          const textWithUnsubscribe = text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}'
+
+          onUpdate({
+            designJson: design, // Store Maily.to JSON
+            htmlContent: htmlWithUnsubscribe, // Responsive email HTML
+            textContent: textWithUnsubscribe,
+          })
+        } else {
+          onUpdate({
+            designJson: design,
+            htmlContent: html,
+            textContent: text,
+          })
         }
-
-        onUpdate({
-          designJson: design, // Store TipTap HTML
-          htmlContent: result.html, // Final compiled email HTML
-          textContent: text,
-        })
       } else {
         // Code editor - MJML code
         const { design, html, text } = await editorRef.exportHtml()
@@ -120,8 +123,8 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
     onUpdate({ textContent: text })
   }
 
-  // Get initial content for TipTap editor
-  const initialTipTapContent = data.designJson ? (typeof data.designJson === 'string' ? data.designJson : '') : ''
+  // Get initial content for Maily.to editor
+  const initialMailyContent = data.designJson ? (typeof data.designJson === 'string' ? data.designJson : '') : ''
 
   return (
     <div className="space-y-6">
@@ -147,7 +150,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
               loading={saving}
             >
               <Save className="w-4 h-4 mr-2" />
-              {editorMode === 'visual' ? 'Save & Compile' : 'Compile & Save'}
+              Save & Compile
             </Button>
           )}
         </div>
@@ -242,13 +245,13 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
           <div>
             {editorMode === 'visual' ? (
               <>
-                <MailerLiteEditor
+                <MailyEditor
                   ref={visualEditorRef}
-                  initialContent={initialTipTapContent}
-                  onReady={() => console.log('MailerLite editor ready')}
+                  initialContent={initialMailyContent}
+                  onReady={() => console.log('Maily editor ready')}
                 />
                 <p className="text-xs text-text-muted mt-3">
-                  💡 Click the "+" button to insert components (buttons, images, dividers), use toolbar for text formatting
+                  💡 Use the toolbar to format text and insert components (buttons, images, dividers, etc.)
                 </p>
               </>
             ) : (
@@ -303,11 +306,11 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
         <ul className="text-xs text-yellow-800 space-y-1">
           {editorMode === 'visual' ? (
             <>
-              <li>• Click the "+" button on the left to insert buttons, images, dividers, or spacers</li>
-              <li>• Use toolbar for text formatting (bold, italic, headings, alignment, lists)</li>
+              <li>• Use the toolbar to insert buttons, images, dividers, and other email components</li>
+              <li>• Format text with bold, italic, headings, colors, alignment, and lists</li>
               <li>• Type personalization variables directly ({'{'}firstName{'}'}, {'{'}email{'}'}, etc.)</li>
-              <li>• Click on inserted components to edit their properties</li>
-              <li>• Click "Save & Compile" to convert to email-safe HTML</li>
+              <li>• Click on components to edit their properties (links, colors, spacing, etc.)</li>
+              <li>• Maily.to uses MJML under the hood for responsive email-safe HTML</li>
             </>
           ) : (
             <>

@@ -41,13 +41,14 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [saving, setSaving] = useState(false)
+  const [loadingSettings, setLoadingSettings] = useState(true)
   const [campaignData, setCampaignData] = useState<CampaignData>({
     name: initialData?.name || '',
     subject: initialData?.subject || '',
     previewText: initialData?.previewText || '',
-    fromName: initialData?.fromName || 'Nebiswera',
-    fromEmail: initialData?.fromEmail || 'hello@nebiswera.ge',
-    replyTo: initialData?.replyTo || 'hello@nebiswera.ge',
+    fromName: initialData?.fromName || '',
+    fromEmail: initialData?.fromEmail || '',
+    replyTo: initialData?.replyTo || '',
     htmlContent: initialData?.htmlContent || '',
     textContent: initialData?.textContent || '',
     targetType: initialData?.targetType || 'ALL_CONTACTS',
@@ -55,12 +56,56 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
     scheduledAt: initialData?.scheduledAt || null,
   })
 
-  // Load campaign data if editing
+  // Load settings and campaign data on mount
   useEffect(() => {
+    loadInitialData()
+  }, [])
+
+  const loadInitialData = async () => {
+    try {
+      // Fetch settings first
+      const settingsRes = await fetch('/api/admin/settings')
+      if (settingsRes.ok) {
+        const settings = await settingsRes.json()
+
+        // If not editing and no initialData, use settings as defaults
+        if (!campaignId && !initialData) {
+          setCampaignData((prev) => ({
+            ...prev,
+            fromName: settings.marketingFromName || 'Nebiswera',
+            fromEmail: settings.marketingFromAddress || 'hello@nebiswera.ge',
+            replyTo: settings.marketingFromAddress || 'hello@nebiswera.ge',
+          }))
+        } else if (!initialData) {
+          // If editing, set defaults for empty fields
+          setCampaignData((prev) => ({
+            ...prev,
+            fromName: prev.fromName || settings.marketingFromName || 'Nebiswera',
+            fromEmail: prev.fromEmail || settings.marketingFromAddress || 'hello@nebiswera.ge',
+            replyTo: prev.replyTo || settings.marketingFromAddress || 'hello@nebiswera.ge',
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error)
+      // Use fallback defaults
+      if (!campaignId && !initialData) {
+        setCampaignData((prev) => ({
+          ...prev,
+          fromName: prev.fromName || 'Nebiswera',
+          fromEmail: prev.fromEmail || 'hello@nebiswera.ge',
+          replyTo: prev.replyTo || 'hello@nebiswera.ge',
+        }))
+      }
+    } finally {
+      setLoadingSettings(false)
+    }
+
+    // Load campaign data if editing
     if (campaignId && !initialData) {
       fetchCampaign()
     }
-  }, [campaignId])
+  }
 
   const fetchCampaign = async () => {
     try {
@@ -218,21 +263,29 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
 
       {/* Step Content */}
       <div className="bg-neu-light rounded-neu shadow-neu p-8 mb-6">
-        {currentStep === 1 && (
-          <Step1BasicInfo data={campaignData} onUpdate={updateCampaignData} />
-        )}
-        {currentStep === 2 && (
-          <Step2Content data={campaignData} onUpdate={updateCampaignData} />
-        )}
-        {currentStep === 3 && (
-          <Step3Audience data={campaignData} onUpdate={updateCampaignData} />
-        )}
-        {currentStep === 4 && (
-          <Step4ReviewSchedule
-            data={campaignData}
-            onUpdate={updateCampaignData}
-            campaignId={campaignId}
-          />
+        {loadingSettings ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-text-muted">Loading...</div>
+          </div>
+        ) : (
+          <>
+            {currentStep === 1 && (
+              <Step1BasicInfo data={campaignData} onUpdate={updateCampaignData} />
+            )}
+            {currentStep === 2 && (
+              <Step2Content data={campaignData} onUpdate={updateCampaignData} />
+            )}
+            {currentStep === 3 && (
+              <Step3Audience data={campaignData} onUpdate={updateCampaignData} />
+            )}
+            {currentStep === 4 && (
+              <Step4ReviewSchedule
+                data={campaignData}
+                onUpdate={updateCampaignData}
+                campaignId={campaignId}
+              />
+            )}
+          </>
         )}
       </div>
 

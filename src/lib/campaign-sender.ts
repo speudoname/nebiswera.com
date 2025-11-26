@@ -120,7 +120,8 @@ export async function processCampaign(campaignId: string): Promise<{
     const result = await sendBatch(
       campaign,
       recipients,
-      settings.marketingServerToken
+      settings.marketingServerToken,
+      settings.marketingStreamName
     )
 
     totalSent += result.sent
@@ -175,7 +176,8 @@ async function sendBatch(
     email: string
     variables: unknown
   }>,
-  serverToken: string
+  serverToken: string,
+  messageStream: string
 ): Promise<SendBatchResult> {
   // Prepare messages
   const messages: PostmarkMessage[] = recipients.map((recipient) => {
@@ -191,7 +193,7 @@ async function sendBatch(
       HtmlBody: personalizedHtml,
       TextBody: personalizedText,
       ReplyTo: campaign.replyTo || undefined,
-      MessageStream: 'broadcast',
+      MessageStream: messageStream || 'broadcast',
       TrackOpens: true,
       TrackLinks: 'HtmlAndText',
       Metadata: {
@@ -419,7 +421,12 @@ export async function processCampaignBatch(campaignId: string): Promise<{
     return { processed: true, hasMore: false, sent: 0, failed: 0 }
   }
 
-  const result = await sendBatch(campaign, recipients, settings.marketingServerToken)
+  const result = await sendBatch(
+    campaign,
+    recipients,
+    settings.marketingServerToken,
+    settings.marketingStreamName
+  )
 
   // Update campaign stats
   await prisma.campaign.update({

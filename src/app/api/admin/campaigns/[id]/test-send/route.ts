@@ -92,7 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Add [TEST] prefix to subject
     subject = `[TEST] ${subject}`
 
-    // Send via Postmark broadcast stream
+    // Send via Postmark marketing stream
     const response = await fetch('https://api.postmarkapp.com/email', {
       method: 'POST',
       headers: {
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         HtmlBody: htmlContent,
         TextBody: textContent,
         ReplyTo: campaign.replyTo || undefined,
-        MessageStream: 'broadcast',
+        MessageStream: settings.marketingStreamName || 'broadcast',
         TrackOpens: true,
         TrackLinks: 'HtmlAndText',
       }),

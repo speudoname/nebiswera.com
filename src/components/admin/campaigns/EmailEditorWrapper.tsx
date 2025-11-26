@@ -1,138 +1,182 @@
 'use client'
 
-import { useRef, useImperativeHandle, forwardRef, useEffect, useState } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
+import type { Monaco } from '@monaco-editor/react'
+
+// Dynamically import Monaco Editor to avoid SSR issues
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full bg-neu-base">
+      <div className="text-text-muted">Loading editor...</div>
+    </div>
+  ),
+})
 
 interface EmailEditorWrapperProps {
-  designJson?: any
+  initialMjml?: string
   onReady?: () => void
-  onChange?: (design: any, html: string, text: string) => void
 }
 
 export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
-  ({ designJson, onReady, onChange }, ref) => {
-    const iframeRef = useRef<HTMLIFrameElement>(null)
-    const [isReady, setIsReady] = useState(false)
-    const pendingDesign = useRef<any>(null)
+  ({ initialMjml, onReady }, ref) => {
+    const [mjmlCode, setMjmlCode] = useState(initialMjml || getDefaultMjml())
+    const [htmlPreview, setHtmlPreview] = useState('')
+    const [compileError, setCompileError] = useState<string | null>(null)
+    const [isCompiling, setIsCompiling] = useState(false)
 
-    // Listen for messages from iframe
-    useEffect(() => {
-      const handleMessage = (event: MessageEvent) => {
-        // Security: only accept messages from same origin
-        if (event.origin !== window.location.origin) return
-
-        const { type, payload } = event.data
-
-        switch (type) {
-          case 'EDITOR_READY':
-            setIsReady(true)
-            // Load initial design if provided
-            if (designJson && iframeRef.current) {
-              iframeRef.current.contentWindow?.postMessage(
-                { type: 'LOAD_TEMPLATE', payload: designJson },
-                window.location.origin
-              )
-            }
-            onReady?.()
-            break
-
-          case 'DESIGN_EXPORTED':
-            const { design, html, text } = payload
-            onChange?.(design, html, text)
-            break
-
-          case 'DESIGN_ERROR':
-            console.error('Email editor error:', payload.error)
-            break
-        }
+    // Compile MJML to HTML for preview
+    const compileMjml = async (code: string) => {
+      if (!code.trim()) {
+        setHtmlPreview('')
+        setCompileError(null)
+        return
       }
 
-      window.addEventListener('message', handleMessage)
-      return () => window.removeEventListener('message', handleMessage)
-    }, [designJson, onReady, onChange])
+      setIsCompiling(true)
+      try {
+        const mjml = (await import('mjml-browser')).default
+        const result = mjml(code, {
+          validationLevel: 'soft',
+          minify: false,
+        })
 
-    // Expose exportHtml method to parent via ref
+        if (result.errors && result.errors.length > 0) {
+          const errorMsg = result.errors
+            .map((e: any) => `Line ${e.line}: ${e.message}`)
+            .join('\n')
+          setCompileError(errorMsg)
+          setHtmlPreview(result.html) // Still show HTML even with errors
+        } else {
+          setCompileError(null)
+          setHtmlPreview(result.html)
+        }
+      } catch (error) {
+        setCompileError(error instanceof Error ? error.message : 'Failed to compile MJML')
+        setHtmlPreview('')
+      } finally {
+        setIsCompiling(false)
+      }
+    }
+
+    // Debounced compilation
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        compileMjml(mjmlCode)
+      }, 500) // 500ms debounce
+
+      return () => clearTimeout(timer)
+    }, [mjmlCode])
+
+    // Initial compilation
+    useEffect(() => {
+      compileMjml(mjmlCode)
+      onReady?.()
+    }, [])
+
+    // Expose methods to parent via ref
     useImperativeHandle(ref, () => ({
       exportHtml: async () => {
-        return new Promise((resolve, reject) => {
-          if (!isReady || !iframeRef.current) {
-            reject(new Error('Editor not ready'))
-            return
+        try {
+          const mjml = (await import('mjml-browser')).default
+          const result = mjml(mjmlCode, {
+            validationLevel: 'soft',
+            minify: false,
+          })
+
+          if (result.errors && result.errors.length > 0) {
+            const errorMsg = result.errors[0].message
+            throw new Error(errorMsg)
           }
 
-          // Set up one-time listener for the response
-          const handleResponse = (event: MessageEvent) => {
-            if (event.origin !== window.location.origin) return
+          // Generate plain text from HTML
+          const text = result.html
+            .replace(/<style[^>]*>.*?<\/style>/gi, '')
+            .replace(/<script[^>]*>.*?<\/script>/gi, '')
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/p>/gi, '\n\n')
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/\n\s*\n\s*\n/g, '\n\n')
+            .trim()
 
-            const { type, payload } = event.data
-
-            if (type === 'DESIGN_EXPORTED') {
-              window.removeEventListener('message', handleResponse)
-              resolve(payload)
-            } else if (type === 'DESIGN_ERROR') {
-              window.removeEventListener('message', handleResponse)
-              reject(new Error(payload.error))
-            }
+          return {
+            design: mjmlCode, // Store MJML code as design
+            html: result.html,
+            text,
           }
-
-          window.addEventListener('message', handleResponse)
-
-          // Request design export from iframe
-          iframeRef.current.contentWindow?.postMessage(
-            { type: 'GET_DESIGN' },
-            window.location.origin
-          )
-
-          // Timeout after 5 seconds
-          setTimeout(() => {
-            window.removeEventListener('message', handleResponse)
-            reject(new Error('Export timeout'))
-          }, 5000)
-        })
+        } catch (error) {
+          console.error('Failed to compile MJML:', error)
+          throw error
+        }
       },
+      getMjml: () => mjmlCode,
+      setMjml: (code: string) => setMjmlCode(code),
     }))
 
-    // Load template when designJson changes
-    useEffect(() => {
-      if (isReady && designJson && iframeRef.current) {
-        iframeRef.current.contentWindow?.postMessage(
-          { type: 'LOAD_TEMPLATE', payload: designJson },
-          window.location.origin
-        )
-      }
-    }, [designJson, isReady])
-
     return (
-      <div style={{ width: '100%', height: '600px', position: 'relative' }}>
-        {!isReady && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '8px',
-            }}
-          >
-            <div style={{ color: '#666' }}>Loading email editor...</div>
+      <div className="w-full h-[600px] flex gap-4">
+        {/* Left: MJML Editor */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-text-primary">MJML Code</h3>
+            {isCompiling && (
+              <span className="text-xs text-text-muted">Compiling...</span>
+            )}
           </div>
-        )}
-        <iframe
-          ref={iframeRef}
-          src="/email-editor"
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            borderRadius: '8px',
-            display: isReady ? 'block' : 'none',
-          }}
-          title="Email Editor"
-        />
+          <div className="flex-1 border rounded-neu overflow-hidden shadow-neu-inset">
+            <MonacoEditor
+              height="100%"
+              defaultLanguage="xml"
+              value={mjmlCode}
+              onChange={(value) => setMjmlCode(value || '')}
+              theme="vs-light"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                wrappingIndent: 'indent',
+                automaticLayout: true,
+                tabSize: 2,
+                formatOnPaste: true,
+                formatOnType: true,
+              }}
+            />
+          </div>
+          {compileError && (
+            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-neu">
+              <div className="text-xs font-medium text-red-900 mb-1">MJML Errors:</div>
+              <pre className="text-xs text-red-800 whitespace-pre-wrap font-mono">
+                {compileError}
+              </pre>
+            </div>
+          )}
+        </div>
+
+        {/* Right: HTML Preview */}
+        <div className="flex-1 flex flex-col">
+          <h3 className="text-sm font-medium text-text-primary mb-2">Live Preview</h3>
+          <div className="flex-1 border rounded-neu overflow-auto bg-white shadow-neu">
+            {htmlPreview ? (
+              <iframe
+                srcDoc={htmlPreview}
+                className="w-full h-full border-0"
+                title="Email Preview"
+                sandbox="allow-same-origin"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-text-muted text-sm">
+                Preview will appear here
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     )
   }
@@ -140,7 +184,47 @@ export const EmailEditorWrapper = forwardRef<any, EmailEditorWrapperProps>(
 
 EmailEditorWrapper.displayName = 'EmailEditorWrapper'
 
-// Export the exportHtml method type for parent components
+// Export the ref type for parent components
 export type EmailEditorRef = {
   exportHtml: () => Promise<{ design: any; html: string; text: string }>
+  getMjml: () => string
+  setMjml: (code: string) => void
+}
+
+// Default MJML template
+function getDefaultMjml() {
+  return `<mjml>
+  <mj-head>
+    <mj-title>Email Template</mj-title>
+    <mj-preview>Preview text here</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="14px" color="#333333" line-height="1.6" />
+      <mj-section padding="20px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff">
+      <mj-column>
+        <mj-text font-size="20px" font-weight="bold" align="center">
+          Hello {{firstName|there}}!
+        </mj-text>
+        <mj-text>
+          This is your email content. You can personalize it with variables like {{firstName}}, {{lastName}}, or {{email}}.
+        </mj-text>
+        <mj-button background-color="#8B5CF6" href="https://nebiswera.com">
+          Call to Action
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9f9f9">
+      <mj-column>
+        <mj-text font-size="12px" color="#666666" align="center">
+          <a href="{{{ pm:unsubscribe }}}" style="color:#8B5CF6">Unsubscribe</a>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>`
 }

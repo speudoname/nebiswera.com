@@ -69,26 +69,69 @@ const tabs: { id: TabId; label: string; icon: React.ElementType; requiresId?: bo
   { id: 'analytics', label: 'Analytics', icon: BarChart3, requiresId: true },
 ]
 
+// Helper function to generate slug from title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\u10D0-\u10FF]+/g, '-') // Keep Georgian letters and alphanumeric
+    .replace(/^-|-$/g, '')
+    .substring(0, 60) // Limit length
+}
+
 export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>('basic')
   const [data, setData] = useState<WebinarData>(initialData || defaultData)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Track if user has manually edited these fields
+  const [manuallyEditedFields, setManuallyEditedFields] = useState<Set<string>>(
+    new Set(initialData?.slug ? ['slug'] : [])
+  )
 
   const isNew = !webinarId
 
   const handleChange = (field: keyof WebinarData, value: string | number) => {
     setData((prev) => ({ ...prev, [field]: value }))
 
-    // Auto-generate slug from title if slug is empty
-    if (field === 'title' && !data.slug) {
-      const slug = value
-        .toString()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-      setData((prev) => ({ ...prev, slug }))
+    // Auto-generate slug and page paths from title (unless manually edited)
+    if (field === 'title') {
+      const slug = generateSlug(value.toString())
+
+      // Auto-update slug if not manually edited
+      if (!manuallyEditedFields.has('slug')) {
+        setData((prev) => ({ ...prev, slug }))
+      }
+
+      // Auto-update landing page path if not manually edited
+      if (!manuallyEditedFields.has('landingPagePath')) {
+        const slugToUse = manuallyEditedFields.has('slug') ? data.slug : slug
+        setData((prev) => ({ ...prev, landingPagePath: `/ka/webinar/${slugToUse}` }))
+      }
+
+      // Auto-update thank you page path if not manually edited
+      if (!manuallyEditedFields.has('thankYouPagePath')) {
+        const slugToUse = manuallyEditedFields.has('slug') ? data.slug : slug
+        setData((prev) => ({ ...prev, thankYouPagePath: `/ka/webinar/${slugToUse}/thank-you` }))
+      }
+    }
+
+    // When slug changes, also update page paths if they haven't been manually edited
+    if (field === 'slug') {
+      setManuallyEditedFields((prev) => new Set(prev).add('slug'))
+      const slugValue = value.toString()
+
+      if (!manuallyEditedFields.has('landingPagePath')) {
+        setData((prev) => ({ ...prev, landingPagePath: `/ka/webinar/${slugValue}` }))
+      }
+      if (!manuallyEditedFields.has('thankYouPagePath')) {
+        setData((prev) => ({ ...prev, thankYouPagePath: `/ka/webinar/${slugValue}/thank-you` }))
+      }
+    }
+
+    // Mark field as manually edited
+    if (field === 'landingPagePath' || field === 'thankYouPagePath') {
+      setManuallyEditedFields((prev) => new Set(prev).add(field))
     }
   }
 
@@ -331,7 +374,9 @@ function BasicInfoTab({
                 onChange={(e) => onChange('slug', e.target.value)}
                 placeholder="e.g., master-ai-tools"
               />
-              <p className="text-xs text-text-muted mt-1">Used in the webinar URL: /webinar/[slug]</p>
+              <p className="text-xs text-text-muted mt-1">
+                Auto-generated from title • Used in URL: <code className="bg-neu-dark px-1 rounded">/webinar/{data.slug || 'your-slug'}</code>
+              </p>
             </div>
 
             <div>
@@ -383,23 +428,29 @@ function BasicInfoTab({
         <Card variant="raised" padding="lg">
           <h3 className="text-lg font-semibold text-text-primary mb-4">Page Paths</h3>
           <p className="text-sm text-text-muted mb-4">
-            Reference to manually created landing and thank you pages.
+            Auto-generated based on slug. These are the URLs where you'll build the landing and thank you pages.
           </p>
 
           <div className="space-y-4">
-            <Input
-              label="Landing Page Path"
-              value={data.landingPagePath || ''}
-              onChange={(e) => onChange('landingPagePath', e.target.value)}
-              placeholder="e.g., /ka/webinar/master-ai-tools"
-            />
+            <div>
+              <Input
+                label="Landing Page Path"
+                value={data.landingPagePath || ''}
+                onChange={(e) => onChange('landingPagePath', e.target.value)}
+                placeholder="e.g., /ka/webinar/master-ai-tools"
+              />
+              <p className="text-xs text-text-muted mt-1">Auto-synced with slug</p>
+            </div>
 
-            <Input
-              label="Thank You Page Path"
-              value={data.thankYouPagePath || ''}
-              onChange={(e) => onChange('thankYouPagePath', e.target.value)}
-              placeholder="e.g., /ka/webinar/master-ai-tools/thank-you"
-            />
+            <div>
+              <Input
+                label="Thank You Page Path"
+                value={data.thankYouPagePath || ''}
+                onChange={(e) => onChange('thankYouPagePath', e.target.value)}
+                placeholder="e.g., /ka/webinar/master-ai-tools/thank-you"
+              />
+              <p className="text-xs text-text-muted mt-1">Auto-synced with slug</p>
+            </div>
           </div>
         </Card>
       </div>

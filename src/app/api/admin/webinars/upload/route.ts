@@ -6,7 +6,7 @@ import {
   getWebinarOriginalKey,
   getPublicUrl,
 } from '@/lib/storage/r2'
-import { createTranscodingJob, getHlsUrl, getThumbnailUrl } from '@/lib/video/coconut'
+import { createTranscodingJob, getJobStatus, getHlsUrl, getThumbnailUrl } from '@/lib/video/coconut'
 import type { NextRequest } from 'next/server'
 
 // POST /api/admin/webinars/upload - Get a presigned URL for R2 upload
@@ -161,12 +161,118 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const job = await prisma.videoProcessingJob.findUnique({
+    let job = await prisma.videoProcessingJob.findUnique({
       where: { webinarId },
     })
 
     if (!job) {
       return NextResponse.json({ error: 'No video processing job found' }, { status: 404 })
+    }
+
+    // If job is still PROCESSING and has a Coconut job ID, poll Coconut API directly
+    // This serves as a fallback when webhooks fail
+    if (job.status === 'PROCESSING' && job.coconutJobId) {
+      try {
+        const coconutStatus = await getJobStatus(job.coconutJobId)
+        console.log(`Coconut status for ${job.coconutJobId}:`, coconutStatus.status, `progress: ${coconutStatus.progress}%`)
+
+        // Update progress from Coconut
+        if (coconutStatus.progress !== undefined && coconutStatus.progress !== job.progress) {
+          await prisma.videoProcessingJob.update({
+            where: { id: job.id },
+            data: { progress: Math.round(coconutStatus.progress) },
+          })
+          job = { ...job, progress: Math.round(coconutStatus.progress) }
+        }
+
+        // Check if Coconut job completed
+        if (coconutStatus.status === 'completed') {
+          const duration = coconutStatus.input?.metadata?.duration
+            ? Math.round(coconutStatus.input.metadata.duration)
+            : null
+
+          const hlsUrl = getHlsUrl(webinarId)
+          const thumbnailUrl = getThumbnailUrl(webinarId)
+
+          // Update processing job
+          await prisma.videoProcessingJob.update({
+            where: { id: job.id },
+            data: {
+              status: 'COMPLETED',
+              progress: 100,
+              hlsUrl,
+              thumbnailUrl,
+              duration,
+              completedAt: new Date(),
+              error: null,
+            },
+          })
+
+          // Update webinar
+          await prisma.webinar.update({
+            where: { id: webinarId },
+            data: {
+              videoStatus: 'ready',
+              hlsUrl,
+              thumbnailUrl,
+              videoDuration: duration,
+            },
+          })
+
+          console.log(`Video completed via polling for webinar: ${webinarId}`)
+
+          // Return completed status
+          return NextResponse.json({
+            jobId: job.id,
+            status: 'COMPLETED',
+            progress: 100,
+            originalUrl: job.originalUrl,
+            hlsUrl,
+            thumbnailUrl,
+            duration,
+            error: null,
+            startedAt: job.startedAt,
+            completedAt: new Date(),
+            videoStatus: 'ready',
+          })
+        }
+
+        // Check if Coconut job failed
+        if (coconutStatus.status === 'failed') {
+          const errorMessage = 'Coconut transcoding failed'
+
+          await prisma.videoProcessingJob.update({
+            where: { id: job.id },
+            data: {
+              status: 'FAILED',
+              error: errorMessage,
+              completedAt: new Date(),
+            },
+          })
+
+          await prisma.webinar.update({
+            where: { id: webinarId },
+            data: { videoStatus: 'error' },
+          })
+
+          return NextResponse.json({
+            jobId: job.id,
+            status: 'FAILED',
+            progress: job.progress,
+            originalUrl: job.originalUrl,
+            hlsUrl: null,
+            thumbnailUrl: null,
+            duration: null,
+            error: errorMessage,
+            startedAt: job.startedAt,
+            completedAt: new Date(),
+            videoStatus: 'error',
+          })
+        }
+      } catch (coconutError) {
+        // If Coconut API fails, just log and continue with local status
+        console.error('Failed to poll Coconut API:', coconutError)
+      }
     }
 
     const webinar = await prisma.webinar.findUnique({

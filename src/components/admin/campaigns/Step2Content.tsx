@@ -5,6 +5,7 @@ import { Button } from '@/components/ui'
 import { Save, AlertCircle } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { MailyEditor, type MailyEditorRef } from './MailyEditor'
+import { ImageUploader } from './ImageUploader'
 
 interface Step2ContentProps {
   data: CampaignData
@@ -159,6 +160,9 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
         </div>
       </div>
 
+      {/* Image Uploader */}
+      <ImageUploader />
+
       {/* Variable Reference Panel */}
       <div className="bg-blue-50 border border-blue-200 rounded-neu p-4">
         <h3 className="text-sm font-medium text-blue-900 mb-2">📝 Personalization Variables</h3>
@@ -182,14 +186,14 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
       </div>
 
       {/* Maily.to Editor with better styling */}
-      <div className="bg-white rounded-neu border-2 border-neu-dark shadow-neu overflow-hidden">
+      <div className="bg-white rounded-neu border-2 border-neu-dark shadow-neu">
         <div className="p-4 bg-neu-base border-b-2 border-neu-dark">
           <p className="text-sm text-text-muted flex items-center gap-2">
             <AlertCircle className="w-4 h-4" />
             Changes are auto-saved every 2 seconds. Click &quot;Save & Compile&quot; to finalize and generate HTML.
           </p>
         </div>
-        <div className="h-[600px] overflow-auto">
+        <div className="p-4">
           <MailyEditor
             ref={editorRef}
             initialContent={initialMailyContent}

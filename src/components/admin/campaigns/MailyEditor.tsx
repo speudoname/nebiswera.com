@@ -34,6 +34,11 @@ export const MailyEditor = forwardRef<MailyEditorRef, MailyEditorProps>(
       onReady?.()
     }, [initialContent, onReady])
 
+    const handleEditorUpdate = useCallback((editorInstance: TiptapEditor) => {
+      setEditor(editorInstance)
+      onChange?.()
+    }, [onChange])
+
     useImperativeHandle(ref, () => ({
       exportHtml: async () => {
         if (!editor) {
@@ -70,11 +75,6 @@ export const MailyEditor = forwardRef<MailyEditorRef, MailyEditorProps>(
         }
       },
     }), [editor])
-
-    const handleEditorUpdate = (editorInstance: TiptapEditor) => {
-      setEditor(editorInstance)
-      onChange?.()
-    }
 
     return (
       <div className="maily-editor-wrapper">

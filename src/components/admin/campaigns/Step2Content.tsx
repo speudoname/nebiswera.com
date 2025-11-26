@@ -305,7 +305,7 @@ export function Step2Content({ data, onUpdate }: Step2ContentProps) {
             <>
               <li>• Click the "+" button on the left to insert buttons, images, dividers, or spacers</li>
               <li>• Use toolbar for text formatting (bold, italic, headings, alignment, lists)</li>
-              <li>• Type personalization variables directly ({{firstName}}, {{email}}, etc.)</li>
+              <li>• Type personalization variables directly ({'{'}firstName{'}'}, {'{'}email{'}'}, etc.)</li>
               <li>• Click on inserted components to edit their properties</li>
               <li>• Click "Save & Compile" to convert to email-safe HTML</li>
             </>

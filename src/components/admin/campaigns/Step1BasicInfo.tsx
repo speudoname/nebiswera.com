@@ -66,30 +66,32 @@ export function Step1BasicInfo({ data, onUpdate }: Step1BasicInfoProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Input
-            id="fromName"
-            name="fromName"
-            label="From Name *"
-            value={data.fromName}
-            onChange={(e) => onUpdate({ fromName: e.target.value })}
-            placeholder="Nebiswera"
-            required
-          />
+          <div>
+            <Input
+              id="fromName"
+              name="fromName"
+              label="From Name *"
+              value={data.fromName}
+              onChange={(e) => onUpdate({ fromName: e.target.value })}
+              placeholder="Nebiswera"
+              required
+            />
+            <p className="text-xs text-text-muted mt-1">
+              The sender name recipients will see
+            </p>
+          </div>
 
           <div>
-            <label className="block text-body-sm font-medium text-secondary mb-1">
-              From Email *
-            </label>
-            <select
+            <Input
+              id="fromEmail"
+              name="fromEmail"
+              label="From Email *"
+              type="email"
               value={data.fromEmail}
               onChange={(e) => onUpdate({ fromEmail: e.target.value })}
-              className="block w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+              placeholder="levan@nebiswera.com"
               required
-            >
-              <option value="hello@nebiswera.ge">hello@nebiswera.ge</option>
-              <option value="info@nebiswera.ge">info@nebiswera.ge</option>
-              <option value="team@nebiswera.ge">team@nebiswera.ge</option>
-            </select>
+            />
             <p className="text-xs text-text-muted mt-1">
               Must be a verified sender in Postmark
             </p>
@@ -104,7 +106,7 @@ export function Step1BasicInfo({ data, onUpdate }: Step1BasicInfoProps) {
             type="email"
             value={data.replyTo}
             onChange={(e) => onUpdate({ replyTo: e.target.value })}
-            placeholder="hello@nebiswera.ge"
+            placeholder="levan@nebiswera.com"
           />
           <p className="text-xs text-text-muted mt-1">
             Where replies should go (defaults to From Email)

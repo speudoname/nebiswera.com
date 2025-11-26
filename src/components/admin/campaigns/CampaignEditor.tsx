@@ -73,16 +73,16 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
           setCampaignData((prev) => ({
             ...prev,
             fromName: settings.marketingFromName || 'Nebiswera',
-            fromEmail: settings.marketingFromAddress || 'hello@nebiswera.ge',
-            replyTo: settings.marketingFromAddress || 'hello@nebiswera.ge',
+            fromEmail: settings.marketingFromAddress || 'levan@nebiswera.com',
+            replyTo: settings.marketingFromAddress || 'levan@nebiswera.com',
           }))
         } else if (!initialData) {
           // If editing, set defaults for empty fields
           setCampaignData((prev) => ({
             ...prev,
             fromName: prev.fromName || settings.marketingFromName || 'Nebiswera',
-            fromEmail: prev.fromEmail || settings.marketingFromAddress || 'hello@nebiswera.ge',
-            replyTo: prev.replyTo || settings.marketingFromAddress || 'hello@nebiswera.ge',
+            fromEmail: prev.fromEmail || settings.marketingFromAddress || 'levan@nebiswera.com',
+            replyTo: prev.replyTo || settings.marketingFromAddress || 'levan@nebiswera.com',
           }))
         }
       }
@@ -93,8 +93,8 @@ export function CampaignEditor({ campaignId, initialData }: CampaignEditorProps)
         setCampaignData((prev) => ({
           ...prev,
           fromName: prev.fromName || 'Nebiswera',
-          fromEmail: prev.fromEmail || 'hello@nebiswera.ge',
-          replyTo: prev.replyTo || 'hello@nebiswera.ge',
+          fromEmail: prev.fromEmail || 'levan@nebiswera.com',
+          replyTo: prev.replyTo || 'levan@nebiswera.com',
         }))
       }
     } finally {

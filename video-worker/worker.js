@@ -47,18 +47,11 @@ const s3Client = new S3Client({
 })
 
 // Quality presets - ordered from smallest to largest for memory efficiency
-// Note: 1080p disabled on Railway free tier due to memory limits
 const QUALITY_PRESETS = [
   { name: '480p', height: 480, bitrate: '1000k', audioBitrate: '96k', crf: 24 },
   { name: '720p', height: 720, bitrate: '2500k', audioBitrate: '128k', crf: 23 },
-  // { name: '1080p', height: 1080, bitrate: '5000k', audioBitrate: '128k', crf: 22 }, // Disabled: needs more RAM
+  { name: '1080p', height: 1080, bitrate: '5000k', audioBitrate: '128k', crf: 22 },
 ]
-
-// Set to true to enable 1080p (requires Railway paid tier with more RAM)
-const ENABLE_1080P = process.env.ENABLE_1080P === 'true'
-if (ENABLE_1080P) {
-  QUALITY_PRESETS.push({ name: '1080p', height: 1080, bitrate: '5000k', audioBitrate: '128k', crf: 22 })
-}
 
 let isShuttingDown = false
 let currentJobId = null
@@ -300,8 +293,8 @@ async function getR2FileSize(r2Key) {
   }
 }
 
-// Max file size for Railway free tier (100MB)
-const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '100')
+// Max file size (default 2GB for Pro tier)
+const MAX_FILE_SIZE_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '2000')
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 /**
@@ -560,6 +553,17 @@ async function start() {
   // Initial poll
   await pollForJobs()
 }
+
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+  process.exit(1)
+})
 
 // Start the worker
 start().catch((error) => {

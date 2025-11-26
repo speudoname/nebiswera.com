@@ -34,10 +34,20 @@ interface CoconutWebhookPayload {
 
 // POST /api/webhooks/coconut - Handle Coconut transcoding notifications
 export async function POST(request: NextRequest) {
+  // Log request details for debugging
+  const headers = Object.fromEntries(request.headers.entries())
+  console.log('Coconut webhook request received:', {
+    method: request.method,
+    url: request.url,
+    userAgent: headers['user-agent'],
+    contentType: headers['content-type'],
+    timestamp: new Date().toISOString(),
+  })
+
   try {
     const payload: CoconutWebhookPayload = await request.json()
 
-    console.log('Coconut webhook received:', JSON.stringify(payload, null, 2))
+    console.log('Coconut webhook payload:', JSON.stringify(payload, null, 2))
 
     const coconutJobId = payload.id
     const webinarId = payload.metadata?.webinarId

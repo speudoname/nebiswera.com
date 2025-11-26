@@ -46,12 +46,19 @@ const s3Client = new S3Client({
   },
 })
 
-// Quality presets
+// Quality presets - ordered from smallest to largest for memory efficiency
+// Note: 1080p disabled on Railway free tier due to memory limits
 const QUALITY_PRESETS = [
-  { name: '1080p', height: 1080, bitrate: '5000k', audioBitrate: '128k', crf: 22 },
-  { name: '720p', height: 720, bitrate: '2500k', audioBitrate: '128k', crf: 23 },
   { name: '480p', height: 480, bitrate: '1000k', audioBitrate: '96k', crf: 24 },
+  { name: '720p', height: 720, bitrate: '2500k', audioBitrate: '128k', crf: 23 },
+  // { name: '1080p', height: 1080, bitrate: '5000k', audioBitrate: '128k', crf: 22 }, // Disabled: needs more RAM
 ]
+
+// Set to true to enable 1080p (requires Railway paid tier with more RAM)
+const ENABLE_1080P = process.env.ENABLE_1080P === 'true'
+if (ENABLE_1080P) {
+  QUALITY_PRESETS.push({ name: '1080p', height: 1080, bitrate: '5000k', audioBitrate: '128k', crf: 22 })
+}
 
 let isShuttingDown = false
 let currentJobId = null
@@ -112,12 +119,19 @@ async function transcodeQuality(inputPath, outputDir, quality, onProgress) {
   const segmentPattern = path.join(qualityDir, 'segment-%03d.ts')
 
   return new Promise((resolve, reject) => {
+    // Memory-efficient FFmpeg settings:
+    // - threads 2: Limit CPU/memory usage
+    // - preset medium: Better compression, less memory than 'fast'
+    // - bufsize: Limit encoding buffer
     const args = [
       '-i', inputPath,
+      '-threads', '2',
       '-vf', `scale=-2:${quality.height}`,
       '-c:v', 'libx264',
-      '-preset', 'fast',
+      '-preset', 'medium',
       '-crf', quality.crf.toString(),
+      '-maxrate', quality.bitrate,
+      '-bufsize', '1M',
       '-c:a', 'aac',
       '-b:a', quality.audioBitrate,
       '-hls_time', '6',

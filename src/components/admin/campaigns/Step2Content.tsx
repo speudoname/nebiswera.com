@@ -27,26 +27,29 @@ const getAutoSaveKey = (campaignId?: string) =>
 export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) {
   const [saving, setSaving] = useState(false)
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
+  const [initialContent, setInitialContent] = useState('')
   const editorRef = useRef<MailyEditorRef>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load from localStorage on mount (only once)
+  // Load initial content from localStorage or database on mount
   useEffect(() => {
     const savedContent = localStorage.getItem(getAutoSaveKey(campaignId))
     console.log('🔍 Checking localStorage for key:', getAutoSaveKey(campaignId))
     console.log('📦 Found saved content:', savedContent ? 'Yes' : 'No')
     console.log('📝 Current data.designJson:', data.designJson ? 'Exists' : 'Empty')
 
+    // Priority: localStorage > database > empty
     if (savedContent && !data.designJson) {
       try {
         const parsed = JSON.parse(savedContent)
         console.log('✅ Loading from localStorage:', parsed)
-        if (editorRef.current && parsed.designJson) {
-          editorRef.current.setContent(parsed.designJson)
-        }
+        setInitialContent(parsed.designJson || '')
       } catch (e) {
         console.error('❌ Failed to load auto-saved content:', e)
+        setInitialContent(data.designJson ? (typeof data.designJson === 'string' ? data.designJson : JSON.stringify(data.designJson)) : '')
       }
+    } else {
+      setInitialContent(data.designJson ? (typeof data.designJson === 'string' ? data.designJson : JSON.stringify(data.designJson)) : '')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -144,9 +147,6 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
     }
   }
 
-  // Get initial content for Maily.to editor
-  const initialMailyContent = data.designJson ? (typeof data.designJson === 'string' ? data.designJson : JSON.stringify(data.designJson)) : ''
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -221,16 +221,18 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
             Changes are auto-saved every 2 seconds. Click &quot;Save & Compile&quot; to finalize and generate HTML.
           </p>
         </div>
-        {/* Completely remove wrapper - let Maily.to control its own layout */}
-        <MailyEditor
-          ref={editorRef}
-          initialContent={initialMailyContent}
-          onReady={() => {
-            console.log('✅ Maily editor ready')
-            setAutoSaveStatus('saved')
-          }}
-          onChange={triggerAutoSave}
-        />
+        {/* Only render editor after initialContent is loaded */}
+        {initialContent !== null && (
+          <MailyEditor
+            ref={editorRef}
+            initialContent={initialContent}
+            onReady={() => {
+              console.log('✅ Maily editor ready with content:', initialContent.substring(0, 50))
+              setAutoSaveStatus('saved')
+            }}
+            onChange={triggerAutoSave}
+          />
+        )}
       </div>
 
       {/* Tips */}

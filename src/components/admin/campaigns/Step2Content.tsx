@@ -30,7 +30,7 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
   const editorRef = useRef<MailyEditorRef>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (only once)
   useEffect(() => {
     const savedContent = localStorage.getItem(getAutoSaveKey(campaignId))
     console.log('🔍 Checking localStorage for key:', getAutoSaveKey(campaignId))
@@ -48,7 +48,8 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
         console.error('❌ Failed to load auto-saved content:', e)
       }
     }
-  }, [campaignId, data.designJson])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Auto-save to localStorage
   const handleAutoSave = useCallback(() => {
@@ -97,32 +98,47 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
       // Ensure unsubscribe link is present
       const hasUnsubscribeLink = html.includes('{{{ pm:unsubscribe }}}') || html.includes('{{unsubscribe}}')
 
-      if (!hasUnsubscribeLink) {
-        const htmlWithUnsubscribe = html.replace(
-          '</body>',
-          '<div style="text-align:center;padding:20px;font-size:12px;color:#666;"><a href="{{{ pm:unsubscribe }}}" style="color:#8B5CF6;">Unsubscribe</a></div></body>'
-        )
-        const textWithUnsubscribe = text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}'
+      const updates = hasUnsubscribeLink
+        ? {
+            designJson: design,
+            htmlContent: html,
+            textContent: text,
+          }
+        : {
+            designJson: design,
+            htmlContent: html.replace(
+              '</body>',
+              '<div style="text-align:center;padding:20px;font-size:12px;color:#666;"><a href="{{{ pm:unsubscribe }}}" style="color:#8B5CF6;">Unsubscribe</a></div></body>'
+            ),
+            textContent: text + '\n\nUnsubscribe: {{{ pm:unsubscribe }}}',
+          }
 
-        onUpdate({
-          designJson: design,
-          htmlContent: htmlWithUnsubscribe,
-          textContent: textWithUnsubscribe,
+      // Update local state first
+      onUpdate(updates)
+
+      // Save to database
+      if (campaignId) {
+        const res = await fetch(`/api/admin/campaigns/${campaignId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...data, ...updates }),
         })
+
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.error || 'Failed to save to database')
+        }
+
+        // Clear localStorage after successful save
+        localStorage.removeItem(getAutoSaveKey(campaignId))
+        setAutoSaveStatus('saved')
+        alert('✅ Content saved successfully!')
       } else {
-        onUpdate({
-          designJson: design,
-          htmlContent: html,
-          textContent: text,
-        })
+        alert('⚠️ Please save the campaign first (click "Save Draft" at the bottom)')
       }
-
-      // Clear localStorage after successful save
-      localStorage.removeItem(getAutoSaveKey(campaignId))
-      setAutoSaveStatus('saved')
     } catch (error) {
-      console.error('Failed to export from editor:', error)
-      alert(`Failed to compile: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('Failed to save:', error)
+      alert(`Failed to save: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setSaving(false)
     }

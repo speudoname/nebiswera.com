@@ -15,8 +15,8 @@ module.exports = {
     {
       name: 'nebiswera',
 
-      // Script to execute
-      script: '.next/standalone/server.js',
+      // Script to execute (standalone files are deployed directly to app root)
+      script: 'server.js',
 
       // Current working directory
       cwd: '/var/www/nebiswera',

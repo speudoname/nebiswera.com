@@ -27,7 +27,7 @@ const getAutoSaveKey = (campaignId?: string) =>
 export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) {
   const [saving, setSaving] = useState(false)
   const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
-  const [initialContent, setInitialContent] = useState('')
+  const [initialContent, setInitialContent] = useState<string | null>(null)
   const editorRef = useRef<MailyEditorRef>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 

@@ -10,7 +10,7 @@ Nebiswera is a bilingual (Georgian/English) learning platform built with:
 - **Email**: Postmark
 - **Icons**: Lucide React
 - **Design System**: Neomorphic with purple/lavender pastels
-- **Deployment**: Railway (standalone output)
+- **Deployment**: DigitalOcean Droplet (standalone output)
 
 ## Design System
 

@@ -1,5 +1,5 @@
-// AWS MediaConvert Video Transcoding API Integration
-// https://docs.aws.amazon.com/mediaconvert/
+// AWS MediaConvert Video Transcoding with R2 Delivery
+// Flow: Upload to S3 → MediaConvert transcodes → Copy to R2 → Serve from R2 (free bandwidth)
 
 import {
   MediaConvertClient,
@@ -11,6 +11,8 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
+  CopyObjectCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
@@ -22,10 +24,14 @@ const AWS_MEDIACONVERT_ENDPOINT = process.env.AWS_MEDIACONVERT_ENDPOINT
 const AWS_MEDIACONVERT_ROLE = process.env.AWS_MEDIACONVERT_ROLE
 const AWS_S3_BUCKET = process.env.AWS_S3_BUCKET || 'nebiswera-videos'
 
-// S3 public URL
-const S3_PUBLIC_URL = `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com`
+// R2 Configuration
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY
+const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || 'nebiswera'
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://cdn.nebiswera.com'
 
-// Initialize clients
+// Initialize S3 client for AWS
 const s3Client = new S3Client({
   region: AWS_REGION,
   credentials: {
@@ -34,6 +40,17 @@ const s3Client = new S3Client({
   },
 })
 
+// Initialize S3 client for R2
+const r2Client = new S3Client({
+  region: 'auto',
+  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: R2_ACCESS_KEY_ID!,
+    secretAccessKey: R2_SECRET_ACCESS_KEY!,
+  },
+})
+
+// Initialize MediaConvert client
 const mediaConvertClient = new MediaConvertClient({
   region: AWS_REGION,
   endpoint: AWS_MEDIACONVERT_ENDPOINT,
@@ -43,12 +60,12 @@ const mediaConvertClient = new MediaConvertClient({
   },
 })
 
-export interface MediaConvertJobConfig {
+export interface TranscodingJobConfig {
   webinarId: string
-  inputUrl: string // Can be S3 URL or HTTPS URL
+  inputUrl: string // S3 URL of original video
 }
 
-export interface MediaConvertJobResponse {
+export interface TranscodingJobResponse {
   id: string
   status: string
   progress: number
@@ -81,29 +98,21 @@ export async function createPresignedUploadUrl(
 
 /**
  * Create a transcoding job with AWS MediaConvert
- * - Outputs: HLS with 480p, 720p, 1080p + thumbnail
- * - Storage: S3
+ * Outputs HLS with 480p, 720p, 1080p + thumbnail to S3
  */
-export async function createTranscodingJob(config: MediaConvertJobConfig): Promise<MediaConvertJobResponse> {
+export async function createTranscodingJob(config: TranscodingJobConfig): Promise<TranscodingJobResponse> {
   if (!AWS_MEDIACONVERT_ROLE) {
     throw new Error('AWS_MEDIACONVERT_ROLE is not configured')
   }
 
   const outputPath = `s3://${AWS_S3_BUCKET}/processed/${config.webinarId}`
 
-  // Determine input - if it's an HTTPS URL, use it directly, otherwise assume S3
-  const inputFileUrl = config.inputUrl.startsWith('s3://')
-    ? config.inputUrl
-    : config.inputUrl.startsWith('https://')
-      ? config.inputUrl
-      : `s3://${AWS_S3_BUCKET}/${config.inputUrl}`
-
   const jobSettings: CreateJobCommandInput = {
     Role: AWS_MEDIACONVERT_ROLE,
     Settings: {
       Inputs: [
         {
-          FileInput: inputFileUrl,
+          FileInput: config.inputUrl,
           AudioSelectors: {
             'Audio Selector 1': {
               DefaultSelection: 'DEFAULT',
@@ -279,7 +288,7 @@ export async function createTranscodingJob(config: MediaConvertJobConfig): Promi
 /**
  * Get job status from MediaConvert
  */
-export async function getJobStatus(jobId: string): Promise<MediaConvertJobResponse> {
+export async function getJobStatus(jobId: string): Promise<TranscodingJobResponse> {
   const command = new GetJobCommand({ Id: jobId })
   const response = await mediaConvertClient.send(command)
 
@@ -304,22 +313,104 @@ export async function getJobStatus(jobId: string): Promise<MediaConvertJobRespon
 }
 
 /**
- * Get the public HLS URL for a webinar
+ * Copy all transcoded files from S3 to R2
+ * This is called after MediaConvert job completes
  */
-export function getHlsUrl(webinarId: string): string {
-  return `${S3_PUBLIC_URL}/processed/${webinarId}/hls/index.m3u8`
+export async function copyTranscodedToR2(webinarId: string): Promise<{ hlsUrl: string; thumbnailUrl: string }> {
+  const s3Prefix = `processed/${webinarId}/`
+  const r2Prefix = `webinars/processed/${webinarId}/`
+
+  console.log(`Copying transcoded files from S3 to R2 for webinar: ${webinarId}`)
+
+  // List all files in S3 processed folder
+  const listCommand = new ListObjectsV2Command({
+    Bucket: AWS_S3_BUCKET,
+    Prefix: s3Prefix,
+  })
+
+  const listResponse = await s3Client.send(listCommand)
+
+  if (!listResponse.Contents || listResponse.Contents.length === 0) {
+    throw new Error(`No transcoded files found in S3 for webinar: ${webinarId}`)
+  }
+
+  console.log(`Found ${listResponse.Contents.length} files to copy`)
+
+  // Copy each file from S3 to R2
+  for (const object of listResponse.Contents) {
+    if (!object.Key) continue
+
+    // Get the file from S3
+    const getCommand = new GetObjectCommand({
+      Bucket: AWS_S3_BUCKET,
+      Key: object.Key,
+    })
+
+    const getResponse = await s3Client.send(getCommand)
+
+    if (!getResponse.Body) continue
+
+    // Convert stream to buffer
+    const chunks: Uint8Array[] = []
+    const stream = getResponse.Body as AsyncIterable<Uint8Array>
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+    const buffer = Buffer.concat(chunks)
+
+    // Determine R2 key (replace S3 prefix with R2 prefix)
+    const r2Key = object.Key.replace(s3Prefix, r2Prefix)
+
+    // Determine content type
+    let contentType = 'application/octet-stream'
+    if (r2Key.endsWith('.m3u8')) {
+      contentType = 'application/vnd.apple.mpegurl'
+    } else if (r2Key.endsWith('.ts')) {
+      contentType = 'video/mp2t'
+    } else if (r2Key.endsWith('.jpg') || r2Key.endsWith('.jpeg')) {
+      contentType = 'image/jpeg'
+    } else if (r2Key.endsWith('.mp4')) {
+      contentType = 'video/mp4'
+    }
+
+    // Upload to R2
+    const putCommand = new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: r2Key,
+      Body: buffer,
+      ContentType: contentType,
+    })
+
+    await r2Client.send(putCommand)
+    console.log(`Copied: ${object.Key} → ${r2Key}`)
+  }
+
+  console.log(`Finished copying files to R2 for webinar: ${webinarId}`)
+
+  // Return R2 URLs
+  return {
+    hlsUrl: getHlsUrl(webinarId),
+    thumbnailUrl: getThumbnailUrl(webinarId),
+  }
 }
 
 /**
- * Get the public thumbnail URL for a webinar
+ * Get the public HLS URL for a webinar (from R2)
+ */
+export function getHlsUrl(webinarId: string): string {
+  return `${R2_PUBLIC_URL}/webinars/processed/${webinarId}/hls/index.m3u8`
+}
+
+/**
+ * Get the public thumbnail URL for a webinar (from R2)
  */
 export function getThumbnailUrl(webinarId: string): string {
-  return `${S3_PUBLIC_URL}/processed/${webinarId}/thumbnail.0000000.jpg`
+  return `${R2_PUBLIC_URL}/webinars/processed/${webinarId}/thumbnail.0000000.jpg`
 }
 
 /**
  * Get the S3 URL for original video
  */
-export function getOriginalUrl(webinarId: string): string {
-  return `${S3_PUBLIC_URL}/originals/${webinarId}/video.mp4`
+export function getOriginalS3Url(webinarId: string): string {
+  return `s3://${AWS_S3_BUCKET}/originals/${webinarId}/video.mp4`
 }

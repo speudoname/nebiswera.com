@@ -251,7 +251,7 @@ enum SuppressionReason {
 - [x] Transition SCHEDULED to SENDING status
 - [x] Process in batches with 1 second delay between batches
 - [x] Security: CRON_SECRET header verification
-- [ ] Configure Railway cron or external trigger (deployment task)
+- [ ] Configure cron job on DigitalOcean droplet or external trigger (deployment task)
 
 ---
 

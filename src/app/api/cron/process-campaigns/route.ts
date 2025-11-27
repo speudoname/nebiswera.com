@@ -12,7 +12,7 @@ const CRON_SECRET = process.env.CRON_SECRET
  * POST /api/cron/process-campaigns
  *
  * Processes scheduled and sending campaigns.
- * Should be called by a cron job (Railway, Vercel Cron, or external service)
+ * Should be called by a cron job (server cron, or external service)
  *
  * Security:
  * - Requires CRON_SECRET header to prevent unauthorized access

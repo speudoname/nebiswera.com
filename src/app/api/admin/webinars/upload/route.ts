@@ -3,13 +3,15 @@ import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import {
   createPresignedUploadUrl,
-  getWebinarOriginalKey,
-  getPublicUrl,
-} from '@/lib/storage/r2'
-import { createTranscodingJob, getJobStatus, getHlsUrl, getThumbnailUrl } from '@/lib/video/coconut'
+  createTranscodingJob,
+  getJobStatus,
+  getHlsUrl,
+  getThumbnailUrl,
+  copyTranscodedToR2,
+} from '@/lib/video/mediaconvert'
 import type { NextRequest } from 'next/server'
 
-// POST /api/admin/webinars/upload - Get a presigned URL for R2 upload
+// POST /api/admin/webinars/upload - Get a presigned URL for S3 upload
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -32,14 +34,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
     }
 
-    // Get file extension from filename or default to mp4
-    const extension = fileName?.split('.').pop()?.toLowerCase() || 'mp4'
-    const key = getWebinarOriginalKey(webinarId, extension)
     const mimeType = contentType || 'video/mp4'
 
-    // Create presigned upload URL (valid for 2 hours for large uploads)
-    const uploadUrl = await createPresignedUploadUrl(key, mimeType, 7200)
-    const originalUrl = getPublicUrl(key)
+    // Create presigned URL for S3 upload
+    const { uploadUrl, s3Key, s3Url } = await createPresignedUploadUrl(webinarId, mimeType, 7200)
 
     // Create or update processing job
     const job = await prisma.videoProcessingJob.upsert({
@@ -48,13 +46,13 @@ export async function POST(request: NextRequest) {
         webinarId,
         status: 'PENDING',
         progress: 0,
-        originalUrl,
+        originalUrl: s3Url,
         originalSize: fileSize ? BigInt(fileSize) : null,
       },
       update: {
         status: 'PENDING',
         progress: 0,
-        originalUrl,
+        originalUrl: s3Url,
         originalSize: fileSize ? BigInt(fileSize) : null,
         error: null,
         startedAt: null,
@@ -62,6 +60,7 @@ export async function POST(request: NextRequest) {
         hlsUrl: null,
         thumbnailUrl: null,
         duration: null,
+        coconutJobId: null,
       },
     })
 
@@ -78,9 +77,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       uploadUrl,
-      originalUrl,
+      originalUrl: s3Url,
       jobId: job.id,
-      key,
+      key: s3Key,
     })
   } catch (error) {
     console.error('Failed to create upload URL:', error)
@@ -91,7 +90,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/webinars/upload - Confirm upload is complete and trigger Coconut transcoding
+// PUT /api/admin/webinars/upload - Confirm upload and start MediaConvert transcoding
 export async function PUT(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -114,18 +113,18 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
     }
 
-    // Create Coconut transcoding job
-    const coconutJob = await createTranscodingJob({
+    // Create MediaConvert transcoding job
+    const transcodingJob = await createTranscodingJob({
       webinarId,
       inputUrl: existingJob.originalUrl,
     })
 
-    // Update job with Coconut job ID and set status to PROCESSING
+    // Update job with transcoding job ID and set status to PROCESSING
     const job = await prisma.videoProcessingJob.update({
       where: { id: jobId },
       data: {
         status: 'PROCESSING',
-        coconutJobId: coconutJob.id,
+        coconutJobId: transcodingJob.id, // Using coconutJobId field for MediaConvert job ID
         startedAt: new Date(),
         updatedAt: new Date(),
       },
@@ -134,9 +133,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       jobId: job.id,
-      coconutJobId: coconutJob.id,
+      transcodingJobId: transcodingJob.id,
       status: job.status,
-      message: 'Upload confirmed. Video is being transcoded by Coconut.',
+      message: 'Upload confirmed. Video is being transcoded by AWS MediaConvert.',
     })
   } catch (error) {
     console.error('Failed to confirm upload:', error)
@@ -147,7 +146,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// GET /api/admin/webinars/upload?webinarId=xxx - Get video processing status
+// GET /api/admin/webinars/upload?webinarId=xxx - Get video processing status with progress
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -169,45 +168,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No video processing job found' }, { status: 404 })
     }
 
-    // If job is still PROCESSING and has a Coconut job ID, poll Coconut API directly
-    // This serves as a fallback when webhooks fail
+    // If job is PROCESSING, poll MediaConvert for real-time progress
     if (job.status === 'PROCESSING' && job.coconutJobId) {
       try {
-        const coconutStatus = await getJobStatus(job.coconutJobId)
-        console.log(`Coconut status for ${job.coconutJobId}:`, coconutStatus.status, `progress: ${coconutStatus.progress}%`)
+        const mcStatus = await getJobStatus(job.coconutJobId)
+        console.log(`MediaConvert status for ${job.coconutJobId}: ${mcStatus.status}, progress: ${mcStatus.progress}%`)
 
-        // Get progress - Coconut may return progress as number, string, or undefined
-        let coconutProgress = 0
-        if (coconutStatus.progress !== undefined && coconutStatus.progress !== null) {
-          // Handle string like "50%" or number like 50
-          const progressStr = String(coconutStatus.progress).replace('%', '')
-          coconutProgress = parseInt(progressStr, 10) || 0
-        } else if (coconutStatus.status === 'completed' || coconutStatus.status === 'job.completed') {
-          coconutProgress = 100
+        // Update progress in database if changed
+        if (mcStatus.progress !== job.progress) {
+          await prisma.videoProcessingJob.update({
+            where: { id: job.id },
+            data: { progress: Math.round(mcStatus.progress) },
+          })
+          job = { ...job, progress: Math.round(mcStatus.progress) }
         }
 
-        // Update progress from Coconut if changed
-        if (coconutProgress !== job.progress) {
-          try {
-            await prisma.videoProcessingJob.update({
-              where: { id: job.id },
-              data: { progress: Math.round(coconutProgress) },
-            })
-          } catch (updateError) {
-            console.error('Failed to update progress:', updateError)
-            // Continue anyway - progress display is not critical
-          }
-          job = { ...job, progress: Math.round(coconutProgress) }
-        }
+        // Check if MediaConvert job completed
+        if (mcStatus.status === 'COMPLETE') {
+          console.log(`MediaConvert job completed for webinar: ${webinarId}. Copying to R2...`)
 
-        // Check if Coconut job completed (status can be 'completed' or 'job.completed')
-        if (coconutStatus.status === 'completed' || coconutStatus.status === 'job.completed') {
-          const duration = coconutStatus.input?.metadata?.duration
-            ? Math.round(coconutStatus.input.metadata.duration)
-            : null
-
-          const hlsUrl = getHlsUrl(webinarId)
-          const thumbnailUrl = getThumbnailUrl(webinarId)
+          // Copy transcoded files from S3 to R2
+          const { hlsUrl, thumbnailUrl } = await copyTranscodedToR2(webinarId)
 
           // Update processing job
           await prisma.videoProcessingJob.update({
@@ -217,7 +198,6 @@ export async function GET(request: NextRequest) {
               progress: 100,
               hlsUrl,
               thumbnailUrl,
-              duration,
               completedAt: new Date(),
               error: null,
             },
@@ -230,13 +210,11 @@ export async function GET(request: NextRequest) {
               videoStatus: 'ready',
               hlsUrl,
               thumbnailUrl,
-              videoDuration: duration,
             },
           })
 
-          console.log(`Video completed via polling for webinar: ${webinarId}`)
+          console.log(`Video ready for webinar: ${webinarId}`)
 
-          // Return completed status
           return NextResponse.json({
             jobId: job.id,
             status: 'COMPLETED',
@@ -244,7 +222,7 @@ export async function GET(request: NextRequest) {
             originalUrl: job.originalUrl,
             hlsUrl,
             thumbnailUrl,
-            duration,
+            duration: null,
             error: null,
             startedAt: job.startedAt,
             completedAt: new Date(),
@@ -252,9 +230,9 @@ export async function GET(request: NextRequest) {
           })
         }
 
-        // Check if Coconut job failed (status can be 'failed' or 'job.failed')
-        if (coconutStatus.status === 'failed' || coconutStatus.status === 'job.failed') {
-          const errorMessage = 'Coconut transcoding failed'
+        // Check if job failed
+        if (mcStatus.status === 'ERROR' || mcStatus.status === 'CANCELED') {
+          const errorMessage = mcStatus.errorMessage || 'MediaConvert transcoding failed'
 
           await prisma.videoProcessingJob.update({
             where: { id: job.id },
@@ -284,12 +262,13 @@ export async function GET(request: NextRequest) {
             videoStatus: 'error',
           })
         }
-      } catch (coconutError) {
-        // If Coconut API fails, just log and continue with local status
-        console.error('Failed to poll Coconut API:', coconutError)
+      } catch (pollError) {
+        console.error('Failed to poll MediaConvert:', pollError)
+        // Continue with local status if polling fails
       }
     }
 
+    // Return current status
     const webinar = await prisma.webinar.findUnique({
       where: { id: webinarId },
       select: {

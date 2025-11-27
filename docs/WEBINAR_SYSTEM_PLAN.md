@@ -5,7 +5,7 @@
 Build an internal webinar platform similar to eWebinar, integrated into the Nebiswera admin panel. The system supports evergreen (pre-recorded simulated live), on-demand replays, and eventually live streaming with real-time interaction.
 
 **Video Infrastructure:** Cloudflare Stream (already available)
-**Real-time Chat:** SSE + Redis on Railway
+**Real-time Chat:** SSE + Redis on DigitalOcean
 **Email Notifications:** Existing Postmark integration
 **Database:** PostgreSQL with Prisma (existing)
 **Database Schema:** `webinar` (separate PostgreSQL schema, like `crm` for contacts)

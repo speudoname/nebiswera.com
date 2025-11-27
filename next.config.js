@@ -14,18 +14,35 @@ const nextConfig = {
   // Optimize images
   images: {
     formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.nebiswera.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image.mux.com',
+      },
+    ],
   },
 
   // Reduce bundle size by excluding source maps in production
   productionBrowserSourceMaps: false,
 
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+
   // Experimental optimizations
   experimental: {
     // Optimize package imports
-    optimizePackageImports: ['next-intl'],
+    optimizePackageImports: ['next-intl', 'lucide-react'],
   },
 
-  // Security headers
+  // Security headers and caching
   async headers() {
     return [
       {
@@ -51,6 +68,26 @@ const nextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(self), microphone=(self), geolocation=()',
+          },
+        ],
+      },
+      {
+        // Cache static assets (JS, CSS, fonts, images) for 1 year
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        // Cache images for 30 days with revalidation
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=2592000, must-revalidate',
           },
         ],
       },

@@ -64,6 +64,7 @@ export function HomeClient() {
             muted
             loop
             playsInline
+            preload="metadata"
             // @ts-expect-error - fetchPriority is valid but not in React types yet
             fetchPriority="high"
             poster="https://cdn.nebiswera.com/hero-video-poster.jpg"

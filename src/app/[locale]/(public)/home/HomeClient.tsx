@@ -4,23 +4,32 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
+import { HeroVideo, type HeroVideoRef } from '@/components/ui/HeroVideo'
 import { ArrowRight, BookOpen, Volume2, VolumeX } from 'lucide-react'
+
+// Bunny.net video URLs
+const HERO_VIDEO = {
+  hls: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/playlist.m3u8',
+  mp4: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/play_720p.mp4',
+  poster: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg',
+}
 
 export function HomeClient() {
   const t = useTranslations('home')
   const locale = useLocale()
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<HeroVideoRef>(null)
   const [isMuted, setIsMuted] = useState(true)
   const [showButton, setShowButton] = useState(true)
   const [hasUnmuted, setHasUnmuted] = useState(false)
 
   function toggleMute() {
     if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted
-      setIsMuted(videoRef.current.muted)
+      const newMuted = !videoRef.current.muted
+      videoRef.current.setMuted(newMuted)
+      setIsMuted(newMuted)
 
       // If unmuting for the first time, hide the button
-      if (!videoRef.current.muted && !hasUnmuted) {
+      if (!newMuted && !hasUnmuted) {
         setHasUnmuted(true)
         setShowButton(false)
       }
@@ -53,24 +62,17 @@ export function HomeClient() {
         </h2>
 
         {/* Video */}
-        <div className="mb-6 md:mb-8 w-full max-w-xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video relative">
-          <video
+        <div
+          className="mb-6 md:mb-8 w-full max-w-xl mx-auto rounded-neu shadow-neu overflow-hidden aspect-video relative"
+          onClick={handleVideoClick}
+        >
+          <HeroVideo
             ref={videoRef}
-            onClick={handleVideoClick}
+            hlsSrc={HERO_VIDEO.hls}
+            mp4Fallback={HERO_VIDEO.mp4}
+            poster={HERO_VIDEO.poster}
             className="w-full h-full object-cover cursor-pointer"
-            width={1280}
-            height={720}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            // @ts-expect-error - fetchPriority is valid but not in React types yet
-            fetchPriority="high"
-            poster="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg"
-          >
-            <source src="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/play_720p.mp4" type="video/mp4" />
-          </video>
+          />
 
           {/* Unmute Button */}
           {showButton && (

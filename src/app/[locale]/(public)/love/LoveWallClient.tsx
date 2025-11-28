@@ -150,7 +150,7 @@ export function LoveWallClient() {
                     src={testimonial.videoUrl}
                     poster={testimonial.videoThumbnail || undefined}
                     controls
-                    preload="metadata"
+                    preload="auto"
                     className="w-full aspect-video bg-neu-dark/20"
                     playsInline
                   >

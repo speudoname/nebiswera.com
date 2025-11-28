@@ -63,7 +63,7 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
             controls
             poster={videoThumbnail || undefined}
             className="w-full h-full object-cover"
-            preload="metadata"
+            preload="auto"
             playsInline
           >
             <source src={videoUrl} type="video/mp4" />

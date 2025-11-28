@@ -34,7 +34,6 @@ export async function queueNotification(
   })
 
   if (!notification) {
-    console.log(`No enabled notification found for trigger: ${trigger}`)
     return
   }
 
@@ -61,7 +60,6 @@ export async function queueNotification(
   })
 
   if (alreadySent) {
-    console.log('Notification already sent:', notification.id, registrationId)
     return
   }
 
@@ -96,7 +94,6 @@ export async function queueNotification(
     },
   })
 
-  console.log(`Notification queued for ${sendAt.toISOString()}:`, trigger)
 }
 
 /**
@@ -187,7 +184,6 @@ export async function sendNotificationNow(
       },
     })
 
-    console.log('Notification sent:', notification.trigger, registration.email)
     return true
   } catch (error) {
     console.error('Failed to send notification:', error)
@@ -236,8 +232,6 @@ export async function processNotificationQueue(): Promise<number> {
     },
     take: 50, // Process in batches
   })
-
-  console.log(`Processing ${pending.length} pending notifications`)
 
   let sentCount = 0
 

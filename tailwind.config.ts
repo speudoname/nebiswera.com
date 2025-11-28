@@ -4,7 +4,7 @@ import type { Config } from 'tailwindcss'
  * Tailwind Configuration
  *
  * This file extends Tailwind with our design system tokens.
- * The source of truth for all design values is in src/styles/theme.ts
+ * Design tokens are defined in this file.
  *
  * DO NOT add inline colors, fonts, or sizes in components.
  * All values should reference the tokens defined here.
@@ -69,7 +69,6 @@ const config: Config = {
           light: '#FFFFFF',
           dark: '#E8E6EB',
           shadow: '#B8B4BD',
-          highlight: '#FFFFFF',
         },
         // Text colors (Dark Purple #4A3060)
         text: {
@@ -121,15 +120,6 @@ const config: Config = {
       },
 
       // =======================================================================
-      // TEXT SHADOWS
-      // =======================================================================
-      textShadow: {
-        'hero': '2px 2px 8px rgba(74, 48, 96, 0.4)',
-        'hero-lg': '3px 3px 12px rgba(74, 48, 96, 0.5)',
-        'none': 'none',
-      },
-
-      // =======================================================================
       // BORDER RADIUS - Softer for neomorphic
       // =======================================================================
       borderRadius: {
@@ -137,15 +127,6 @@ const config: Config = {
         'neu': '12px',
         'neu-md': '16px',
         'neu-lg': '20px',
-        'neu-xl': '24px',
-      },
-
-      // =======================================================================
-      // BACKGROUND GRADIENTS
-      // =======================================================================
-      backgroundImage: {
-        'neu-gradient': 'linear-gradient(145deg, #FFFFFF, #EFEDF1)',
-        'neu-gradient-reverse': 'linear-gradient(145deg, #EFEDF1, #FFFFFF)',
       },
 
       // =======================================================================
@@ -177,29 +158,6 @@ const config: Config = {
         wide: '0.025em',
         wider: '0.05em',
         widest: '0.1em',
-      },
-
-      // =======================================================================
-      // Z-INDEX
-      // =======================================================================
-      zIndex: {
-        '60': '60',
-        '70': '70',
-        '80': '80',
-        '90': '90',
-        '100': '100',
-        '200': '200',
-        '300': '300',
-        '999': '999',
-      },
-
-      // =======================================================================
-      // TRANSITIONS
-      // =======================================================================
-      transitionDuration: {
-        'fast': '150ms',
-        'normal': '200ms',
-        'slow': '300ms',
       },
 
       // =======================================================================

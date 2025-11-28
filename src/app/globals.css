@@ -107,19 +107,6 @@
   @apply text-xs text-primary-600 leading-normal;
 }
 
-/* Text shadow utilities */
-@utility text-shadow-hero {
-  text-shadow: 2px 2px 8px rgba(74, 48, 96, 0.4);
-}
-
-@utility text-shadow-hero-lg {
-  text-shadow: 3px 3px 12px rgba(74, 48, 96, 0.5);
-}
-
-@utility text-shadow-none {
-  text-shadow: none;
-}
-
 /**
  * GLOBAL TYPOGRAPHY STYLES
  *
@@ -283,21 +270,3 @@
   }
 }
 
-/* Maily.to editor fixes */
-.maily-editor-wrapper {
-  overflow: visible !important;
-  min-height: 600px;
-}
-
-.maily-editor-wrapper > div {
-  overflow: visible !important;
-}
-
-/* Ensure Maily.to toolbar and add section buttons are visible */
-#mly-editor {
-  overflow: visible !important;
-}
-
-#mly-editor > div {
-  overflow: visible !important;
-}

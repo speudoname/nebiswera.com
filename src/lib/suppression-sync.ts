@@ -139,7 +139,6 @@ export async function syncSuppressions(): Promise<SyncResult> {
     }
 
     // Step 1: Fetch from Postmark and update our DB
-    console.log('Fetching suppressions from Postmark...')
     const postmarkSuppressions = await fetchPostmarkSuppressions(settings.marketingServerToken)
     result.fromPostmark.total = postmarkSuppressions.length
 
@@ -166,7 +165,6 @@ export async function syncSuppressions(): Promise<SyncResult> {
     }
 
     // Step 2: Push our unsubscribes to Postmark
-    console.log('Pushing local suppressions to Postmark...')
     const localSuppressed = await prisma.contact.findMany({
       where: {
         OR: [

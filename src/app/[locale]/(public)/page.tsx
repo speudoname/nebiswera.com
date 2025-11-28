@@ -31,45 +31,54 @@ export default async function HomePage({
   const t = await getTranslations('home')
 
   return (
-    <div className="overflow-x-hidden">
-      {/* Hero Section */}
-      <HomeClient />
+    <>
+      {/* Preload hero poster for faster LCP - only on home page */}
+      <link
+        rel="preload"
+        as="image"
+        href="https://cdn.nebiswera.com/hero-video-poster.jpg"
+        fetchPriority="high"
+      />
+      <div className="overflow-x-hidden">
+        {/* Hero Section */}
+        <HomeClient />
 
-      {/* Secret Reveal */}
-      <SecretRevealSection />
+        {/* Secret Reveal */}
+        <SecretRevealSection />
 
-      {/* Testimonials #1 */}
-      <TestimonialShowcase count={3} darkBackground={true} />
+        {/* Testimonials #1 */}
+        <TestimonialShowcase count={3} darkBackground={true} />
 
-      {/* Problem Awareness */}
-      <ProblemAwarenessSection />
+        {/* Problem Awareness */}
+        <ProblemAwarenessSection />
 
-      {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
-      <WhatItIsNotSection />
+        {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
+        <WhatItIsNotSection />
 
-      {/* Testimonials #2 */}
-      <TestimonialShowcase count={2} darkBackground={true} />
+        {/* Testimonials #2 */}
+        <TestimonialShowcase count={2} darkBackground={true} />
 
-      {/* Transformation Promise */}
-      <TransformationPromiseSection />
+        {/* Transformation Promise */}
+        <TransformationPromiseSection />
 
-      {/* 3-Day Workshop Offer - Part 1 (Header, Schedule, Stats) */}
-      <WorkshopOfferSection />
+        {/* 3-Day Workshop Offer - Part 1 (Header, Schedule, Stats) */}
+        <WorkshopOfferSection />
 
-      {/* Philosophy (3 Steps) */}
-      <PhilosophySection />
+        {/* Philosophy (3 Steps) */}
+        <PhilosophySection />
 
-      {/* Testimonials #3 - Videos preferred (between stats and three things) */}
-      <TestimonialShowcase count={3} type="VIDEO" />
+        {/* Testimonials #3 - Videos preferred (between stats and three things) */}
+        <TestimonialShowcase count={3} type="VIDEO" />
 
-      {/* Workshop Three Things (სამი რამ რაც ხდება ვორქშოფის დროს) */}
-      <WorkshopThreeThings />
+        {/* Workshop Three Things (სამი რამ რაც ხდება ვორქშოფის დროს) */}
+        <WorkshopThreeThings />
 
-      {/* Social Proof (Stats + Link to all testimonials) */}
-      <SocialProofSection />
+        {/* Social Proof (Stats + Link to all testimonials) */}
+        <SocialProofSection />
 
-      {/* Final CTA */}
-      <CTASection />
-    </div>
+        {/* Final CTA */}
+        <CTASection />
+      </div>
+    </>
   )
 }

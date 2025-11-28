@@ -85,25 +85,18 @@ export async function PATCH(
     if (body.audioUrl !== undefined) updateData.audioUrl = body.audioUrl
     if (body.videoUrl !== undefined) {
       updateData.videoUrl = body.videoUrl
-      // Set video status to pending when new video is uploaded
+      // Bunny handles transcoding automatically - video is processing/ready
       if (body.videoUrl) {
-        updateData.videoStatus = 'pending'
+        updateData.videoStatus = 'ready'
       }
     }
+    if (body.videoThumbnail !== undefined) updateData.videoThumbnail = body.videoThumbnail
     if (body.type !== undefined) updateData.type = body.type
 
     const testimonial = await prisma.testimonial.update({
       where: { id },
       data: updateData,
     })
-
-    // Trigger transcoding asynchronously when a new video is uploaded
-    if (body.videoUrl && body.videoUrl.length > 0) {
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://nebiswera.ge'
-      fetch(`${baseUrl}/api/testimonials/${id}/process`, {
-        method: 'POST',
-      }).catch(err => console.error('Failed to start transcoding:', err))
-    }
 
     return NextResponse.json({ success: true, testimonial })
   } catch (error: any) {

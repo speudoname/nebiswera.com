@@ -20,16 +20,15 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    // Default: only show APPROVED testimonials
-    // Admins can explicitly filter by status, or pass status="" to see all
-    if (status !== null && isAdmin) {
-      // Admin explicitly filtering by status
+    // Admin can see all testimonials, non-admins only see APPROVED
+    if (isAdmin) {
+      // Admin: filter by status if explicitly provided, otherwise show all
       if (status) {
         where.status = status
       }
-      // If status is "", don't set filter (show all)
+      // If no status param or empty, show all statuses for admin
     } else {
-      // No status param, or non-admin: show APPROVED only
+      // Non-admin: always show only APPROVED
       where.status = 'APPROVED'
     }
 
@@ -60,7 +59,7 @@ export async function GET(request: NextRequest) {
       prisma.testimonial.count({ where }),
     ])
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       testimonials,
       pagination: {
         page,
@@ -69,6 +68,13 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(total / limit),
       },
     })
+
+    // Prevent caching of API responses
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+
+    return response
   } catch (error: any) {
     console.error('Error fetching testimonials:', error)
     return NextResponse.json({ error: 'Failed to fetch testimonials' }, { status: 500 })

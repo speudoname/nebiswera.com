@@ -71,8 +71,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       title,
       slug,
       description,
-      cloudflareVideoId,
-      cloudflareVideoUid,
       videoDuration,
       thumbnailUrl,
       hlsUrl,
@@ -93,8 +91,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
-    if (cloudflareVideoId !== undefined) updateData.cloudflareVideoId = cloudflareVideoId
-    if (cloudflareVideoUid !== undefined) updateData.cloudflareVideoUid = cloudflareVideoUid
     if (videoDuration !== undefined) updateData.videoDuration = videoDuration
     if (thumbnailUrl !== undefined) updateData.thumbnailUrl = thumbnailUrl
     if (hlsUrl !== undefined) updateData.hlsUrl = hlsUrl

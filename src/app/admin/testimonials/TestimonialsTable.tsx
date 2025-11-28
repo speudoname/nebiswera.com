@@ -112,10 +112,20 @@ export function TestimonialsTable() {
     if (!confirm('Are you sure you want to delete this testimonial?')) return
 
     try {
-      await fetch(`/api/testimonials/${id}`, { method: 'DELETE' })
-      fetchTestimonials()
+      const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        // Optimistic update - remove from local state immediately
+        setTestimonials(prev => prev.filter(t => t.id !== id))
+        setTotal(prev => prev - 1)
+        // Then refresh from server to get accurate data
+        fetchTestimonials()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete testimonial')
+      }
     } catch (error) {
       console.error('Error deleting testimonial:', error)
+      alert('Failed to delete testimonial')
     }
   }
 

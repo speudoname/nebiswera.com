@@ -67,9 +67,9 @@ export function HomeClient() {
             preload="auto"
             // @ts-expect-error - fetchPriority is valid but not in React types yet
             fetchPriority="high"
-            poster="https://cdn.nebiswera.com/hero-video-poster.jpg"
+            poster="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg"
           >
-            <source src="https://cdn.nebiswera.com/hero-video.mp4" type="video/mp4" />
+            <source src="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/play_720p.mp4" type="video/mp4" />
           </video>
 
           {/* Unmute Button */}

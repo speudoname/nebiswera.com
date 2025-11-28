@@ -4,8 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Hls from 'hls.js'
 
 interface WebinarPlayerProps {
-  videoUid?: string // Legacy Cloudflare Stream ID
-  hlsUrl?: string // R2 HLS URL
+  hlsUrl: string
   playbackMode: 'simulated_live' | 'on_demand' | 'replay'
   allowSeeking: boolean
   startPosition: number
@@ -18,7 +17,6 @@ interface WebinarPlayerProps {
 }
 
 export function WebinarPlayer({
-  videoUid,
   hlsUrl,
   playbackMode,
   allowSeeking,
@@ -40,9 +38,8 @@ export function WebinarPlayer({
   const lastReportedTime = useRef(0)
   const lastValidTime = useRef(0)
 
-  // Determine video source type
-  const isHLS = !!hlsUrl
-  const videoSource = hlsUrl || (videoUid ? `https://customer-71c315d5a485ec66.cloudflarestream.com/${videoUid}/manifest/video.m3u8` : '')
+  // Video source
+  const videoSource = hlsUrl
 
   // Initialize HLS player
   useEffect(() => {

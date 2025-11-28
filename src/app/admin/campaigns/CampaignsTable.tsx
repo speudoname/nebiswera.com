@@ -99,6 +99,10 @@ export function CampaignsTable() {
       })
       if (res.ok) {
         setDeleteConfirm(null)
+        // Optimistic update - remove from local state immediately
+        setCampaigns(prev => prev.filter(c => c.id !== id))
+        setPagination(prev => ({ ...prev, total: prev.total - 1 }))
+        // Then refresh from server to get accurate data
         fetchCampaigns()
       } else {
         const data = await res.json()

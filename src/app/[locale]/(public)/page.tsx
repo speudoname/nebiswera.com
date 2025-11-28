@@ -36,7 +36,7 @@ export default async function HomePage({
       <link
         rel="preload"
         as="image"
-        href="https://cdn.nebiswera.com/hero-video-poster.jpg"
+        href="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg"
         fetchPriority="high"
       />
       <div className="overflow-x-hidden">

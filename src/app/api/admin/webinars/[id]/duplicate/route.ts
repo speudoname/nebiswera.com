@@ -62,8 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         title: `${original.title} (Copy)`,
         slug: newSlug,
         description: original.description,
-        cloudflareVideoId: original.cloudflareVideoId,
-        cloudflareVideoUid: original.cloudflareVideoUid,
+        hlsUrl: original.hlsUrl,
         videoDuration: original.videoDuration,
         thumbnailUrl: original.thumbnailUrl,
         landingPagePath: null, // Don't copy page paths

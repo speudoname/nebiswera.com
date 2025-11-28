@@ -165,7 +165,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         id: webinar.id,
         title: webinar.title,
         description: webinar.description,
-        videoUid: webinar.cloudflareVideoUid,
+        hlsUrl: webinar.hlsUrl,
         duration: webinar.videoDuration,
         thumbnailUrl: webinar.thumbnailUrl,
       },

@@ -11,8 +11,7 @@ interface WebinarData {
   id: string
   title: string
   description?: string
-  videoUid?: string // Legacy Cloudflare Stream ID
-  hlsUrl?: string // R2 HLS URL
+  hlsUrl: string
   duration?: number
   thumbnailUrl?: string
   presenterName?: string
@@ -207,7 +206,6 @@ export function WebinarRoom({
         {/* Player */}
         <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-neu-lg">
           <WebinarPlayer
-            videoUid={webinar.videoUid}
             hlsUrl={webinar.hlsUrl}
             playbackMode={playback.mode}
             allowSeeking={playback.allowSeeking}

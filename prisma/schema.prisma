@@ -607,12 +607,8 @@ model Webinar {
   slug              String        @unique
   description       String?       @db.Text
 
-  // Video (Cloudflare Stream - legacy)
-  cloudflareVideoId String?       // Cloudflare Stream video ID
-  cloudflareVideoUid String?      // Cloudflare Stream video UID (for signed URLs)
-
-  // Video (R2 + FFmpeg HLS)
-  hlsUrl            String?       // R2 URL to HLS master playlist (master.m3u8)
+  // Video (Bunny.net Stream)
+  hlsUrl            String?       // Bunny Stream HLS URL (playlist.m3u8)
   thumbnailUrl      String?       // Thumbnail image URL
   videoDuration     Int?          // Duration in seconds
   videoStatus       String?       // 'processing' | 'ready' | 'failed'
@@ -1154,7 +1150,7 @@ enum WebinarAnalyticsEventType {
 }
 
 // ===========================================
-// Video Processing (R2 + FFmpeg)
+// Video Processing (Bunny.net Stream)
 // ===========================================
 
 model VideoProcessingJob {
@@ -1166,15 +1162,15 @@ model VideoProcessingJob {
   progress        Int                   @default(0) // 0-100
 
   // Source
-  originalUrl     String                // R2 URL of original file
+  originalUrl     String                // Original upload URL
   originalSize    BigInt?               // File size in bytes
 
-  // External transcoding service (AWS MediaConvert job ID)
-  coconutJobId    String?               // Legacy field name, now stores MediaConvert job ID
+  // Bunny.net Stream video ID
+  bunnyVideoId    String?               @map("coconutJobId") // Mapped to preserve existing column
 
   // Output (populated after processing)
-  hlsUrl          String?               // R2 URL to master.m3u8
-  thumbnailUrl    String?               // R2 URL to thumbnail
+  hlsUrl          String?               // Bunny Stream HLS URL
+  thumbnailUrl    String?               // Bunny Stream thumbnail URL
   duration        Int?                  // Duration in seconds
 
   // Processing info
@@ -1188,7 +1184,7 @@ model VideoProcessingJob {
 
   @@index([status])
   @@index([createdAt])
-  @@index([coconutJobId])
+  @@index([bunnyVideoId])
   @@schema("webinar")
   @@map("video_processing_jobs")
 }

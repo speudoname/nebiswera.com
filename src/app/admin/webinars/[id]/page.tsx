@@ -37,7 +37,6 @@ export default async function EditWebinarPage({ params }: PageProps) {
     timezone: webinar.timezone,
     completionPercent: webinar.completionPercent,
     status: webinar.status,
-    cloudflareVideoId: webinar.cloudflareVideoId || undefined,
     videoDuration: webinar.videoDuration || undefined,
     thumbnailUrl: webinar.thumbnailUrl || undefined,
     hlsUrl: webinar.hlsUrl || undefined,

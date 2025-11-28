@@ -24,7 +24,7 @@ interface WebinarAccessData {
     id: string
     title: string
     description: string | null
-    videoUid: string
+    hlsUrl: string
     duration: number | null
     thumbnailUrl: string | null
     presenterName?: string
@@ -111,7 +111,7 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
             webinar={{
               id: '',
               title: 'Loading...',
-              videoUid: '',
+              hlsUrl: '',
             }}
             access={{
               registrationId: '',
@@ -239,7 +239,7 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
             id: data.webinar.id,
             title: data.webinar.title,
             description: data.webinar.description || undefined,
-            videoUid: data.webinar.videoUid,
+            hlsUrl: data.webinar.hlsUrl,
             duration: data.webinar.duration || undefined,
             thumbnailUrl: data.webinar.thumbnailUrl || undefined,
             presenterName: data.webinar.presenterName,

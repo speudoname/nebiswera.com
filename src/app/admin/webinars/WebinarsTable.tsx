@@ -105,6 +105,10 @@ export function WebinarsTable() {
       })
       if (res.ok) {
         setDeleteConfirm(null)
+        // Optimistic update - remove from local state immediately
+        setWebinars(prev => prev.filter(w => w.id !== id))
+        setPagination(prev => ({ ...prev, total: prev.total - 1 }))
+        // Then refresh from server to get accurate data
         fetchWebinars()
       } else {
         const data = await res.json()

@@ -30,20 +30,19 @@ export function Step3AudioVideo({
     setUploadProgress(0)
 
     try {
-      const { uploadFileToR2 } = await import('@/lib/storage/upload-helpers')
-      const url = await uploadFileToR2(blob, type)
-
-      // Generate and upload thumbnail for videos
+      let url: string
       let thumbnailUrl: string | undefined
+
       if (type === 'video') {
-        try {
-          const { generateVideoThumbnail } = await import('@/lib/storage/video-thumbnail')
-          const thumbnailBlob = await generateVideoThumbnail(blob, 1)
-          thumbnailUrl = await uploadFileToR2(thumbnailBlob, 'image')
-        } catch (error) {
-          console.error('Failed to generate video thumbnail:', error)
-          // Continue without thumbnail - not critical
-        }
+        // Upload video to Bunny Stream - it handles transcoding and thumbnails
+        const { uploadVideoToBunny } = await import('@/lib/storage/upload-helpers')
+        const result = await uploadVideoToBunny(blob, `testimonial-${testimonialId}`)
+        url = result.hlsUrl
+        thumbnailUrl = result.thumbnailUrl
+      } else {
+        // Upload audio to R2
+        const { uploadFileToR2 } = await import('@/lib/storage/upload-helpers')
+        url = await uploadFileToR2(blob, type)
       }
 
       const updateRes = await fetch(`/api/testimonials/${testimonialId}`, {

@@ -36,8 +36,7 @@ interface WebinarData {
   timezone: string
   completionPercent: number
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-  cloudflareVideoId?: string // Legacy
-  hlsUrl?: string // R2 HLS URL
+  hlsUrl?: string
   videoDuration?: number
   thumbnailUrl?: string
   videoStatus?: string // 'processing' | 'ready' | 'failed'
@@ -617,14 +616,12 @@ function VideoTab({
   onSave: () => Promise<void>
 }) {
   const handleUploadComplete = async (videoData: {
-    videoUid: string
+    bunnyVideoId: string
     duration: number
     thumbnail: string
-    hlsUrl?: string
+    hlsUrl: string
   }) => {
-    if (videoData.hlsUrl) {
-      onChange('hlsUrl', videoData.hlsUrl)
-    }
+    onChange('hlsUrl', videoData.hlsUrl)
     onChange('videoDuration', videoData.duration)
     onChange('thumbnailUrl', videoData.thumbnail)
     onChange('videoStatus', 'ready')
@@ -633,7 +630,7 @@ function VideoTab({
     await onSave()
   }
 
-  const hasVideo = data.hlsUrl || data.cloudflareVideoId
+  const hasVideo = !!data.hlsUrl
   const isProcessing = data.videoStatus === 'processing'
 
   return (
@@ -665,30 +662,19 @@ function VideoTab({
         <div className="space-y-4">
           {/* Video preview */}
           <div className="aspect-video bg-black rounded-neu overflow-hidden relative">
-            {data.hlsUrl ? (
-              <video
-                controls
-                className="w-full h-full"
-                poster={data.thumbnailUrl}
-              >
-                <source src={data.hlsUrl} type="application/x-mpegURL" />
-                Your browser does not support HLS video playback.
-              </video>
-            ) : data.cloudflareVideoId ? (
-              <iframe
-                src={`https://iframe.cloudflarestream.com/${data.cloudflareVideoId}`}
-                className="w-full h-full"
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                allowFullScreen
-              />
-            ) : null}
+            <video
+              controls
+              className="w-full h-full"
+              poster={data.thumbnailUrl}
+            >
+              <source src={data.hlsUrl} type="application/x-mpegURL" />
+              Your browser does not support HLS video playback.
+            </video>
           </div>
 
           {/* Video info */}
           <div className="flex items-center justify-between text-sm text-text-muted">
-            <span>
-              {data.hlsUrl ? 'HLS Stream' : `Video ID: ${data.cloudflareVideoId}`}
-            </span>
+            <span>HLS Stream</span>
             {data.videoDuration && data.videoDuration > 0 && (
               <span>
                 Duration: {Math.floor(data.videoDuration / 60)}:{(data.videoDuration % 60).toString().padStart(2, '0')}
@@ -712,7 +698,6 @@ function VideoTab({
             variant="secondary"
             onClick={() => {
               onChange('hlsUrl', '')
-              onChange('cloudflareVideoId', '')
               onChange('videoDuration', 0)
               onChange('thumbnailUrl', '')
               onChange('videoStatus', '')
@@ -738,10 +723,10 @@ function VideoTab({
 
         <div className="space-y-4">
           <Input
-            label="HLS URL (master.m3u8)"
+            label="HLS URL (playlist.m3u8)"
             value={data.hlsUrl || ''}
             onChange={(e) => onChange('hlsUrl', e.target.value)}
-            placeholder="e.g., https://cdn.nebiswera.com/webinars/processed/xxx/master.m3u8"
+            placeholder="e.g., https://vz-xxx.b-cdn.net/{videoId}/playlist.m3u8"
           />
 
           <div className="grid grid-cols-2 gap-4">
@@ -749,7 +734,7 @@ function VideoTab({
               label="Thumbnail URL"
               value={data.thumbnailUrl || ''}
               onChange={(e) => onChange('thumbnailUrl', e.target.value)}
-              placeholder="e.g., https://cdn.nebiswera.com/.../thumbnail.jpg"
+              placeholder="e.g., https://vz-xxx.b-cdn.net/{videoId}/thumbnail.jpg"
             />
 
             <Input

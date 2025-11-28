@@ -226,8 +226,8 @@ fi
 
 log_info "Test 8: Checking CDN assets..."
 
-# Test hero video poster
-CDN_ASSET="https://cdn.nebiswera.com/hero-video-poster.jpg"
+# Test Bunny CDN video thumbnail
+CDN_ASSET="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg"
 CDN_RESPONSE=$(curl -s -I "$CDN_ASSET" --max-time 10 || echo "")
 
 if echo "$CDN_RESPONSE" | grep -qi "HTTP.*200"; then

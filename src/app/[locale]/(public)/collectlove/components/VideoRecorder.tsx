@@ -181,13 +181,16 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
             src={videoUrl}
             controls
             playsInline
-            preload="auto"
+            preload="metadata"
             className="w-full h-full object-cover"
-            onLoadedData={() => {
-              // Ensure video is visible after loading
+            onLoadedMetadata={() => {
+              // Seek to start frame to show preview instead of black screen
               if (playbackRef.current) {
-                playbackRef.current.currentTime = 0.1
+                playbackRef.current.currentTime = 0.01
               }
+            }}
+            onError={(e) => {
+              console.error('Video playback error:', e)
             }}
           />
         )}

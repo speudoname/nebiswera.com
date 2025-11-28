@@ -40,7 +40,6 @@ export default async function InteractionsPage({ params }: PageProps) {
       <InteractionsEditor
         webinarId={id}
         videoDuration={webinar.videoDuration || 3600}
-        videoUid={webinar.cloudflareVideoUid || ''}
         initialInteractions={webinar.interactions.map((i) => ({
           id: i.id,
           type: i.type,

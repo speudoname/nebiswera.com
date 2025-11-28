@@ -37,7 +37,6 @@ interface Interaction {
 interface InteractionsEditorProps {
   webinarId: string
   videoDuration: number
-  videoUid: string
   initialInteractions: Interaction[]
 }
 
@@ -63,7 +62,6 @@ const POSITIONS = [
 export function InteractionsEditor({
   webinarId,
   videoDuration,
-  videoUid,
   initialInteractions,
 }: InteractionsEditorProps) {
   const [interactions, setInteractions] = useState<Interaction[]>(initialInteractions)

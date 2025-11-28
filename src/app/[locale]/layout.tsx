@@ -2,9 +2,12 @@ import { Inter, Noto_Sans_Georgian } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 import { locales, type Locale } from '@/i18n/config'
 import { SessionProvider } from '@/providers/SessionProvider'
 import { getOrganizationSchema, getWebSiteSchema } from '@/lib/metadata'
+
+const GA_MEASUREMENT_ID = 'G-W670GS5SSX'
 
 const inter = Inter({
   subsets: ['latin', 'latin-ext'],
@@ -63,6 +66,20 @@ export default async function LocaleLayout({
         />
       </head>
       <body className={`${inter.variable} ${notoSansGeorgian.variable} font-sans`}>
+        {/* Google Analytics */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+
         <SessionProvider>
           <NextIntlClientProvider messages={messages}>
             {children}

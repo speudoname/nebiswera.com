@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Star } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
+import { VideoPlayer } from '@/components/ui/VideoPlayer'
 import Link from 'next/link'
 
 type Testimonial = {
@@ -17,6 +18,7 @@ type Testimonial = {
   profilePhoto: string | null
   images: string[]
   videoUrl: string | null
+  hlsUrl: string | null
   videoThumbnail: string | null
   submittedAt: string
 }
@@ -146,16 +148,12 @@ export function LoveWallClient() {
               {/* Video Player */}
               {testimonial.videoUrl && (
                 <div className="mt-4 relative rounded-neu overflow-hidden shadow-neu-inset">
-                  <video
+                  <VideoPlayer
                     src={testimonial.videoUrl}
-                    poster={testimonial.videoThumbnail || undefined}
-                    controls
-                    preload="auto"
+                    hlsSrc={testimonial.hlsUrl}
+                    poster={testimonial.videoThumbnail}
                     className="w-full aspect-video bg-neu-dark/20"
-                    playsInline
-                  >
-                    Your browser does not support the video tag.
-                  </video>
+                  />
                 </div>
               )}
 

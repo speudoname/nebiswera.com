@@ -116,6 +116,7 @@ export async function PUT(request: NextRequest) {
     // Create MediaConvert transcoding job
     const transcodingJob = await createTranscodingJob({
       webinarId,
+      videoType: 'webinar',
       inputUrl: existingJob.originalUrl,
     })
 

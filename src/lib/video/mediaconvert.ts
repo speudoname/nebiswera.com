@@ -61,7 +61,9 @@ const mediaConvertClient = new MediaConvertClient({
 })
 
 export interface TranscodingJobConfig {
-  webinarId: string
+  webinarId?: string
+  testimonialId?: string
+  videoType: 'webinar' | 'testimonial'
   inputUrl: string // S3 URL of original video
 }
 
@@ -78,11 +80,13 @@ export interface TranscodingJobResponse {
  * Create a presigned URL for uploading video to S3
  */
 export async function createPresignedUploadUrl(
-  webinarId: string,
+  id: string,
   contentType: string = 'video/mp4',
-  expiresIn: number = 7200
+  expiresIn: number = 7200,
+  videoType: 'webinar' | 'testimonial' = 'webinar'
 ): Promise<{ uploadUrl: string; s3Key: string; s3Url: string }> {
-  const s3Key = `originals/${webinarId}/video.mp4`
+  const folder = videoType === 'testimonial' ? 'testimonials' : 'originals'
+  const s3Key = `${folder}/${id}/video.mp4`
 
   const command = new PutObjectCommand({
     Bucket: AWS_S3_BUCKET,
@@ -97,6 +101,30 @@ export async function createPresignedUploadUrl(
 }
 
 /**
+ * Upload a video buffer directly to S3 (for testimonials uploaded via API)
+ */
+export async function uploadVideoToS3(
+  id: string,
+  buffer: Buffer,
+  contentType: string = 'video/webm',
+  videoType: 'webinar' | 'testimonial' = 'testimonial'
+): Promise<string> {
+  const folder = videoType === 'testimonial' ? 'testimonials' : 'originals'
+  const ext = contentType.includes('webm') ? 'webm' : 'mp4'
+  const s3Key = `${folder}/${id}/video.${ext}`
+
+  const command = new PutObjectCommand({
+    Bucket: AWS_S3_BUCKET,
+    Key: s3Key,
+    Body: buffer,
+    ContentType: contentType,
+  })
+
+  await s3Client.send(command)
+  return `s3://${AWS_S3_BUCKET}/${s3Key}`
+}
+
+/**
  * Create a transcoding job with AWS MediaConvert
  * Outputs HLS with 480p, 720p, 1080p + thumbnail to S3
  */
@@ -105,7 +133,9 @@ export async function createTranscodingJob(config: TranscodingJobConfig): Promis
     throw new Error('AWS_MEDIACONVERT_ROLE is not configured')
   }
 
-  const outputPath = `s3://${AWS_S3_BUCKET}/processed/${config.webinarId}`
+  const id = config.videoType === 'testimonial' ? config.testimonialId : config.webinarId
+  const folder = config.videoType === 'testimonial' ? 'testimonials' : 'processed'
+  const outputPath = `s3://${AWS_S3_BUCKET}/${folder}/${id}`
 
   const jobSettings: CreateJobCommandInput = {
     Role: AWS_MEDIACONVERT_ROLE,
@@ -270,7 +300,8 @@ export async function createTranscodingJob(config: TranscodingJobConfig): Promis
       ],
     },
     UserMetadata: {
-      webinarId: config.webinarId,
+      videoType: config.videoType,
+      videoId: id || '',
     },
   }
 
@@ -316,11 +347,16 @@ export async function getJobStatus(jobId: string): Promise<TranscodingJobRespons
  * Copy all transcoded files from S3 to R2
  * This is called after MediaConvert job completes
  */
-export async function copyTranscodedToR2(webinarId: string): Promise<{ hlsUrl: string; thumbnailUrl: string }> {
-  const s3Prefix = `processed/${webinarId}/`
-  const r2Prefix = `webinars/processed/${webinarId}/`
+export async function copyTranscodedToR2(
+  id: string,
+  videoType: 'webinar' | 'testimonial' = 'webinar'
+): Promise<{ hlsUrl: string; thumbnailUrl: string }> {
+  const folder = videoType === 'testimonial' ? 'testimonials' : 'processed'
+  const s3Prefix = `${folder}/${id}/`
+  const r2Folder = videoType === 'testimonial' ? 'testimonials' : 'webinars'
+  const r2Prefix = `${r2Folder}/processed/${id}/`
 
-  console.log(`Copying transcoded files from S3 to R2 for webinar: ${webinarId}`)
+  console.log(`Copying transcoded files from S3 to R2 for ${videoType}: ${id}`)
 
   // List all files in S3 processed folder
   const listCommand = new ListObjectsV2Command({
@@ -331,7 +367,7 @@ export async function copyTranscodedToR2(webinarId: string): Promise<{ hlsUrl: s
   const listResponse = await s3Client.send(listCommand)
 
   if (!listResponse.Contents || listResponse.Contents.length === 0) {
-    throw new Error(`No transcoded files found in S3 for webinar: ${webinarId}`)
+    throw new Error(`No transcoded files found in S3 for ${videoType}: ${id}`)
   }
 
   console.log(`Found ${listResponse.Contents.length} files to copy`)
@@ -385,27 +421,29 @@ export async function copyTranscodedToR2(webinarId: string): Promise<{ hlsUrl: s
     console.log(`Copied: ${object.Key} → ${r2Key}`)
   }
 
-  console.log(`Finished copying files to R2 for webinar: ${webinarId}`)
+  console.log(`Finished copying files to R2 for ${videoType}: ${id}`)
 
   // Return R2 URLs
   return {
-    hlsUrl: getHlsUrl(webinarId),
-    thumbnailUrl: getThumbnailUrl(webinarId),
+    hlsUrl: getHlsUrl(id, videoType),
+    thumbnailUrl: getThumbnailUrl(id, videoType),
   }
 }
 
 /**
- * Get the public HLS URL for a webinar (from R2)
+ * Get the public HLS URL (from R2)
  */
-export function getHlsUrl(webinarId: string): string {
-  return `${R2_PUBLIC_URL}/webinars/processed/${webinarId}/hls/index.m3u8`
+export function getHlsUrl(id: string, videoType: 'webinar' | 'testimonial' = 'webinar'): string {
+  const folder = videoType === 'testimonial' ? 'testimonials' : 'webinars'
+  return `${R2_PUBLIC_URL}/${folder}/processed/${id}/hls/index.m3u8`
 }
 
 /**
- * Get the public thumbnail URL for a webinar (from R2)
+ * Get the public thumbnail URL (from R2)
  */
-export function getThumbnailUrl(webinarId: string): string {
-  return `${R2_PUBLIC_URL}/webinars/processed/${webinarId}/thumbnail.0000000.jpg`
+export function getThumbnailUrl(id: string, videoType: 'webinar' | 'testimonial' = 'webinar'): string {
+  const folder = videoType === 'testimonial' ? 'testimonials' : 'webinars'
+  return `${R2_PUBLIC_URL}/${folder}/processed/${id}/thumbnail.0000000.jpg`
 }
 
 /**

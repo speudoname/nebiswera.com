@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useLocale } from 'next-intl'
 import { Star } from 'lucide-react'
 import { getInitials, type TestimonialData } from '@/lib/testimonials'
+import { VideoPlayer } from '@/components/ui/VideoPlayer'
 import type { Locale } from '@/i18n/config'
 
 const translations: Record<Locale, { readMore: string, showLess: string }> = {
@@ -12,7 +13,7 @@ const translations: Record<Locale, { readMore: string, showLess: string }> = {
 }
 
 export function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
-  const { name, text, rating, profilePhoto, videoUrl, videoThumbnail, audioUrl, images, type } = testimonial
+  const { name, text, rating, profilePhoto, videoUrl, hlsUrl, videoThumbnail, audioUrl, images, type } = testimonial
   const [isExpanded, setIsExpanded] = useState(false)
   const locale = useLocale() as Locale
   const t = translations[locale]
@@ -59,16 +60,12 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
       {/* Video player if available */}
       {videoUrl && (
         <div className="mb-4 rounded-neu overflow-hidden shadow-neu-inset aspect-video">
-          <video
-            controls
-            poster={videoThumbnail || undefined}
+          <VideoPlayer
+            src={videoUrl}
+            hlsSrc={hlsUrl}
+            poster={videoThumbnail}
             className="w-full h-full object-cover"
-            preload="auto"
-            playsInline
-          >
-            <source src={videoUrl} type="video/mp4" />
-            <source src={videoUrl} type="video/webm" />
-          </video>
+          />
         </div>
       )}
 

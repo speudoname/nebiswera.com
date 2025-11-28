@@ -210,8 +210,10 @@ model Testimonial {
   profilePhoto   String?
   images         String[] // Array of R2 URLs
   audioUrl       String?
-  videoUrl       String?
-  videoThumbnail String? // Auto-generated thumbnail for video
+  videoUrl       String?         // Raw video URL (R2) - kept as fallback
+  videoThumbnail String?         // Auto-generated thumbnail for video
+  hlsUrl         String?         // HLS manifest URL for adaptive streaming
+  videoStatus    String?         // 'pending' | 'processing' | 'ready' | 'error'
 
   // Metadata
   status       TestimonialStatus @default(PENDING)

@@ -208,9 +208,9 @@ echo ""
 # Create app directory if it doesn't exist
 ssh_exec "sudo mkdir -p $APP_DIR"
 
-# Copy standalone build
+# Copy standalone build (exclude .env to preserve production config)
 log_info "Copying standalone build..."
-run_command "rsync -avz --delete .next/standalone/ ${SSH_TARGET}:${APP_DIR}/"
+run_command "rsync -avz --delete --exclude='.env' .next/standalone/ ${SSH_TARGET}:${APP_DIR}/"
 
 # Copy static files
 log_info "Copying static files..."

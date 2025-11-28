@@ -181,7 +181,14 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
             src={videoUrl}
             controls
             playsInline
+            preload="auto"
             className="w-full h-full object-cover"
+            onLoadedData={() => {
+              // Ensure video is visible after loading
+              if (playbackRef.current) {
+                playbackRef.current.currentTime = 0.1
+              }
+            }}
           />
         )}
 

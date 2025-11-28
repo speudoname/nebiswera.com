@@ -237,7 +237,29 @@
       "skip": "გამოტოვება",
       "back": "უკან",
       "upload": "ფაილის ატვირთვა",
-      "uploading": "იტვირთება..."
+      "uploading": "იტვირთება...",
+      "record": "ჩაწერა",
+      "videoRecorder": {
+        "startRecording": "ჩაწერის დაწყება",
+        "pause": "პაუზა",
+        "resume": "გაგრძელება",
+        "finishRecording": "ჩაწერის დასრულება",
+        "cancel": "გაუქმება",
+        "retake": "თავიდან ჩაწერა",
+        "useRecording": "ამ ჩანაწერის გამოყენება",
+        "paused": "შეჩერებული"
+      },
+      "audioRecorder": {
+        "startRecording": "ჩაწერის დაწყება",
+        "pause": "პაუზა",
+        "resume": "გაგრძელება",
+        "stopRecording": "ჩაწერის შეწყვეტა",
+        "cancel": "გაუქმება",
+        "retake": "თავიდან ჩაწერა",
+        "useRecording": "ამ ჩანაწერის გამოყენება",
+        "paused": "შეჩერებული",
+        "recording": "ჩაწერა მიმდინარეობს"
+      }
     },
     "step4": {
       "title": "დაამატეთ დამატებითი სურათები",

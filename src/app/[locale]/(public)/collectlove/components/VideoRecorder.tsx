@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Video, Square, Play, Pause, Trash2, Check, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
@@ -10,6 +11,7 @@ interface VideoRecorderProps {
 }
 
 export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderProps) {
+  const t = useTranslations('collectLove.step3.videoRecorder')
   const [isRecording, setIsRecording] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
@@ -192,7 +194,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
 
         {isPaused && (
           <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            Paused
+            {t('paused')}
           </div>
         )}
       </div>
@@ -202,29 +204,29 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
           {!isRecording ? (
             <Button variant="primary" size="lg" fullWidth onClick={startRecording}>
               <Camera className="w-5 h-5 mr-2" />
-              Start Recording
+              {t('startRecording')}
             </Button>
           ) : (
             <div className="flex gap-3">
               {!isPaused ? (
                 <Button variant="secondary" fullWidth onClick={pauseRecording}>
                   <Pause className="w-5 h-5 mr-2" />
-                  Pause
+                  {t('pause')}
                 </Button>
               ) : (
                 <Button variant="secondary" fullWidth onClick={resumeRecording}>
                   <Play className="w-5 h-5 mr-2" />
-                  Resume
+                  {t('resume')}
                 </Button>
               )}
               <Button variant="primary" fullWidth onClick={stopRecording}>
                 <Square className="w-5 h-5 mr-2" />
-                Finish Recording
+                {t('finishRecording')}
               </Button>
             </div>
           )}
           <Button variant="ghost" size="lg" fullWidth onClick={() => { stopCamera(); onCancel(); }}>
-            Cancel
+            {t('cancel')}
           </Button>
         </div>
       ) : (
@@ -232,12 +234,12 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
           <div className="flex gap-3">
             <Button variant="ghost" fullWidth onClick={retake}>
               <Trash2 className="w-5 h-5 mr-2" />
-              Retake
+              {t('retake')}
             </Button>
           </div>
           <Button variant="primary" size="lg" fullWidth onClick={handleUseRecording}>
             <Check className="w-5 h-5 mr-2" />
-            Use This Recording
+            {t('useRecording')}
           </Button>
         </div>
       )}

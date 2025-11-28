@@ -237,7 +237,29 @@
       "skip": "Skip",
       "back": "Back",
       "upload": "Upload File",
-      "uploading": "Uploading..."
+      "uploading": "Uploading...",
+      "record": "Record",
+      "videoRecorder": {
+        "startRecording": "Start Recording",
+        "pause": "Pause",
+        "resume": "Resume",
+        "finishRecording": "Finish Recording",
+        "cancel": "Cancel",
+        "retake": "Retake",
+        "useRecording": "Use This Recording",
+        "paused": "Paused"
+      },
+      "audioRecorder": {
+        "startRecording": "Start Recording",
+        "pause": "Pause",
+        "resume": "Resume",
+        "stopRecording": "Stop Recording",
+        "cancel": "Cancel",
+        "retake": "Retake",
+        "useRecording": "Use This Recording",
+        "paused": "Paused",
+        "recording": "Recording"
+      }
     },
     "step4": {
       "title": "Add Additional Images",

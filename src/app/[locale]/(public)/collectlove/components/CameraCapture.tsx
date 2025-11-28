@@ -171,8 +171,8 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
         <canvas ref={canvasRef} className="hidden" />
 
         {countdown !== null && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="text-9xl font-bold text-white animate-pulse">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="text-9xl font-bold text-white drop-shadow-lg animate-pulse">
               {countdown}
             </div>
           </div>

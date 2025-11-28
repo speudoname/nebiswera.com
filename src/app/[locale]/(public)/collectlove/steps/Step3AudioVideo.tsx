@@ -153,7 +153,7 @@ export function Step3AudioVideo({
                   onClick={() => setRecordingMode('audio')}
                 >
                   <Mic className="w-4 h-4 mr-2" />
-                  Record
+                  {t('record')}
                 </Button>
 
                 <label className="flex-1">
@@ -193,7 +193,7 @@ export function Step3AudioVideo({
                   onClick={() => setRecordingMode('video')}
                 >
                   <Video className="w-4 h-4 mr-2" />
-                  Record
+                  {t('record')}
                 </Button>
 
                 <label className="flex-1">

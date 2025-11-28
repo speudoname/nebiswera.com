@@ -1167,8 +1167,8 @@ model VideoProcessingJob {
   originalUrl     String                // R2 URL of original file
   originalSize    BigInt?               // File size in bytes
 
-  // Coconut transcoding
-  coconutJobId    String?               // Coconut API job ID
+  // External transcoding service (AWS MediaConvert job ID)
+  coconutJobId    String?               // Legacy field name, now stores MediaConvert job ID
 
   // Output (populated after processing)
   hlsUrl          String?               // R2 URL to master.m3u8

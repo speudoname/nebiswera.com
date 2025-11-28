@@ -21,21 +21,6 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
   const isLongText = text.length > 200
   const displayText = isExpanded || !isLongText ? text : text.slice(0, 200) + '...'
 
-  function getVideoThumbnail(videoUrl: string, savedThumbnail: string | null): string | undefined {
-    // If we have a saved thumbnail, use it
-    if (savedThumbnail) return savedThumbnail
-
-    // Otherwise, generate Mux thumbnail URL if it's a Mux video
-    if (videoUrl.includes('stream.mux.com')) {
-      const match = videoUrl.match(/stream\.mux\.com\/([^.]+)/)
-      if (match) {
-        const playbackId = match[1]
-        return `https://image.mux.com/${playbackId}/thumbnail.jpg?time=1&width=1280`
-      }
-    }
-
-    return undefined
-  }
 
   return (
     <div className="bg-neu-base rounded-neu-lg p-6 md:p-8 shadow-neu flex flex-col h-full">
@@ -76,7 +61,7 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
         <div className="mb-4 rounded-neu overflow-hidden shadow-neu-inset aspect-video">
           <video
             controls
-            poster={getVideoThumbnail(videoUrl, videoThumbnail)}
+            poster={videoThumbnail || undefined}
             className="w-full h-full object-cover"
             preload="metadata"
             playsInline

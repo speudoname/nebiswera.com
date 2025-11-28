@@ -19,10 +19,6 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cdn.nebiswera.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'image.mux.com',
-      },
     ],
   },
 

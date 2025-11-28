@@ -48,20 +48,6 @@ export default async function LocaleLayout({
         <link rel="preconnect" href="https://cdn.nebiswera.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.nebiswera.com" />
 
-        {/* Preconnect to Mux for webinar thumbnails */}
-        <link rel="preconnect" href="https://image.mux.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://image.mux.com" />
-        <link rel="preconnect" href="https://stream.mux.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://stream.mux.com" />
-
-        {/* Preload hero video poster for LCP optimization */}
-        <link
-          rel="preload"
-          as="image"
-          href="https://cdn.nebiswera.com/hero-video-poster.jpg"
-          fetchPriority="high"
-        />
-
 
         <script
           type="application/ld+json"

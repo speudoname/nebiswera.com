@@ -28,6 +28,10 @@ interface CreateVideoResponse {
  * Returns videoId and direct upload URL
  */
 export async function createBunnyVideo(title: string): Promise<CreateVideoResponse> {
+  console.log('[Bunny] Creating video entry with title:', title)
+  console.log('[Bunny] Library ID:', BUNNY_LIBRARY_ID)
+  console.log('[Bunny] API Key present:', !!BUNNY_LIBRARY_API_KEY)
+
   const response = await fetch(
     `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos`,
     {
@@ -40,12 +44,16 @@ export async function createBunnyVideo(title: string): Promise<CreateVideoRespon
     }
   )
 
+  console.log('[Bunny] Create video response status:', response.status)
+
   if (!response.ok) {
     const error = await response.text()
+    console.error('[Bunny] Failed to create video:', error)
     throw new Error(`Failed to create Bunny video: ${error}`)
   }
 
   const data = await response.json()
+  console.log('[Bunny] Video created with GUID:', data.guid)
 
   return {
     videoId: data.guid,
@@ -61,22 +69,31 @@ export async function uploadVideoToBunny(
   videoBuffer: Buffer,
   contentType: string = 'video/mp4'
 ): Promise<void> {
-  const response = await fetch(
-    `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
-    {
-      method: 'PUT',
-      headers: {
-        'AccessKey': BUNNY_LIBRARY_API_KEY,
-        'Content-Type': 'application/octet-stream',
-      },
-      body: new Uint8Array(videoBuffer),
-    }
-  )
+  console.log('[Bunny] Uploading video buffer to videoId:', videoId)
+  console.log('[Bunny] Buffer size:', videoBuffer.length, 'bytes')
+  console.log('[Bunny] Content type:', contentType)
+
+  const uploadUrl = `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}`
+  console.log('[Bunny] Upload URL:', uploadUrl)
+
+  const response = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: {
+      'AccessKey': BUNNY_LIBRARY_API_KEY,
+      'Content-Type': 'application/octet-stream',
+    },
+    body: new Uint8Array(videoBuffer),
+  })
+
+  console.log('[Bunny] Upload response status:', response.status)
 
   if (!response.ok) {
     const error = await response.text()
+    console.error('[Bunny] Failed to upload video:', error)
     throw new Error(`Failed to upload video to Bunny: ${error}`)
   }
+
+  console.log('[Bunny] Video upload complete!')
 }
 
 /**

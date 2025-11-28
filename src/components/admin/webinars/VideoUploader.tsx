@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui'
-import { X, Loader2, CheckCircle, AlertCircle, Video } from 'lucide-react'
+import { X, Loader2, CheckCircle, AlertCircle, Video, Upload } from 'lucide-react'
 
 interface VideoUploaderProps {
   webinarId?: string
@@ -28,11 +28,13 @@ export function VideoUploader({
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
+  const [fileSize, setFileSize] = useState<number>(0)
   const [bunnyStatus, setBunnyStatus] = useState<string>('')
+  const [uploadPhase, setUploadPhase] = useState<'sending' | 'processing_server'>('sending')
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const xhrRef = useRef<XMLHttpRequest | null>(null)
 
   // Poll for video processing status
   const pollVideoStatus = useCallback(async (wId: string) => {
@@ -108,6 +110,13 @@ export function VideoUploader({
     pollingRef.current = setTimeout(poll, 3000)
   }, [onUploadComplete, onError])
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B'
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+    return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+  }
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -130,55 +139,87 @@ export function VideoUploader({
     }
 
     setFileName(file.name)
+    setFileSize(file.size)
     setError(null)
     setStatus('uploading')
     setProgress(0)
+    setUploadPhase('sending')
 
-    try {
-      // Create abort controller for cancellation
-      abortControllerRef.current = new AbortController()
-
-      // Create FormData with video file
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('webinarId', webinarId)
-      if (webinarTitle) {
-        formData.append('title', webinarTitle)
-      }
-
-      // Upload directly to our API (which sends to Bunny)
-      const response = await fetch('/api/admin/webinars/upload', {
-        method: 'POST',
-        body: formData,
-        signal: abortControllerRef.current.signal,
-      })
-
-      if (!response.ok) {
-        const errData = await response.json()
-        throw new Error(errData.error || 'Failed to upload video')
-      }
-
-      const data = await response.json()
-
-      // Start polling for processing status
-      pollVideoStatus(webinarId)
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        setStatus('idle')
-        setProgress(0)
-        return
-      }
-
-      console.error('Upload error:', err)
-      setError(err instanceof Error ? err.message : 'Failed to upload video')
-      setStatus('error')
-      onError?.(err instanceof Error ? err.message : 'Failed to upload video')
+    // Create FormData with video file
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('webinarId', webinarId)
+    if (webinarTitle) {
+      formData.append('title', webinarTitle)
     }
+
+    // Use XMLHttpRequest for upload progress tracking
+    const xhr = new XMLHttpRequest()
+    xhrRef.current = xhr
+
+    xhr.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100)
+        setProgress(percentComplete)
+        console.log(`Upload progress: ${percentComplete}% (${formatFileSize(event.loaded)} / ${formatFileSize(event.total)})`)
+      }
+    })
+
+    xhr.upload.addEventListener('load', () => {
+      // Upload to server complete, now server is sending to Bunny
+      setUploadPhase('processing_server')
+      setProgress(100)
+      console.log('Upload to server complete, sending to Bunny...')
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          console.log('Server response:', data)
+          // Start polling for Bunny processing status
+          pollVideoStatus(webinarId)
+        } catch (err) {
+          console.error('Failed to parse response:', err)
+          setError('Invalid server response')
+          setStatus('error')
+          onError?.('Invalid server response')
+        }
+      } else {
+        try {
+          const errData = JSON.parse(xhr.responseText)
+          console.error('Upload failed:', errData)
+          setError(errData.error || `Upload failed: ${xhr.status}`)
+          setStatus('error')
+          onError?.(errData.error || `Upload failed: ${xhr.status}`)
+        } catch {
+          setError(`Upload failed: ${xhr.status} ${xhr.statusText}`)
+          setStatus('error')
+          onError?.(`Upload failed: ${xhr.status} ${xhr.statusText}`)
+        }
+      }
+    })
+
+    xhr.addEventListener('error', () => {
+      console.error('XHR error event')
+      setError('Network error during upload')
+      setStatus('error')
+      onError?.('Network error during upload')
+    })
+
+    xhr.addEventListener('abort', () => {
+      console.log('Upload aborted')
+      setStatus('idle')
+      setProgress(0)
+    })
+
+    xhr.open('POST', '/api/admin/webinars/upload')
+    xhr.send(formData)
   }
 
   const handleCancel = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
+    if (xhrRef.current) {
+      xhrRef.current.abort()
     }
     if (pollingRef.current) {
       clearTimeout(pollingRef.current)
@@ -186,8 +227,10 @@ export function VideoUploader({
     setStatus('idle')
     setProgress(0)
     setFileName(null)
+    setFileSize(0)
     setError(null)
     setBunnyStatus('')
+    setUploadPhase('sending')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -250,11 +293,23 @@ export function VideoUploader({
         <div className="border border-neu-dark rounded-neu p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
-              <span className="font-medium text-text-primary">
-                {status === 'uploading' && `Uploading: ${fileName}`}
-                {status === 'processing' && getProcessingStatusText()}
-              </span>
+              {status === 'uploading' && uploadPhase === 'sending' ? (
+                <Upload className="w-5 h-5 text-primary-600" />
+              ) : (
+                <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
+              )}
+              <div>
+                <span className="font-medium text-text-primary">
+                  {status === 'uploading' && uploadPhase === 'sending' && `Uploading: ${fileName}`}
+                  {status === 'uploading' && uploadPhase === 'processing_server' && 'Sending to Bunny Stream...'}
+                  {status === 'processing' && getProcessingStatusText()}
+                </span>
+                {status === 'uploading' && uploadPhase === 'sending' && fileSize > 0 && (
+                  <span className="text-sm text-text-muted ml-2">
+                    ({formatFileSize(fileSize)})
+                  </span>
+                )}
+              </div>
             </div>
             <button
               onClick={handleCancel}
@@ -267,16 +322,28 @@ export function VideoUploader({
           {/* Progress bar */}
           <div className="w-full bg-neu-dark rounded-full h-3 mb-2">
             <div
-              className="bg-primary-500 h-3 rounded-full transition-all duration-300"
+              className={`h-3 rounded-full transition-all duration-300 ${
+                status === 'uploading' && uploadPhase === 'processing_server'
+                  ? 'bg-amber-500 animate-pulse'
+                  : 'bg-primary-500'
+              }`}
               style={{ width: `${progress}%` }}
             />
           </div>
           <p className="text-sm text-text-muted text-right">
-            {status === 'uploading' && 'Uploading to Bunny Stream...'}
+            {status === 'uploading' && uploadPhase === 'sending' && `${progress}% uploaded to server`}
+            {status === 'uploading' && uploadPhase === 'processing_server' && 'Server is uploading to Bunny...'}
             {status === 'processing' && (
-              progress > 0 ? `${progress}% transcoded` : 'Transcoding to adaptive bitrate...'
+              progress > 0 ? `${progress}% transcoded` : 'Waiting for Bunny to process...'
             )}
           </p>
+
+          {status === 'uploading' && uploadPhase === 'processing_server' && (
+            <p className="text-xs text-text-muted mt-2">
+              Your file has been uploaded to the server. The server is now sending it to Bunny Stream.
+              This may take a moment for larger files.
+            </p>
+          )}
 
           {status === 'processing' && (
             <p className="text-xs text-text-muted mt-2">

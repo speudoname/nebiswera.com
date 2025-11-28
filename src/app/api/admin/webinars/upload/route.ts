@@ -20,16 +20,22 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    console.log('[Webinar Upload] Starting upload request...')
+
     const formData = await request.formData()
     const file = formData.get('file')
     const webinarId = formData.get('webinarId') as string
     const title = formData.get('title') as string
 
+    console.log('[Webinar Upload] Form data received:', { webinarId, title, hasFile: !!file })
+
     if (!file || typeof file === 'string') {
+      console.error('[Webinar Upload] No file provided')
       return NextResponse.json({ error: 'Video file is required' }, { status: 400 })
     }
 
     if (!webinarId) {
+      console.error('[Webinar Upload] No webinarId provided')
       return NextResponse.json({ error: 'Webinar ID is required' }, { status: 400 })
     }
 
@@ -39,18 +45,30 @@ export async function POST(request: NextRequest) {
     })
 
     if (!webinar) {
+      console.error('[Webinar Upload] Webinar not found:', webinarId)
       return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
     }
 
     const uploadFile = file as Blob & { name: string; size: number; type: string }
+    console.log('[Webinar Upload] File details:', {
+      name: uploadFile.name,
+      size: uploadFile.size,
+      type: uploadFile.type,
+      sizeInMB: (uploadFile.size / (1024 * 1024)).toFixed(2),
+    })
 
     // Convert to buffer
+    console.log('[Webinar Upload] Converting to buffer...')
     const arrayBuffer = await uploadFile.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
+    console.log('[Webinar Upload] Buffer created, size:', buffer.length)
 
     // Upload to Bunny Stream
     const videoTitle = title || webinar.title || `webinar-${webinarId}`
+    console.log('[Webinar Upload] Uploading to Bunny with title:', videoTitle)
+
     const result = await uploadVideo(videoTitle, buffer, uploadFile.type)
+    console.log('[Webinar Upload] Bunny upload result:', result)
 
     // Create or update processing job
     const job = await prisma.videoProcessingJob.upsert({

@@ -22,15 +22,15 @@ export async function HeroSection({ locale }: HeroSectionProps) {
       <div className="hero-container">
         <div className="hero-content">
           <p className="hero-eyebrow">
-            <span className="text-primary">{t('eyebrowStart')}</span>
+            <span className="text-primary-600">{t('eyebrowStart')}</span>
             <span className="text-secondary"> {t('eyebrowEmphasis')} </span>
-            <span className="text-primary">{t('eyebrowEnd')}</span>
+            <span className="text-primary-600">{t('eyebrowEnd')}</span>
           </p>
 
           <h1 className="hero-title">
             <span className="text-dark">{t('titlePart1')}</span>
-            <span className="text-primary"> — </span>
-            <span className="text-primary">{t('titlePart2')}</span>
+            <span className="text-primary-600"> — </span>
+            <span className="text-primary-600">{t('titlePart2')}</span>
           </h1>
 
           <h2 className="hero-subtitle">

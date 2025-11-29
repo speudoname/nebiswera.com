@@ -18,6 +18,8 @@ import {
 } from 'lucide-react'
 import { VideoUploader } from './VideoUploader'
 import { ScheduleConfigForm } from './ScheduleConfigForm'
+import { RegistrationFieldsForm } from './RegistrationFieldsForm'
+import type { RegistrationFieldConfig } from '@/types/registration-fields'
 
 interface WebinarEditorProps {
   webinarId?: string
@@ -57,12 +59,13 @@ const defaultData: WebinarData = {
   status: 'DRAFT',
 }
 
-type TabId = 'basic' | 'video' | 'schedule' | 'interactions' | 'chat' | 'notifications' | 'registrations' | 'analytics'
+type TabId = 'basic' | 'video' | 'schedule' | 'regFields' | 'interactions' | 'chat' | 'notifications' | 'registrations' | 'analytics'
 
 const tabs: { id: TabId; label: string; icon: React.ElementType; requiresId?: boolean }[] = [
   { id: 'basic', label: 'Basic Info', icon: Info },
   { id: 'video', label: 'Video', icon: Video },
   { id: 'schedule', label: 'Schedule', icon: Calendar, requiresId: true },
+  { id: 'regFields', label: 'Registration Fields', icon: User, requiresId: true },
   { id: 'interactions', label: 'Interactions', icon: MessageSquare, requiresId: true },
   { id: 'chat', label: 'Chat', icon: MessageSquare, requiresId: true },
   { id: 'notifications', label: 'Notifications', icon: Bell, requiresId: true },
@@ -406,6 +409,9 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
         )}
         {activeTab === 'schedule' && webinarId && (
           <ScheduleTab webinarId={webinarId} webinarTimezone={data.timezone} />
+        )}
+        {activeTab === 'regFields' && webinarId && (
+          <RegistrationFieldsTab webinarId={webinarId} />
         )}
         {activeTab === 'interactions' && webinarId && (
           <div className="text-center py-12 text-text-muted">
@@ -850,6 +856,75 @@ function ScheduleTab({
     <ScheduleConfigForm
       webinarId={webinarId}
       webinarTimezone={webinarTimezone}
+      initialConfig={config}
+      onSave={handleSave}
+    />
+  )
+}
+
+// Registration Fields Tab Component
+function RegistrationFieldsTab({ webinarId }: { webinarId: string }) {
+  const [loading, setLoading] = useState(true)
+  const [config, setConfig] = useState<RegistrationFieldConfig | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const res = await fetch(`/api/admin/webinars/${webinarId}/registration-fields`)
+        if (res.ok) {
+          const data = await res.json()
+          setConfig(data.config)
+        } else if (res.status === 404) {
+          // No config yet, use defaults
+          setConfig(null)
+        } else {
+          throw new Error('Failed to fetch registration fields config')
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load registration fields')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchConfig()
+  }, [webinarId])
+
+  const handleSave = async (fieldConfig: RegistrationFieldConfig) => {
+    const res = await fetch(`/api/admin/webinars/${webinarId}/registration-fields`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fieldConfig),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to save registration fields')
+    }
+
+    const data = await res.json()
+    setConfig(data.config)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-red-600">
+        {error}
+      </div>
+    )
+  }
+
+  return (
+    <RegistrationFieldsForm
+      webinarId={webinarId}
       initialConfig={config}
       onSave={handleSave}
     />

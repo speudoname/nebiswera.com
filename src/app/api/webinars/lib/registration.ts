@@ -13,6 +13,8 @@ interface RegistrationInput {
   email: string
   firstName?: string
   lastName?: string
+  phone?: string
+  customFieldResponses?: Record<string, string | boolean>
   sessionId?: string // For scheduled sessions
   sessionType?: WebinarSessionType // For on-demand or replay
   timezone?: string
@@ -46,7 +48,7 @@ export async function registerForWebinar(
   webinarId: string,
   input: RegistrationInput
 ): Promise<RegistrationResult> {
-  const { email, firstName, lastName, sessionId, sessionType, timezone, source, utmParams } = input
+  const { email, firstName, lastName, phone, customFieldResponses, sessionId, sessionType, timezone, source, utmParams } = input
 
   // Validate email
   if (!email || !isValidEmail(email)) {
@@ -138,6 +140,8 @@ export async function registerForWebinar(
       email: email.toLowerCase(),
       firstName: firstName || null,
       lastName: lastName || null,
+      phone: phone || null,
+      customFieldResponses: customFieldResponses || null,
       accessToken,
       sessionType: finalSessionType,
       timezone: timezone || 'UTC',

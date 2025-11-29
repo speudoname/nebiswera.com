@@ -640,6 +640,7 @@ model Webinar {
 
   // Relations
   scheduleConfig    WebinarScheduleConfig?
+  registrationFieldConfig WebinarRegistrationFieldConfig?
   sessions          WebinarSession[]
   interactions      WebinarInteraction[]
   registrations     WebinarRegistration[]
@@ -719,6 +720,37 @@ enum WebinarEventType {
   @@schema("webinar")
 }
 
+// Registration field configuration (custom fields per webinar)
+model WebinarRegistrationFieldConfig {
+  id                String    @id @default(cuid())
+  webinarId         String    @unique
+  webinar           Webinar   @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  // Name field configuration
+  nameFormat        NameFieldFormat @default(SPLIT) // SPLIT (firstName + lastName) or FULL (single fullName field)
+
+  // Optional fields toggles
+  showPhone         Boolean   @default(false)
+  phoneRequired     Boolean   @default(false)
+
+  // Custom fields (JSON array of field definitions)
+  // Example: [{"label": "Company", "type": "text", "required": true}]
+  customFields      Json      @default("[]")
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@schema("webinar")
+  @@map("webinar_registration_field_configs")
+}
+
+enum NameFieldFormat {
+  SPLIT  // firstName + lastName (two separate fields)
+  FULL   // fullName (single field, auto-split on save)
+
+  @@schema("webinar")
+}
+
 // Individual webinar session (generated from schedule or manually created)
 model WebinarSession {
   id            String          @id @default(cuid())
@@ -765,6 +797,11 @@ model WebinarRegistration {
   email           String
   firstName       String?
   lastName        String?
+  phone           String?
+
+  // Custom field responses (JSON object matching customFields from config)
+  // Example: {"company": "Acme Inc", "jobTitle": "Developer"}
+  customFieldResponses Json?
 
   // Link to CRM contact (if exists)
   contactId       String?               // References Contact in crm schema

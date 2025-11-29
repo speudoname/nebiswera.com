@@ -90,6 +90,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'FEEDBACK',
       'TIP',
       'SPECIAL_OFFER',
+      'PAUSE',
+      'QUIZ',
+      'CONTACT_FORM',
     ]
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: 'Invalid interaction type' }, { status: 400 })

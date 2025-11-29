@@ -48,15 +48,25 @@ function InteractionCard({
   onRespond: (response: unknown) => void
 }) {
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
+  const [selectedOptions, setSelectedOptions] = useState<number[]>([])
+  const [textResponse, setTextResponse] = useState('')
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', company: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const config = interaction.config as {
     options?: string[]
+    correctAnswers?: number[]
     buttonText?: string
     buttonUrl?: string
     downloadUrl?: string
     fileName?: string
     description?: string
+    message?: string
+    autoResumeDuration?: number
+    placeholder?: string
+    collectPhone?: boolean
+    collectCompany?: boolean
+    successMessage?: string
   }
 
   const handleSubmit = async () => {
@@ -210,6 +220,160 @@ function InteractionCard({
               variant="primary"
             >
               {config.buttonText || 'Claim Offer'}
+            </Button>
+          </div>
+        )
+
+      case 'QUESTION':
+        return (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-text-primary">{interaction.title}</h3>
+            <textarea
+              value={textResponse}
+              onChange={(e) => setTextResponse(e.target.value)}
+              placeholder={config.placeholder || 'Type your answer here...'}
+              rows={3}
+              className="w-full p-3 rounded-lg bg-neu-light shadow-neu-inset focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <Button
+              onClick={async () => {
+                setIsSubmitting(true)
+                try {
+                  await onRespond({ textResponse })
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
+              disabled={!textResponse.trim() || isSubmitting}
+              loading={isSubmitting}
+              className="w-full"
+            >
+              Submit Answer
+            </Button>
+          </div>
+        )
+
+      case 'PAUSE':
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-6 h-6 text-primary-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+              </svg>
+              <h3 className="font-semibold text-text-primary">{interaction.title}</h3>
+            </div>
+            {config.message && (
+              <p className="text-sm text-text-secondary">{config.message}</p>
+            )}
+            {!config.autoResumeDuration && (
+              <Button
+                onClick={() => onRespond({ resumed: true })}
+                className="w-full"
+              >
+                Resume Video
+              </Button>
+            )}
+            {config.autoResumeDuration && (
+              <p className="text-xs text-text-secondary text-center">
+                Video will resume automatically in {config.autoResumeDuration} seconds...
+              </p>
+            )}
+          </div>
+        )
+
+      case 'QUIZ':
+        return (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-text-primary">{interaction.title}</h3>
+            <div className="space-y-2">
+              {config.options?.map((option, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedOption(index)}
+                  className={`w-full p-3 text-left rounded-lg transition-all ${
+                    selectedOption === index
+                      ? 'bg-primary-500 text-white shadow-neu-pressed'
+                      : 'bg-neu-light hover:bg-neu-dark shadow-neu-sm'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <Button
+              onClick={async () => {
+                setIsSubmitting(true)
+                try {
+                  const isCorrect = config.correctAnswers?.includes(selectedOption!)
+                  await onRespond({
+                    selectedOptions: [selectedOption],
+                    isCorrect,
+                  })
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
+              disabled={selectedOption === null || isSubmitting}
+              loading={isSubmitting}
+              className="w-full"
+            >
+              Submit Answer
+            </Button>
+          </div>
+        )
+
+      case 'CONTACT_FORM':
+        return (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-text-primary">{interaction.title}</h3>
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Full Name *"
+                className="w-full p-2 rounded-lg bg-neu-light shadow-neu-inset focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="Email Address *"
+                className="w-full p-2 rounded-lg bg-neu-light shadow-neu-inset focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+              {config.collectPhone && (
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Phone Number"
+                  className="w-full p-2 rounded-lg bg-neu-light shadow-neu-inset focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              )}
+              {config.collectCompany && (
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="Company Name"
+                  className="w-full p-2 rounded-lg bg-neu-light shadow-neu-inset focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              )}
+            </div>
+            <Button
+              onClick={async () => {
+                setIsSubmitting(true)
+                try {
+                  await onRespond({ formData })
+                } finally {
+                  setIsSubmitting(false)
+                }
+              }}
+              disabled={!formData.name || !formData.email || isSubmitting}
+              loading={isSubmitting}
+              className="w-full"
+            >
+              Submit
             </Button>
           </div>
         )

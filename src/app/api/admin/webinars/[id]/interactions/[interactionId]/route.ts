@@ -17,10 +17,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id, interactionId } = await params
 
   try {
-    const interaction = await prisma.webinarInteraction.findFirst({
+    const interaction = await prisma.webinarInteraction.findUnique({
       where: {
         id: interactionId,
         webinarId: id,
+      },
+      include: {
+        _count: {
+          select: {
+            pollResponses: true,
+            events: true,
+          },
+        },
       },
     })
 
@@ -35,14 +43,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         triggerTime: interaction.triggersAt,
         duration: interaction.duration,
         title: interaction.title,
+        description: interaction.description,
         config: interaction.content,
         pauseVideo: interaction.pauseVideo,
         required: interaction.required,
         showOnReplay: interaction.showOnReplay,
+        dismissable: interaction.dismissable,
         position: interaction.position,
         enabled: interaction.enabled,
         viewCount: interaction.viewCount,
         actionCount: interaction.actionCount,
+        responseCount: interaction._count.pollResponses,
+        eventCount: interaction._count.events,
       },
     })
   } catch (error) {
@@ -54,8 +66,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PUT /api/admin/webinars/[id]/interactions/[interactionId] - Update interaction
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+// PATCH /api/admin/webinars/[id]/interactions/[interactionId] - Update interaction
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -63,8 +75,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { id, interactionId } = await params
 
   try {
-    // Verify interaction exists and belongs to webinar
-    const existing = await prisma.webinarInteraction.findFirst({
+    // Verify interaction exists and belongs to this webinar
+    const existing = await prisma.webinarInteraction.findUnique({
       where: {
         id: interactionId,
         webinarId: id,
@@ -81,54 +93,68 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       triggerTime,
       duration,
       title,
+      description,
       config,
       pauseVideo,
       required,
       showOnReplay,
+      dismissable,
       position,
       enabled,
+      sortOrder,
     } = body
 
     // Validate type if provided
-    const validTypes: WebinarInteractionType[] = [
-      'POLL',
-      'QUESTION',
-      'CTA',
-      'DOWNLOAD',
-      'FEEDBACK',
-      'TIP',
-      'SPECIAL_OFFER',
-    ]
-    if (type && !validTypes.includes(type)) {
-      return NextResponse.json({ error: 'Invalid interaction type' }, { status: 400 })
+    if (type) {
+      const validTypes: WebinarInteractionType[] = [
+        'POLL',
+        'QUESTION',
+        'CTA',
+        'DOWNLOAD',
+        'FEEDBACK',
+        'TIP',
+        'SPECIAL_OFFER',
+        'PAUSE',
+        'QUIZ',
+        'CONTACT_FORM',
+      ]
+      if (!validTypes.includes(type)) {
+        return NextResponse.json({ error: 'Invalid interaction type' }, { status: 400 })
+      }
     }
 
     // Validate position if provided
-    const validPositions: WebinarInteractionPosition[] = [
-      'TOP_LEFT',
-      'TOP_RIGHT',
-      'BOTTOM_LEFT',
-      'BOTTOM_RIGHT',
-      'CENTER',
-      'FULL_OVERLAY',
-    ]
-    if (position && !validPositions.includes(position)) {
-      return NextResponse.json({ error: 'Invalid position' }, { status: 400 })
+    if (position) {
+      const validPositions: WebinarInteractionPosition[] = [
+        'TOP_LEFT',
+        'TOP_RIGHT',
+        'BOTTOM_LEFT',
+        'BOTTOM_RIGHT',
+        'CENTER',
+        'SIDEBAR',
+        'FULL_OVERLAY',
+      ]
+      if (!validPositions.includes(position)) {
+        return NextResponse.json({ error: 'Invalid position' }, { status: 400 })
+      }
     }
 
     const interaction = await prisma.webinarInteraction.update({
       where: { id: interactionId },
       data: {
         ...(type && { type: type as WebinarInteractionType }),
-        ...(typeof triggerTime === 'number' && { triggersAt: triggerTime }),
-        ...(duration !== undefined && { duration: duration || null }),
+        ...(triggerTime !== undefined && { triggersAt: triggerTime }),
+        ...(duration !== undefined && { duration }),
         ...(title && { title }),
-        ...(config !== undefined && { content: config }),
-        ...(typeof pauseVideo === 'boolean' && { pauseVideo }),
-        ...(typeof required === 'boolean' && { required }),
-        ...(typeof showOnReplay === 'boolean' && { showOnReplay }),
+        ...(description !== undefined && { description }),
+        ...(config && { content: config }),
+        ...(pauseVideo !== undefined && { pauseVideo }),
+        ...(required !== undefined && { required }),
+        ...(showOnReplay !== undefined && { showOnReplay }),
+        ...(dismissable !== undefined && { dismissable }),
         ...(position && { position: position as WebinarInteractionPosition }),
-        ...(typeof enabled === 'boolean' && { enabled }),
+        ...(enabled !== undefined && { enabled }),
+        ...(sortOrder !== undefined && { sortOrder }),
       },
     })
 
@@ -139,12 +165,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         triggerTime: interaction.triggersAt,
         duration: interaction.duration,
         title: interaction.title,
+        description: interaction.description,
         config: interaction.content,
         pauseVideo: interaction.pauseVideo,
         required: interaction.required,
         showOnReplay: interaction.showOnReplay,
+        dismissable: interaction.dismissable,
         position: interaction.position,
         enabled: interaction.enabled,
+        sortOrder: interaction.sortOrder,
       },
     })
   } catch (error) {
@@ -165,8 +194,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id, interactionId } = await params
 
   try {
-    // Verify interaction exists and belongs to webinar
-    const existing = await prisma.webinarInteraction.findFirst({
+    // Verify interaction exists and belongs to this webinar
+    const existing = await prisma.webinarInteraction.findUnique({
       where: {
         id: interactionId,
         webinarId: id,

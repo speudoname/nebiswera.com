@@ -821,6 +821,7 @@ model WebinarRegistration {
 
   // Session type they registered for
   sessionType     WebinarSessionType
+  sessionStartTime DateTime?             // Calculated at registration: when this session starts
 
   // Attendance tracking
   status          WebinarRegistrationStatus @default(REGISTERED)
@@ -929,6 +930,9 @@ enum WebinarInteractionType {
   FEEDBACK        // Rating/emoji feedback
   TIP             // Info tooltip/notification
   SPECIAL_OFFER   // Timed offer with countdown
+  PAUSE           // Explicit pause with message (auto-resume or manual)
+  QUIZ            // Multiple choice quiz with correct answers
+  CONTACT_FORM    // Lead capture form (name, email, phone, etc.)
 
   @@schema("webinar")
 }

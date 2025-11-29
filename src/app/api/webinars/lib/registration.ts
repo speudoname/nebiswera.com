@@ -163,6 +163,7 @@ export async function registerForWebinar(
       phone: phone || null,
       customFieldResponses,
       sessionType: finalSessionType,
+      sessionId: finalSessionId,
       timezone: timezone || 'UTC',
       source: source || 'direct',
     },

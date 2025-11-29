@@ -34,6 +34,7 @@ export default async function EditWebinarPage({ params }: PageProps) {
     presenterTitle: webinar.presenterTitle || '',
     presenterBio: webinar.presenterBio || '',
     presenterAvatar: webinar.presenterAvatar || '',
+    customThankYouPageHtml: webinar.customThankYouPageHtml || '',
     timezone: webinar.timezone,
     completionPercent: webinar.completionPercent,
     status: webinar.status,

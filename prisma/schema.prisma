@@ -627,6 +627,9 @@ model Webinar {
   presenterAvatar   String?
   presenterBio      String?       @db.Text
 
+  // Thank you page customization
+  customThankYouPageHtml String?  @db.Text // Custom HTML content shown below standard thank you message
+
   // Completion settings
   completionPercent Int           @default(80) // % watched to count as "completed"
 

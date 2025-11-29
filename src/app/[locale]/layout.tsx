@@ -11,6 +11,7 @@ const GA_MEASUREMENT_ID = 'G-W670GS5SSX'
 
 const inter = Inter({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-inter',
   display: 'optional',
   preload: true,
@@ -18,6 +19,7 @@ const inter = Inter({
 
 const notoSansGeorgian = Noto_Sans_Georgian({
   subsets: ['georgian'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-georgian',
   display: 'optional',
   preload: true,

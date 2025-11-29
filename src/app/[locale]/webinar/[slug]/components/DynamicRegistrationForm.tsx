@@ -125,8 +125,8 @@ export function DynamicRegistrationForm({ slug, locale }: DynamicRegistrationFor
         throw new Error(data.error || 'Registration failed')
       }
 
-      // Redirect to watch page
-      router.push(`/${locale}/webinar/${slug}/watch?token=${data.registration.accessToken}`)
+      // Redirect to thank you page
+      router.push(`/${locale}/webinar/${slug}/thank-you?token=${data.registration.accessToken}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {

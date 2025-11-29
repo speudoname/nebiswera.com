@@ -36,6 +36,7 @@ interface WebinarData {
   presenterTitle: string
   presenterBio: string
   presenterAvatar: string
+  customThankYouPageHtml: string
   timezone: string
   completionPercent: number
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
@@ -55,6 +56,7 @@ const defaultData: WebinarData = {
   presenterTitle: '',
   presenterBio: '',
   presenterAvatar: '',
+  customThankYouPageHtml: '',
   timezone: 'Asia/Tbilisi',
   completionPercent: 80,
   status: 'DRAFT',
@@ -608,6 +610,24 @@ function BasicInfoTab({
                 rows={4}
                 className="w-full rounded-neu border-2 border-transparent bg-neu-base px-4 py-3 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none"
               />
+            </div>
+
+            {/* Custom Thank You Page HTML */}
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-1">
+                Custom Thank You Page HTML
+                <span className="text-xs text-text-muted ml-2">(Optional - shown below standard message)</span>
+              </label>
+              <textarea
+                value={data.customThankYouPageHtml}
+                onChange={(e) => onChange('customThankYouPageHtml', e.target.value)}
+                placeholder="<div>Custom HTML content for thank you page...</div>"
+                rows={6}
+                className="w-full rounded-neu border-2 border-transparent bg-neu-base px-4 py-3 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none resize-none font-mono"
+              />
+              <p className="text-xs text-text-muted mt-1">
+                This HTML will be displayed below the standard thank you message after registration.
+              </p>
             </div>
 
             {/* Presenter preview */}

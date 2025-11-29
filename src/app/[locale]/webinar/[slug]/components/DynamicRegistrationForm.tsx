@@ -298,7 +298,7 @@ export function DynamicRegistrationForm({ slug, locale }: DynamicRegistrationFor
         </label>
         <select
           required
-          value={formData.sessionId || formData.sessionType || ''}
+          value={formData.sessionId ? `session-${formData.sessionId}` : formData.sessionType || ''}
           onChange={(e) => {
             const value = e.target.value
             if (value.startsWith('session-')) {

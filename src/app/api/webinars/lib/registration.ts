@@ -141,7 +141,7 @@ export async function registerForWebinar(
       firstName: firstName || null,
       lastName: lastName || null,
       phone: phone || null,
-      customFieldResponses: customFieldResponses || null,
+      customFieldResponses: customFieldResponses ? customFieldResponses : undefined,
       accessToken,
       sessionType: finalSessionType,
       timezone: timezone || 'UTC',

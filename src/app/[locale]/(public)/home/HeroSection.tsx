@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server'
-import Image from 'next/image'
 import Link from 'next/link'
 import { HeroVideoPlayer } from './HeroVideoPlayer'
 
@@ -38,15 +37,33 @@ export async function HeroSection({ locale }: HeroSectionProps) {
             {t('subtitle')}
           </h2>
 
-          {/* Video Container with inline styles for instant paint */}
-          <div className="hero-video-container mb-6 md:mb-8 shadow-neu">
-            {/* LCP Image - direct from CDN, no Next.js optimization overhead */}
+          {/* Video Container with inline styles for instant paint - NO CSS dependency */}
+          <div
+            className="hero-video-container mb-6 md:mb-8 shadow-neu"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '36rem',
+              margin: '0 auto',
+              aspectRatio: '16/9',
+              borderRadius: '1rem',
+              overflow: 'hidden',
+            }}
+          >
+            {/* LCP Image - inline styles for ZERO render delay */}
             <img
               src={HERO_POSTER}
               alt=""
               className="hero-poster"
               fetchPriority="high"
               decoding="async"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              }}
             />
 
             {/* Video Player - Client component, loads on top */}

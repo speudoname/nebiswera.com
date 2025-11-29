@@ -66,7 +66,7 @@ export function ThankYouClient({ slug, token, locale }: ThankYouClientProps) {
       return () => clearTimeout(timer)
     }
 
-    // SCHEDULED: Calculate time until start and set up countdown
+    // SCHEDULED or JUST_IN_TIME: Calculate time until start and set up countdown
     if (data.sessionScheduledAt) {
       const startTime = new Date(data.sessionScheduledAt).getTime()
       const now = Date.now()
@@ -132,7 +132,10 @@ export function ThankYouClient({ slug, token, locale }: ThankYouClientProps) {
     }
   }
 
-  const showCountdown = data.sessionType === 'SCHEDULED' && timeUntilStart !== null && timeUntilStart > 0
+  const showCountdown =
+    (data.sessionType === 'SCHEDULED' || data.sessionType === 'JUST_IN_TIME') &&
+    timeUntilStart !== null &&
+    timeUntilStart > 0
   const showAutoRedirectMessage = data.sessionType === 'ON_DEMAND' || data.sessionType === 'REPLAY'
 
   return (

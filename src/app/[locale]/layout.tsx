@@ -114,8 +114,8 @@ export default async function LocaleLayout({
           .text-secondary{color:#5B4478}
           .text-dark{color:#2D1B4E}
 
-          /* Hero Video Container */
-          .hero-video-container{position:relative;width:100%;max-width:36rem;margin:0 auto 1.5rem;aspect-ratio:16/9;border-radius:1rem;overflow:hidden;box-shadow:6px 6px 12px #B8B4BD,-6px -6px 12px #FFFFFF}
+          /* Hero Video Container - Using padding-bottom trick for reliable 16:9 aspect ratio */
+          .hero-video-container{position:relative;width:100%;max-width:36rem;margin:0 auto 1.5rem;padding-bottom:56.25%;height:0;border-radius:1rem;overflow:hidden;box-shadow:6px 6px 12px #B8B4BD,-6px -6px 12px #FFFFFF}
           @media(min-width:768px){.hero-video-container{margin-bottom:2rem}}
           .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 

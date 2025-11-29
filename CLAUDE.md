@@ -1,475 +1,75 @@
-# Nebiswera - Development Guidelines
+# Nebiswera - Development Guide
 
-## Project Overview
+> **⚠️ IMPORTANT FOR CLAUDE:**
+> This file is an **index only**. Keep it under 100 lines.
+>
+> **When adding new documentation:**
+> 1. ❌ **DO NOT** add details to this file
+> 2. ✅ **DO** create/update a file in `.claude/` folder
+> 3. ✅ **DO** add a brief link here pointing to that file
+>
+> **Purpose:** This file loads on every conversation. Keep it minimal to save context.
 
-Nebiswera is a bilingual (Georgian/English) learning platform built with:
-- **Framework**: Next.js 14 (App Router)
-- **Database**: PostgreSQL with Prisma ORM
-- **Auth**: NextAuth.js v5
-- **i18n**: next-intl
-- **Email**: Postmark
-- **Icons**: Lucide React
-- **Design System**: Neomorphic with purple/lavender pastels
-- **Deployment**: DigitalOcean Droplet (standalone output)
+## Quick Reference
 
-## Design System
+**Tech Stack:** Next.js 14 (App Router) | PostgreSQL + Prisma | NextAuth.js v5 | next-intl | Postmark
 
-### Neomorphic Design
+**Deployment:** DigitalOcean Droplet (standalone output)
 
-The app uses a neomorphic (soft UI) design with a purple/lavender pastel color scheme.
+## Critical Rules
 
-**Key Principles:**
-- Soft shadows create depth (raised and inset states)
-- Consistent lavender background (`bg-neu-base`)
-- Purple accent colors for interactive elements
-- Rounded corners throughout (`rounded-neu`, `rounded-neu-md`)
+### 1. NO Hardcoded Strings
+All user-facing text MUST use translations from `content/messages/`.
 
-### Color Palette
+👉 See [.claude/i18n.md](.claude/i18n.md) for full guide
 
-```
-Primary Purple:  #8B5CF6 (primary-500)
-Background:      #E8E0F0 (neu-base)
-Text Primary:    #2D1B4E (text-primary)
-Text Secondary:  #5B4478 (text-secondary)
-```
+### 2. Design System
+Use neomorphic purple/lavender theme with consistent shadows and rounded corners.
 
-### Shadow Classes
+👉 See [.claude/design-system.md](.claude/design-system.md) for colors, shadows, components
 
-```tsx
-// Raised elements (buttons, cards)
-shadow-neu-sm    // Subtle raised
-shadow-neu       // Default raised
-shadow-neu-md    // Medium raised
-shadow-neu-lg    // Large raised
+### 3. Icons
+ALWAYS use Lucide React (`lucide-react`). Never use other icon libraries or inline SVGs.
 
-// Pressed/inset elements (inputs, pressed buttons)
-shadow-neu-inset-sm
-shadow-neu-inset
-shadow-neu-inset-md
+Browse: https://lucide.dev/icons
 
-// Interactive states
-hover:shadow-neu-hover
-active:shadow-neu-pressed
-```
+### 4. Component Organization
+**Co-locate components with their pages.** Only truly shared components go in `/src/components/`.
 
-### Component Usage
+👉 See [.claude/component-organization.md](.claude/component-organization.md) for decision tree
 
-```tsx
-// Card with neomorphic shadow
-<Card variant="raised" padding="md">Content</Card>
+### 5. Admin Panel = English Only
+No translations needed in `/admin/*` routes. Admin users understand English.
 
-// Button with neomorphic styling
-<Button variant="primary">Click me</Button>
+## Documentation Index
 
-// Input with inset shadow
-<Input label="Email" placeholder="you@example.com" />
-```
+### Planning & Building
+- **Creating a new page?** → [.claude/checklists/new-page.md](.claude/checklists/new-page.md)
+- **Adding a new feature?** → [.claude/checklists/new-feature.md](.claude/checklists/new-feature.md)
 
-### Background Colors
+### Reference Docs
+- **Internationalization (i18n)** → [.claude/i18n.md](.claude/i18n.md)
+  - Translation files, namespaces, email templates
+- **Design System** → [.claude/design-system.md](.claude/design-system.md)
+  - Colors, shadows, component usage, icons
+- **Component Organization** → [.claude/component-organization.md](.claude/component-organization.md)
+  - Where to put components, lib files, page structure
+- **SEO & Metadata** → [.claude/seo-metadata.md](.claude/seo-metadata.md)
+  - Page registry, metadata generation, OG images
 
-- `bg-neu-base` - Main background (#E8E0F0)
-- `bg-neu-light` - Lighter variant
-- `bg-neu-dark` - Darker variant (for borders/dividers)
+## Quick Answers
 
-## Icons
+**Q: Where should this component live?**
+A: Check [component-organization.md](.claude/component-organization.md) decision tree
 
-**ALWAYS use Lucide React icons.** Never use other icon libraries or inline SVGs.
+**Q: How do I add translations?**
+A: Add to both `content/messages/en.json` and `ka.json` → [i18n.md](.claude/i18n.md)
 
-```tsx
-import { User, Settings, LogOut } from 'lucide-react'
+**Q: What colors/shadows should I use?**
+A: See [design-system.md](.claude/design-system.md)
 
-<User className="w-5 h-5" />
-<Settings size={20} />
-```
+**Q: How do I add a new page?**
+A: Follow [checklists/new-page.md](.claude/checklists/new-page.md)
 
-Browse icons at: https://lucide.dev/icons
-
-## Internationalization Architecture
-
-### CRITICAL RULE: NO HARDCODED STRINGS
-
-**All user-facing text MUST come from translation files. Never hardcode strings.**
-
-This applies to:
-- UI text (labels, buttons, messages, placeholders)
-- Error messages
-- Success messages
-- Loading states
-- Email content
-- Any text visible to users
-
-### Translation Files
-
-Located in `/content/messages/`:
-- `en.json` - English translations
-- `ka.json` - Georgian translations
-
-### How to Use Translations
-
-**In Client Components:**
-```tsx
-'use client'
-import { useTranslations } from 'next-intl'
-
-export function MyComponent() {
-  const t = useTranslations('namespace')
-  return <h1>{t('key')}</h1>
-}
-```
-
-**In Server Components:**
-```tsx
-import { getTranslations } from 'next-intl/server'
-
-export default async function Page() {
-  const t = await getTranslations('namespace')
-  return <h1>{t('key')}</h1>
-}
-```
-
-**With Variables:**
-```tsx
-// In content/messages/en.json: "welcome": "Hello, {name}!"
-t('welcome', { name: user.name })
-```
-
-### Translation Namespaces
-
-- `common` - Shared UI strings (loading, save, cancel, etc.)
-- `nav` - Navigation labels
-- `auth.login` - Login page
-- `auth.register` - Registration page
-- `auth.forgotPassword` - Forgot password page
-- `auth.resetPassword` - Reset password page
-- `auth.verifyEmail` - Email verification page
-- `auth.errors` - Authentication error messages
-- `dashboard` - Dashboard page
-- `profile` - Profile page
-- `footer` - Footer links
-- `home` - Home/landing page
-- `languages` - Language names and switcher text
-
-### Adding New Translations
-
-1. Add the key to BOTH `content/messages/en.json` AND `content/messages/ka.json`
-2. Use the appropriate namespace
-3. Never leave a translation key in only one language file
-
-### Button Loading States
-
-The `Button` component accepts a `loadingText` prop for localized loading text:
-```tsx
-<Button loading={isLoading} loadingText={t('common.loading')}>
-  {t('submit')}
-</Button>
-```
-
-## Email System
-
-### Language-Based Email Templates
-
-Emails are sent in the user's preferred language (stored in `user.preferredLocale`).
-
-**Template Location:** `/content/email-templates/`
-- `verification-en.ts` - English verification email
-- `verification-ka.ts` - Georgian verification email
-- `password-reset-en.ts` - English password reset email
-- `password-reset-ka.ts` - Georgian password reset email
-
-**Why separate files instead of variable injection:**
-- Better email deliverability
-- Cleaner HTML without complex string interpolation
-- Easier to maintain and preview
-- Each language can have its own formatting/styling if needed
-
-### Sending Emails
-
-The email functions in `/src/lib/email.ts` accept a `locale` parameter:
-```ts
-await sendVerificationEmail(email, token, locale) // 'en' or 'ka'
-await sendPasswordResetEmail(email, token, locale)
-```
-
-The locale is determined by:
-1. User's `preferredLocale` from database (if user exists)
-2. Current session locale (during registration)
-3. Fallback to 'ka' (Georgian as default)
-
-## Route Structure
-
-### Locale-Based Routes
-
-All user-facing routes are under `/[locale]/`:
-- `/ka/dashboard` - Georgian dashboard
-- `/en/dashboard` - English dashboard
-
-### Route Groups
-
-- `(public)` - Public pages (home, about, etc.) with PublicHeader/PublicFooter
-- `(authenticated)` - Protected pages requiring login with AppHeader
-- `auth/` - Authentication pages (login, register, etc.) with minimal header
-
-### Admin Panel
-
-**Note:** The admin panel (`/admin/*`) is intentionally kept in English only.
-- Admin users are expected to understand English
-- This reduces maintenance overhead
-- Admin-only components in `/src/components/admin/` do not require translation
-
-## File Structure
-
-```
-content/                    # All localized content
-├── messages/               # UI translation files (buttons, labels, nav)
-│   ├── en.json
-│   └── ka.json
-├── seo/                    # SEO metadata per page
-│   ├── en.json
-│   └── ka.json
-└── email-templates/        # Language-specific email templates
-    ├── verification-en.ts
-    ├── verification-ka.ts
-    └── ...
-
-src/
-├── app/
-│   ├── [locale]/           # Localized routes
-│   │   ├── (public)/       # Public pages
-│   │   │   ├── page.tsx    # Root page (imports from home/)
-│   │   │   ├── home/       # Home page components (no page.tsx = no /home route)
-│   │   │   │   ├── HomeClient.tsx
-│   │   │   │   └── content/
-│   │   │   │       └── PhilosophySection.tsx
-│   │   │   ├── about/      # About page
-│   │   │   │   ├── page.tsx
-│   │   │   │   └── content/
-│   │   │   └── contact/    # Contact page
-│   │   ├── (authenticated)/ # Protected pages
-│   │   └── auth/           # Auth pages
-│   ├── admin/              # Admin panel (English only)
-│   └── api/                # API routes
-├── components/
-│   ├── ui/                 # Reusable UI components
-│   ├── layout/             # Header/Footer/Navigation components
-│   ├── auth/               # Auth-related components
-│   └── admin/              # Admin components (no i18n)
-├── i18n/                   # next-intl configuration
-├── lib/                    # Utilities and business logic
-├── providers/              # React context providers
-├── styles/                 # Design system tokens
-└── types/                  # TypeScript type definitions
-```
-
-## Page Content Architecture
-
-### Bilingual Content Components
-
-For page-specific content sections (not reusable UI), use **co-located bilingual components** instead of messages JSON.
-
-**Why:**
-- Keeps page content with the page (easier to find and edit)
-- Better for longer text blocks (paragraphs, multi-step explanations)
-- Avoids bloating the messages JSON with page-specific copy
-- Content is self-contained and can have its own structure
-
-**When to use messages JSON:**
-- UI elements (buttons, labels, nav items, form fields)
-- Short strings reused across pages
-- Error/success messages
-
-**When to use bilingual components:**
-- Page sections with paragraphs of text
-- Content that won't be reused elsewhere
-- Sections with complex structure (lists, steps, cards)
-
-### Creating a Bilingual Content Component
-
-Each page folder can have a `content/` subfolder:
-
-```
-src/app/[locale]/(public)/about/
-├── page.tsx
-├── AboutClient.tsx
-└── content/
-    ├── MissionSection.tsx
-    ├── TeamSection.tsx
-    └── ValuesSection.tsx
-```
-
-**Component pattern:**
-
-```tsx
-'use client'
-
-import { useLocale } from 'next-intl'
-import type { Locale } from '@/i18n/config'
-
-const content: Record<Locale, {
-  title: string
-  description: string
-  // ... other fields
-}> = {
-  ka: {
-    title: 'Georgian title',
-    description: 'Georgian description...',
-  },
-  en: {
-    title: 'English title',
-    description: 'English description...',
-  },
-}
-
-export function MissionSection() {
-  const locale = useLocale() as Locale
-  const t = content[locale]
-
-  return (
-    <section>
-      <h2>{t.title}</h2>
-      <p>{t.description}</p>
-    </section>
-  )
-}
-```
-
-### Folder Structure by Page Type
-
-```
-src/app/[locale]/(public)/
-├── page.tsx                    # Root page (imports from home/)
-│
-├── home/                       # Home page (no page.tsx = no /home route)
-│   ├── HomeClient.tsx
-│   └── content/
-│       ├── PhilosophySection.tsx
-│       └── TestimonialsSection.tsx
-│
-├── about/
-│   ├── page.tsx
-│   ├── AboutClient.tsx
-│   └── content/
-│       ├── MissionSection.tsx
-│       └── TeamSection.tsx
-│
-├── contact/
-│   ├── page.tsx
-│   └── ContactClient.tsx       # Simple pages may not need content/
-```
-
-**Key insight:** The `home/` folder has no `page.tsx`, so Next.js doesn't create a `/home` route. It's purely organizational.
-
-## SEO & Metadata System
-
-The project uses a centralized SEO system. **Never hardcode metadata in individual pages.**
-
-### Architecture
-
-```
-content/seo/
-├── en.json          # English titles & descriptions
-└── ka.json          # Georgian titles & descriptions
-
-src/config/seo.ts    # Page registry, sitemap config, OG settings
-src/lib/metadata.ts  # Helper functions for generating metadata
-src/app/robots.ts    # Auto-generated from seo.ts config
-src/app/sitemap.ts   # Auto-generated from seo.ts config
-
-public/og/           # OG images (named by pageKey: home.png, about.png)
-```
-
-### How Pages Use Metadata
-
-Every page must use the server/client component pattern:
-
-```tsx
-// page.tsx (Server Component)
-import { generatePageMetadata } from '@/lib/metadata'
-import { MyPageClient } from './MyPageClient'
-
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params
-  return generatePageMetadata('myPage', locale)
-}
-
-export default function MyPage() {
-  return <MyPageClient />
-}
-```
-
-```tsx
-// MyPageClient.tsx (Client Component)
-'use client'
-// ... all interactive code here
-```
-
-### Updating Metadata
-
-To change titles, descriptions, or OG content:
-1. Edit `content/seo/en.json` and `content/seo/ka.json`
-2. For OG images, place `{pageKey}.png` in `/public/og/`
-3. **No need to touch individual page files**
-
-### Adding New Pages (CRITICAL CHECKLIST)
-
-When creating a new page, you MUST update these files:
-
-| Step | File | Action |
-|------|------|--------|
-| 1 | `src/config/seo.ts` | Add to `indexedPages` (public) or `noIndexPages` (private) |
-| 2 | `content/seo/en.json` | Add `title` and `description` under `pages.{pageKey}` |
-| 3 | `content/seo/ka.json` | Add Georgian `title` and `description` |
-| 4 | `/public/og/` | (Optional) Add `{pageKey}.png` (1200x630px) |
-
-**Example - Adding a "courses" page:**
-
-```ts
-// src/config/seo.ts
-indexedPages: [
-  // ... existing pages
-  { path: '/courses', key: 'courses', priority: 0.9, changefreq: 'weekly' },
-]
-```
-
-```json
-// content/seo/en.json
-{
-  "pages": {
-    "courses": {
-      "title": "Courses - Nebiswera",
-      "description": "Browse our Georgian language courses..."
-    }
-  }
-}
-```
-
-### Public vs Private Pages
-
-- **`indexedPages`**: Appear in sitemap, allowed by robots.txt, indexed by Google
-- **`noIndexPages`**: Blocked in robots.txt, get `noindex` meta tag (auth, dashboard, etc.)
-
-### JSON-LD Schema (Already Implemented)
-
-The following schemas are automatically included in the root layout:
-- `getOrganizationSchema(locale)` - Brand info
-- `getWebSiteSchema(locale)` - Site info with language
-
-These are already set up in `src/app/[locale]/layout.tsx` — no action needed.
-
-## Checklist for New Features
-
-- [ ] All UI text uses `useTranslations` or `getTranslations`
-- [ ] Translation keys added to both `content/messages/en.json` and `content/messages/ka.json`
-- [ ] Loading states use `loadingText` prop
-- [ ] Error messages come from `auth.errors` or appropriate namespace
-- [ ] Links include locale prefix: `/${locale}/path`
-- [ ] Email functions receive user's locale
-- [ ] No hardcoded strings in user-facing code
-
-## Checklist for New Pages
-
-- [ ] Page added to `src/config/seo.ts` (indexedPages or noIndexPages)
-- [ ] Metadata added to `content/seo/en.json` and `content/seo/ka.json`
-- [ ] Page uses server/client component pattern with `generatePageMetadata`
-- [ ] (Optional) OG image added to `/public/og/{pageKey}.png`
-- [ ] Page content sections use bilingual components in `content/` subfolder (not messages JSON)
-- [ ] Content components follow the `Record<Locale, {...}>` pattern
+**Q: What about SEO?**
+A: Update `src/config/seo.ts` and `content/seo/` → [seo-metadata.md](.claude/seo-metadata.md)

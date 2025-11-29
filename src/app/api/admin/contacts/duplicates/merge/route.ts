@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
-import { mergeContacts } from '@/lib/duplicate-detection'
+import { mergeContacts } from '@/app/api/admin/contacts/lib/duplicate-detection'
 import type { NextRequest } from 'next/server'
 
 export async function POST(request: NextRequest) {

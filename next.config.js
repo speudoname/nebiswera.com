@@ -36,6 +36,12 @@ const nextConfig = {
   experimental: {
     // Optimize package imports
     optimizePackageImports: ['next-intl', 'lucide-react'],
+
+    // Enable optimized CSS loading
+    optimizeCss: true,
+
+    // Use CSS chunks for better caching
+    cssChunking: 'loose',
   },
 
   // Security headers and caching

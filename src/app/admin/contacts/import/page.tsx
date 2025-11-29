@@ -21,7 +21,7 @@ import {
   validateTransformedData,
   type ColumnMapping,
   type FieldType,
-} from '@/lib/import-utils'
+} from '@/app/api/admin/contacts/lib/import-utils'
 
 interface Tag {
   id: string

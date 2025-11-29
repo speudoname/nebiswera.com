@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { validateAccessToken, markAsAttended, updateWatchProgress } from '@/lib/webinar/registration'
+import { validateAccessToken, markAsAttended, updateWatchProgress } from '@/app/api/webinars/lib/registration'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {

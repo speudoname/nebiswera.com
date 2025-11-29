@@ -1,4 +1,4 @@
-import { WebinarEditor } from '@/components/admin/webinars/WebinarEditor'
+import { WebinarEditor } from '../components/WebinarEditor'
 
 export const dynamic = 'force-dynamic'
 

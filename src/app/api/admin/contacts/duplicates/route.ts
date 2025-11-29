@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { findAllDuplicates, findDuplicatesForImport } from '@/lib/duplicate-detection'
+import { findAllDuplicates, findDuplicatesForImport } from '@/app/api/admin/contacts/lib/duplicate-detection'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {

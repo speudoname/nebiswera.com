@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { WebinarEditor } from '@/components/admin/webinars/WebinarEditor'
+import { WebinarEditor } from '../components/WebinarEditor'
 
 export const metadata = {
   title: 'Edit Webinar - Admin',

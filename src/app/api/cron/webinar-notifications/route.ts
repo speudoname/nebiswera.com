@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { processNotificationQueue } from '@/lib/webinar/notifications'
+import { processNotificationQueue } from '@/app/api/webinars/lib/notifications'
 import type { NextRequest } from 'next/server'
 
 // GET /api/cron/webinar-notifications - Process notification queue

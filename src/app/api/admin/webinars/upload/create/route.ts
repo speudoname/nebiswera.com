@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
-import { createBunnyVideo, getBunnyHlsUrl, getBunnyThumbnailUrl } from '@/lib/video/bunny'
+import { createBunnyVideo, getBunnyHlsUrl, getBunnyThumbnailUrl } from '@/lib/storage/bunny'
 import type { NextRequest } from 'next/server'
 
 // Environment variables for Bunny

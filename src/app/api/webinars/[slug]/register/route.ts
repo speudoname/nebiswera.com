@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { registerForWebinar } from '@/lib/webinar/registration'
-import { getAvailableSessionsForRegistration } from '@/lib/webinar/session-generator'
+import { registerForWebinar } from '@/app/api/webinars/lib/registration'
+import { getAvailableSessionsForRegistration } from '@/app/api/webinars/lib/session-generator'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {

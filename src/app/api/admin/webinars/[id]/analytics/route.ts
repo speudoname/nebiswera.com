@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { getEngagementBreakdown, updateWebinarEngagementScores } from '@/lib/webinar/engagement'
+import { getEngagementBreakdown, updateWebinarEngagementScores } from '@/app/api/webinars/lib/engagement'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {

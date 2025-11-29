@@ -1,6 +1,6 @@
 // API endpoint for video uploads to Bunny Stream
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadVideo } from '@/lib/video/bunny'
+import { uploadVideo } from '@/lib/storage/bunny'
 import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
 

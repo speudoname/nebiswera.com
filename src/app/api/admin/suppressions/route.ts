@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { syncSuppressions, getSuppressionDump } from '@/lib/suppression-sync'
+import { syncSuppressions, getSuppressionDump } from '@/app/api/admin/lib/suppression-sync'
 import type { NextRequest } from 'next/server'
 
 /**

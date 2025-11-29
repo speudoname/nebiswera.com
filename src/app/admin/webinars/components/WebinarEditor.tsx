@@ -272,6 +272,33 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
     }
   }
 
+  const handleUnpublish = async () => {
+    if (!webinarId) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/webinars/${webinarId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'DRAFT' }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || 'Failed to unpublish webinar')
+      }
+
+      const savedWebinar = await res.json()
+      setData({ ...data, ...savedWebinar })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unpublish webinar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div>
       {/* Header */}
@@ -294,6 +321,11 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
           {!isNew && data.status === 'DRAFT' && (
             <Button variant="secondary" onClick={handlePublish} disabled={saving}>
               Publish
+            </Button>
+          )}
+          {!isNew && data.status === 'PUBLISHED' && (
+            <Button variant="secondary" onClick={handleUnpublish} disabled={saving}>
+              Unpublish
             </Button>
           )}
           <Button onClick={handleSave} disabled={saving}>

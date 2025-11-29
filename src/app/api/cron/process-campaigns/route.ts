@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import {
   getCampaignsToProcess,
   processCampaignBatch,
-} from '@/lib/campaign-sender'
+} from '@/app/api/admin/campaigns/lib/campaign-sender'
 
 // Security: Verify cron secret
 const CRON_SECRET = process.env.CRON_SECRET

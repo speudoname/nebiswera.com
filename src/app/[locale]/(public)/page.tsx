@@ -1,6 +1,6 @@
 import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
-import { HeroSection } from './home/HeroSection'
+import { HeroSection } from './home/content/HeroSection'
 import { PhilosophySection } from './home/content/PhilosophySection'
 import { ProblemAwarenessSection } from './home/content/ProblemAwarenessSection'
 import { SecretRevealSection } from './home/content/SecretRevealSection'
@@ -29,22 +29,9 @@ export default async function HomePage({
   const { locale } = await params
 
   return (
-    <>
-      {/* Critical CSS for LCP - inlined to bypass render-blocking stylesheets */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        .hero-video-container{position:relative;width:100%;max-width:36rem;margin:0 auto;aspect-ratio:16/9;border-radius:1rem;overflow:hidden}
-        .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-      `}} />
-      {/* Preload hero poster for faster LCP - self-hosted on R2 for same-origin performance */}
-      <link
-        rel="preload"
-        as="image"
-        href="https://cdn.nebiswera.com/hero/video-poster.jpg"
-        fetchPriority="high"
-      />
-      <div className="overflow-x-hidden">
-        {/* Hero Section - Server Component for instant LCP */}
-        <HeroSection locale={locale} />
+    <div className="overflow-x-hidden">
+      {/* Hero Section */}
+      <HeroSection locale={locale} />
 
         {/* Secret Reveal */}
         <SecretRevealSection />
@@ -79,9 +66,8 @@ export default async function HomePage({
         {/* Social Proof (Stats + Link to all testimonials) */}
         <SocialProofSection />
 
-        {/* Final CTA */}
-        <CTASection />
-      </div>
-    </>
+      {/* Final CTA */}
+      <CTASection />
+    </div>
   )
 }

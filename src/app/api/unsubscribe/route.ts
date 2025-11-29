@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
-import { verifyUnsubscribeToken } from '@/lib/unsubscribe-token'
+import { verifyUnsubscribeToken } from '@/app/api/lib/unsubscribe-token'
 
 /**
  * POST /api/unsubscribe - Process unsubscribe request

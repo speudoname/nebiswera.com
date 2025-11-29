@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { validateAccessToken } from '@/lib/webinar/registration'
+import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {

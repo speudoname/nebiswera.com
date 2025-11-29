@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
-import { logContactUpdated, logStatusChanged, logTagsAdded, logTagsRemoved } from '@/lib/contact-activity'
+import { logContactUpdated, logStatusChanged, logTagsAdded, logTagsRemoved } from '@/app/api/admin/contacts/lib/contact-activity'
 import type { NextRequest } from 'next/server'
 
 export async function GET(

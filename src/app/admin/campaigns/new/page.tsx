@@ -1,4 +1,4 @@
-import { CampaignEditor } from '@/components/admin/campaigns/CampaignEditor'
+import { CampaignEditor } from '../components/CampaignEditor'
 
 export const metadata = {
   title: 'New Campaign - Admin',

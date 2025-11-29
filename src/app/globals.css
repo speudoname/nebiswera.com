@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import '@maily-to/core/style.css';
 
 @config '../../tailwind.config.ts';
 

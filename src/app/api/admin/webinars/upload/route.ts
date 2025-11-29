@@ -10,7 +10,7 @@ import {
   isVideoProcessing,
   hasVideoError,
   getVideoStatusText,
-} from '@/lib/video/bunny'
+} from '@/lib/storage/bunny'
 import type { NextRequest } from 'next/server'
 
 // POST /api/admin/webinars/upload - Upload video directly to Bunny

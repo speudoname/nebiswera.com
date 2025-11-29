@@ -31,6 +31,8 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
           <img
             src={profilePhoto}
             alt={name}
+            width={56}
+            height={56}
             className="w-14 h-14 rounded-full object-cover shadow-neu-sm"
           />
         ) : (
@@ -81,7 +83,7 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
 
       {/* Text content with height constraint */}
       <div className="mb-4">
-        <p className="text-text-secondary text-sm md:text-base leading-relaxed">
+        <p className="text-text-secondary text-sm md:text-base leading-relaxed whitespace-pre-line">
           "{displayText}"
         </p>
         {isLongText && (
@@ -102,6 +104,8 @@ export function TestimonialCard({ testimonial }: { testimonial: TestimonialData 
               key={index}
               src={image}
               alt={`${name} - image ${index + 1}`}
+              width={120}
+              height={120}
               className="rounded-neu-sm shadow-neu-sm aspect-square object-cover"
             />
           ))}

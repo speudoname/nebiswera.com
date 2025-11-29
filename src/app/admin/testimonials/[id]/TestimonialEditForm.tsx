@@ -276,9 +276,42 @@ export function TestimonialEditForm({ id }: { id: string }) {
           {testimonial.videoUrl && (
             <div>
               <label className="block text-sm font-medium text-text-primary mb-2">
-                Video URL
+                Video
               </label>
-              <p className="text-sm text-text-secondary">{testimonial.videoUrl}</p>
+              <div className="max-w-md">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full rounded-neu shadow-neu"
+                  src={testimonial.videoUrl.includes('playlist.m3u8')
+                    ? testimonial.videoUrl.replace('playlist.m3u8', 'play_720p.mp4')
+                    : testimonial.videoUrl
+                  }
+                >
+                  Your browser does not support the video tag.
+                </video>
+                <p className="text-xs text-text-muted mt-2 break-all">{testimonial.videoUrl}</p>
+              </div>
+            </div>
+          )}
+
+          {testimonial.audioUrl && (
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Audio
+              </label>
+              <div className="max-w-md">
+                <audio
+                  controls
+                  preload="metadata"
+                  className="w-full"
+                  src={testimonial.audioUrl}
+                >
+                  Your browser does not support the audio tag.
+                </audio>
+                <p className="text-xs text-text-muted mt-2 break-all">{testimonial.audioUrl}</p>
+              </div>
             </div>
           )}
 

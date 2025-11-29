@@ -36,7 +36,8 @@ export function LoveWallClient() {
 
   async function fetchTestimonials() {
     try {
-      const res = await fetch('/api/testimonials?limit=100')
+      // Always explicitly request only APPROVED testimonials for public page
+      const res = await fetch('/api/testimonials?limit=100&status=APPROVED')
       const data = await res.json()
       setTestimonials(data.testimonials || [])
     } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
-import { Video, Square, Play, Pause, Trash2, Check, Camera } from 'lucide-react'
+import { Square, Play, Pause, Camera } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 interface VideoRecorderProps {
@@ -14,27 +14,22 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
   const t = useTranslations('collectLove.step3.videoRecorder')
   const [isRecording, setIsRecording] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null)
-  const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [recordingTime, setRecordingTime] = useState(0)
-  const [cameraStarted, setCameraStarted] = useState(false)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const videoChunksRef = useRef<Blob[]>([])
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const previewRef = useRef<HTMLVideoElement | null>(null)
-  const playbackRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
-      if (videoUrl) URL.revokeObjectURL(videoUrl)
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop())
       }
     }
-  }, [videoUrl])
+  }, [])
 
   async function startCamera() {
     try {
@@ -47,7 +42,6 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
       if (previewRef.current) {
         previewRef.current.srcObject = stream
         await previewRef.current.play()
-        setCameraStarted(true)
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
@@ -59,7 +53,6 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop())
       streamRef.current = null
-      setCameraStarted(false)
     }
   }
 
@@ -73,8 +66,18 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
     if (!streamRef.current) return
 
     try {
+      // Try different mimeTypes for better compatibility
+      let mimeType = 'video/webm;codecs=vp9,opus'
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm;codecs=vp8,opus'
+      }
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm'
+      }
+
       const mediaRecorder = new MediaRecorder(streamRef.current, {
-        mimeType: 'video/webm;codecs=vp8,opus',
+        mimeType,
+        videoBitsPerSecond: 2500000, // 2.5 Mbps for good quality
       })
       mediaRecorderRef.current = mediaRecorder
       videoChunksRef.current = []
@@ -86,13 +89,13 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
       }
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(videoChunksRef.current, { type: 'video/webm' })
-        setVideoBlob(blob)
-        const url = URL.createObjectURL(blob)
-        setVideoUrl(url)
+        // Create blob and immediately pass to parent - no preview step here
+        const blob = new Blob(videoChunksRef.current, { type: mimeType })
         stopCamera()
+        onRecordingComplete(blob)
       }
 
+      // Start recording without timeslice for proper blob structure
       mediaRecorder.start()
       setIsRecording(true)
       setRecordingTime(0)
@@ -139,20 +142,6 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
     }
   }
 
-  function retake() {
-    if (videoUrl) URL.revokeObjectURL(videoUrl)
-    setVideoBlob(null)
-    setVideoUrl(null)
-    setRecordingTime(0)
-    startCamera()
-  }
-
-  function handleUseRecording() {
-    if (videoBlob) {
-      onRecordingComplete(videoBlob)
-    }
-  }
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -166,34 +155,15 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
 
   return (
     <div className="p-6 bg-neu-base rounded-neu-lg shadow-neu-md">
+      {/* Live camera feed only - no playback preview */}
       <div className="mb-6 relative bg-black rounded-neu overflow-hidden aspect-video max-h-[60vh]">
-        {!videoUrl ? (
-          <video
-            ref={previewRef}
-            autoPlay
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <video
-            ref={playbackRef}
-            src={videoUrl}
-            controls
-            playsInline
-            preload="metadata"
-            className="w-full h-full object-cover"
-            onLoadedMetadata={() => {
-              // Seek to start frame to show preview instead of black screen
-              if (playbackRef.current) {
-                playbackRef.current.currentTime = 0.01
-              }
-            }}
-            onError={(e) => {
-              console.error('Video playback error:', e)
-            }}
-          />
-        )}
+        <video
+          ref={previewRef}
+          autoPlay
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+        />
 
         {isRecording && (
           <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -209,50 +179,36 @@ export function VideoRecorder({ onRecordingComplete, onCancel }: VideoRecorderPr
         )}
       </div>
 
-      {!videoUrl ? (
-        <div className="space-y-3">
-          {!isRecording ? (
-            <Button variant="primary" size="lg" fullWidth onClick={startRecording}>
-              <Camera className="w-5 h-5 mr-2" />
-              {t('startRecording')}
-            </Button>
-          ) : (
-            <div className="flex gap-3">
-              {!isPaused ? (
-                <Button variant="secondary" fullWidth onClick={pauseRecording}>
-                  <Pause className="w-5 h-5 mr-2" />
-                  {t('pause')}
-                </Button>
-              ) : (
-                <Button variant="secondary" fullWidth onClick={resumeRecording}>
-                  <Play className="w-5 h-5 mr-2" />
-                  {t('resume')}
-                </Button>
-              )}
-              <Button variant="primary" fullWidth onClick={stopRecording}>
-                <Square className="w-5 h-5 mr-2" />
-                {t('finishRecording')}
-              </Button>
-            </div>
-          )}
-          <Button variant="ghost" size="lg" fullWidth onClick={() => { stopCamera(); onCancel(); }}>
-            {t('cancel')}
+      {/* Recording controls only - preview handled by parent */}
+      <div className="space-y-3">
+        {!isRecording ? (
+          <Button variant="primary" size="lg" fullWidth onClick={startRecording}>
+            <Camera className="w-5 h-5 mr-2" />
+            {t('startRecording')}
           </Button>
-        </div>
-      ) : (
-        <div className="space-y-3">
+        ) : (
           <div className="flex gap-3">
-            <Button variant="ghost" fullWidth onClick={retake}>
-              <Trash2 className="w-5 h-5 mr-2" />
-              {t('retake')}
+            {!isPaused ? (
+              <Button variant="secondary" fullWidth onClick={pauseRecording}>
+                <Pause className="w-5 h-5 mr-2" />
+                {t('pause')}
+              </Button>
+            ) : (
+              <Button variant="secondary" fullWidth onClick={resumeRecording}>
+                <Play className="w-5 h-5 mr-2" />
+                {t('resume')}
+              </Button>
+            )}
+            <Button variant="primary" fullWidth onClick={stopRecording}>
+              <Square className="w-5 h-5 mr-2" />
+              {t('finishRecording')}
             </Button>
           </div>
-          <Button variant="primary" size="lg" fullWidth onClick={handleUseRecording}>
-            <Check className="w-5 h-5 mr-2" />
-            {t('useRecording')}
-          </Button>
-        </div>
-      )}
+        )}
+        <Button variant="ghost" size="lg" fullWidth onClick={() => { stopCamera(); onCancel(); }}>
+          {t('cancel')}
+        </Button>
+      </div>
     </div>
   )
 }

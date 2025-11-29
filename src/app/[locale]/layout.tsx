@@ -47,9 +47,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
-        {/* Preconnect to CDN for faster resource loading */}
+        {/* Preconnect to CDNs for faster resource loading */}
         <link rel="preconnect" href="https://cdn.nebiswera.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://cdn.nebiswera.com" />
+        {/* Bunny.net video CDN - critical for LCP on home page */}
+        <link rel="preconnect" href="https://vz-1693fee0-2ad.b-cdn.net" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://vz-1693fee0-2ad.b-cdn.net" />
 
 
         <script

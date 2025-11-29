@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui'
-import { Save, AlertCircle } from 'lucide-react'
+import { Save, AlertCircle, Image } from 'lucide-react'
 import { CampaignData } from './CampaignEditor'
 import { MailyEditor, type MailyEditorRef } from './MailyEditor'
-import { ImageUploader } from './ImageUploader'
+import { EmailImageManager } from './EmailImageManager'
 
 interface Step2ContentProps {
   data: CampaignData
@@ -204,11 +204,20 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
 
       {/* Maily.to Editor - Remove all container constraints */}
       <div className="bg-white rounded-neu border-2 border-neu-dark shadow-neu">
-        <div className="p-4 bg-neu-base border-b-2 border-neu-dark">
+        <div className="p-4 bg-neu-base border-b-2 border-neu-dark space-y-3">
           <p className="text-sm text-text-muted flex items-center gap-2">
             <AlertCircle className="w-4 h-4" />
             Changes are auto-saved every 2 seconds. Click &quot;Save & Compile&quot; to finalize and generate HTML.
           </p>
+
+          {/* Image Manager */}
+          <div className="pt-2 border-t border-neu-dark">
+            <div className="flex items-center gap-2 mb-2">
+              <Image className="w-4 h-4 text-text-muted" />
+              <span className="text-sm font-medium text-text-secondary">Image Manager</span>
+            </div>
+            <EmailImageManager />
+          </div>
         </div>
         {/* Only render editor after initialContent is loaded */}
         {initialContent !== null && (
@@ -226,6 +235,7 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
         <h3 className="text-sm font-medium text-yellow-900 mb-2">✏️ Email Editor Tips</h3>
         <ul className="text-xs text-yellow-800 space-y-1">
           <li>• Use the toolbar to insert buttons, images, dividers, and other email components</li>
+          <li>• <strong>For images:</strong> Use the Image Manager above to upload or select from library, then paste the URL into the image block</li>
           <li>• Format text with bold, italic, headings, colors, alignment, and lists</li>
           <li>• Type personalization variables directly (<code>{'{{firstName}}'}</code>, <code>{'{{email}}'}</code>, etc.)</li>
           <li>• Click on components to edit their properties (links, colors, spacing, etc.)</li>
@@ -236,8 +246,6 @@ export function Step2Content({ data, onUpdate, campaignId }: Step2ContentProps) 
         </ul>
       </div>
 
-      {/* Floating Image Uploader */}
-      <ImageUploader />
     </div>
   )
 }

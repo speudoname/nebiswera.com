@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Mic, Video, Upload } from 'lucide-react'
+import { Mic, Video, Upload, Trash2, Check, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { AudioRecorder } from '../components/AudioRecorder'
 import { VideoRecorder } from '../components/VideoRecorder'
@@ -24,6 +24,22 @@ export function Step3AudioVideo({
   const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+
+  // Preview state - blob to preview before final upload
+  const [previewBlob, setPreviewBlob] = useState<Blob | null>(null)
+  const [previewType, setPreviewType] = useState<'audio' | 'video' | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  const videoPreviewRef = useRef<HTMLVideoElement>(null)
+
+  // Cleanup preview URL on unmount or when preview changes
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
 
   async function uploadMedia(blob: Blob, type: 'audio' | 'video') {
     setIsUploading(true)
@@ -57,12 +73,35 @@ export function Step3AudioVideo({
 
       if (!updateRes.ok) throw new Error('Failed to save')
 
+      // Clear preview and proceed
+      clearPreview()
       onComplete()
     } catch (error: any) {
       alert(error.message)
       setIsUploading(false)
       setUploadProgress(0)
     }
+  }
+
+  function showPreview(blob: Blob, type: 'audio' | 'video') {
+    // Clean up previous preview URL
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+
+    const url = URL.createObjectURL(blob)
+    setPreviewBlob(blob)
+    setPreviewType(type)
+    setPreviewUrl(url)
+  }
+
+  function clearPreview() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    setPreviewBlob(null)
+    setPreviewType(null)
+    setPreviewUrl(null)
   }
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, type: 'audio' | 'video') {
@@ -75,13 +114,30 @@ export function Step3AudioVideo({
       return
     }
 
-    uploadMedia(file, type)
+    // Show preview instead of immediately uploading
+    showPreview(file, type)
+    setExpandedType(null)
   }
 
   function handleRecordingComplete(blob: Blob, type: 'audio' | 'video') {
     setRecordingMode(null)
     setExpandedType(null)
-    uploadMedia(blob, type)
+    // Show preview instead of immediately uploading
+    showPreview(blob, type)
+  }
+
+  function handleConfirmUpload() {
+    if (previewBlob && previewType) {
+      uploadMedia(previewBlob, previewType)
+    }
+  }
+
+  function handleRetake() {
+    const type = previewType
+    clearPreview()
+    if (type) {
+      setRecordingMode(type)
+    }
   }
 
   // Show recorder interface
@@ -103,6 +159,92 @@ export function Step3AudioVideo({
           onRecordingComplete={(blob) => handleRecordingComplete(blob, 'video')}
           onCancel={() => setRecordingMode(null)}
         />
+      </div>
+    )
+  }
+
+  // Show preview screen if we have a blob to preview
+  if (previewBlob && previewType && previewUrl) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-text-primary mb-2">
+            {locale === 'ka' ? 'გადახედეთ თქვენს ჩანაწერს' : 'Review Your Recording'}
+          </h2>
+          <p className="text-text-secondary">
+            {locale === 'ka'
+              ? 'გთხოვთ გადახედოთ და დაადასტუროთ ან გადაიღოთ თავიდან'
+              : 'Please review and confirm or retake'}
+          </p>
+        </div>
+
+        <div className="p-6 bg-neu-base rounded-neu-lg shadow-neu-md">
+          {/* Preview Player */}
+          <div className="mb-6 rounded-neu overflow-hidden bg-black">
+            {previewType === 'video' ? (
+              <video
+                ref={videoPreviewRef}
+                src={previewUrl}
+                controls
+                playsInline
+                className="w-full aspect-video"
+              />
+            ) : (
+              <div className="p-8 flex flex-col items-center justify-center bg-neu-base">
+                <Mic className="w-16 h-16 text-primary-500 mb-4" />
+                <audio
+                  src={previewUrl}
+                  controls
+                  preload="metadata"
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          {isUploading ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 mx-auto mb-4 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-text-secondary">{t('uploading')}</p>
+              {uploadProgress > 0 && (
+                <p className="text-sm text-text-muted mt-2">{uploadProgress}%</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  fullWidth
+                  onClick={handleRetake}
+                >
+                  <RotateCcw className="w-5 h-5 mr-2" />
+                  {locale === 'ka' ? 'თავიდან გადაღება' : 'Retake'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  fullWidth
+                  onClick={clearPreview}
+                >
+                  <Trash2 className="w-5 h-5 mr-2" />
+                  {locale === 'ka' ? 'გაუქმება' : 'Discard'}
+                </Button>
+              </div>
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={handleConfirmUpload}
+              >
+                <Check className="w-5 h-5 mr-2" />
+                {locale === 'ka' ? 'დადასტურება და გაგრძელება' : 'Confirm & Continue'}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     )
   }

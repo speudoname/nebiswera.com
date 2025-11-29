@@ -237,7 +237,26 @@ export function VideoRecorder({ onRecordingComplete, onUploadVideo, locale }: Vi
             ref={videoRef}
             src={videoURL}
             controls
+            playsInline
+            preload="auto"
             onEnded={() => setIsPlaying(false)}
+            onLoadedData={() => {
+              // Auto-play briefly then pause to show first frame as preview
+              if (videoRef.current) {
+                videoRef.current.play().then(() => {
+                  setTimeout(() => {
+                    if (videoRef.current) {
+                      videoRef.current.pause()
+                      videoRef.current.currentTime = 0
+                    }
+                  }, 50)
+                }).catch(() => {
+                  if (videoRef.current) {
+                    videoRef.current.currentTime = 0.1
+                  }
+                })
+              }
+            }}
             className="w-full max-w-md rounded-neu shadow-neu"
           />
           <div className="flex gap-2">

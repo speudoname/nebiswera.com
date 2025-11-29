@@ -228,7 +228,7 @@ export function TestimonialsTable() {
                     {t.email && <div className="text-xs text-text-secondary">{t.email}</div>}
                   </td>
                   <td className="py-4 px-4 max-w-md">
-                    <div className="text-sm text-text-secondary truncate">{t.text}</div>
+                    <div className="text-sm text-text-secondary truncate whitespace-pre-line">{t.text}</div>
                   </td>
                   <td className="py-4 px-4">
                     <div className="flex flex-wrap gap-1">

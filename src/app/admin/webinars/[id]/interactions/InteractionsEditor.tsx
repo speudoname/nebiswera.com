@@ -18,6 +18,9 @@ import {
   Lightbulb,
   Gift,
   GripVertical,
+  Pause,
+  HelpCircle,
+  UserPlus,
 } from 'lucide-react'
 
 interface Interaction {
@@ -42,12 +45,15 @@ interface InteractionsEditorProps {
 
 const INTERACTION_TYPES = [
   { value: 'POLL', label: 'Poll', icon: BarChart2, description: 'Multiple choice question' },
+  { value: 'QUIZ', label: 'Quiz', icon: HelpCircle, description: 'Quiz with correct answers' },
   { value: 'CTA', label: 'Call to Action', icon: MousePointer, description: 'Button with link' },
   { value: 'DOWNLOAD', label: 'Download', icon: Download, description: 'Downloadable resource' },
   { value: 'QUESTION', label: 'Question', icon: MessageSquare, description: 'Open-ended Q&A' },
   { value: 'FEEDBACK', label: 'Feedback', icon: ThumbsUp, description: 'Rating/emoji feedback' },
+  { value: 'CONTACT_FORM', label: 'Contact Form', icon: UserPlus, description: 'Lead capture form' },
   { value: 'TIP', label: 'Tip', icon: Lightbulb, description: 'Info tooltip' },
   { value: 'SPECIAL_OFFER', label: 'Special Offer', icon: Gift, description: 'Timed offer' },
+  { value: 'PAUSE', label: 'Pause', icon: Pause, description: 'Pause video temporarily' },
 ]
 
 const POSITIONS = [
@@ -598,6 +604,142 @@ function InteractionConfigFields({
         <p className="text-sm text-text-secondary">
           Feedback interactions show thumbs up/down/neutral options automatically.
         </p>
+      )
+
+    case 'QUIZ': {
+      const [quizOptions, setQuizOptions] = useState<string[]>(
+        (config.options as string[]) || ['', '']
+      )
+      const [correctAnswers, setCorrectAnswers] = useState<number[]>(
+        (config.correctAnswers as number[]) || []
+      )
+
+      const updateQuizOptions = (newOptions: string[]) => {
+        setQuizOptions(newOptions)
+        onChange({ ...config, options: newOptions, correctAnswers })
+      }
+
+      const toggleCorrectAnswer = (index: number) => {
+        const newCorrect = correctAnswers.includes(index)
+          ? correctAnswers.filter((i) => i !== index)
+          : [...correctAnswers, index]
+        setCorrectAnswers(newCorrect)
+        onChange({ ...config, options: quizOptions, correctAnswers: newCorrect })
+      }
+
+      return (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-text-primary">
+            Quiz Options (check the correct answer)
+          </label>
+          {quizOptions.map((option, index) => (
+            <div key={index} className="flex gap-2 items-center">
+              <input
+                type="checkbox"
+                checked={correctAnswers.includes(index)}
+                onChange={() => toggleCorrectAnswer(index)}
+                className="rounded"
+                title="Mark as correct answer"
+              />
+              <input
+                type="text"
+                value={option}
+                onChange={(e) => {
+                  const newOptions = [...quizOptions]
+                  newOptions[index] = e.target.value
+                  updateQuizOptions(newOptions)
+                }}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                placeholder={`Option ${index + 1}`}
+              />
+              {quizOptions.length > 2 && (
+                <button
+                  onClick={() => updateQuizOptions(quizOptions.filter((_, i) => i !== index))}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          {quizOptions.length < 6 && (
+            <button
+              onClick={() => updateQuizOptions([...quizOptions, ''])}
+              className="text-sm text-primary-500 hover:text-primary-600"
+            >
+              + Add option
+            </button>
+          )}
+          <p className="text-xs text-text-muted mt-2">
+            Check the box next to the correct answer(s)
+          </p>
+        </div>
+      )
+    }
+
+    case 'CONTACT_FORM':
+      return (
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Contact forms collect name and email by default.
+          </p>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={(config.collectPhone as boolean) || false}
+                onChange={(e) => onChange({ ...config, collectPhone: e.target.checked })}
+                className="rounded"
+              />
+              <span className="text-sm">Collect phone number</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={(config.collectCompany as boolean) || false}
+                onChange={(e) => onChange({ ...config, collectCompany: e.target.checked })}
+                className="rounded"
+              />
+              <span className="text-sm">Collect company name</span>
+            </label>
+          </div>
+          <Input
+            label="Success Message (optional)"
+            value={(config.successMessage as string) || ''}
+            onChange={(e) => onChange({ ...config, successMessage: e.target.value })}
+            placeholder="Thanks! We'll be in touch soon."
+          />
+        </div>
+      )
+
+    case 'PAUSE':
+      return (
+        <div className="space-y-4">
+          <Input
+            label="Pause Message"
+            value={(config.message as string) || ''}
+            onChange={(e) => onChange({ ...config, message: e.target.value })}
+            placeholder="e.g., Take a moment to reflect..."
+          />
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Auto-resume after (seconds)
+            </label>
+            <input
+              type="number"
+              value={(config.autoResumeDuration as number) || 0}
+              onChange={(e) =>
+                onChange({ ...config, autoResumeDuration: parseInt(e.target.value) || 0 })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              placeholder="0 = manual resume"
+              min="0"
+            />
+            <p className="text-xs text-text-muted mt-1">
+              Set to 0 to require manual resume button click
+            </p>
+          </div>
+        </div>
       )
 
     default:

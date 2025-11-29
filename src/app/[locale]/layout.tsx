@@ -109,9 +109,9 @@ export default async function LocaleLayout({
           @media(min-width:768px){.hero-subtitle{font-size:1.5rem}}
           @media(min-width:1024px){.hero-subtitle{font-size:1.875rem}}
 
-          /* Color Utilities */
-          .text-primary{color:#8B5CF6}
-          .text-secondary{color:#5B4478}
+          /* Color Utilities - Brand coral/orange for consistency with buttons */
+          .text-primary{color:#F27059}
+          .text-secondary{color:#6B2D5C}
           .text-dark{color:#2D1B4E}
 
           /* Hero Video Container - Using padding-bottom trick for reliable 16:9 aspect ratio */

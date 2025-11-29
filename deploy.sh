@@ -179,30 +179,10 @@ else
 fi
 
 ###############################################################################
-# Step 2: Backup Current Deployment
+# Step 2: Deploy Application Files
 ###############################################################################
 
-log_info "Step 2/6: Creating backup of current deployment..."
-echo ""
-
-BACKUP_DIR="${APP_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
-
-ssh_exec "if [ -d '$APP_DIR' ]; then \
-  echo 'Creating backup at $BACKUP_DIR'; \
-  sudo cp -r '$APP_DIR' '$BACKUP_DIR'; \
-  echo 'Backup created successfully'; \
-else \
-  echo 'No existing deployment found, skipping backup'; \
-fi"
-
-log_success "Backup completed"
-echo ""
-
-###############################################################################
-# Step 3: Deploy Application Files
-###############################################################################
-
-log_info "Step 3/6: Deploying application files..."
+log_info "Step 2/5: Deploying application files..."
 echo ""
 
 # Create app directory if it doesn't exist
@@ -236,7 +216,7 @@ echo ""
 # Step 4: Install Dependencies on Server
 ###############################################################################
 
-log_info "Step 4/6: Installing server dependencies..."
+log_info "Step 3/5: Installing server dependencies..."
 echo ""
 
 # Install Node.js if not present
@@ -259,7 +239,7 @@ echo ""
 # Step 5: Configure and Restart PM2
 ###############################################################################
 
-log_info "Step 5/6: Configuring PM2..."
+log_info "Step 4/5: Configuring PM2..."
 echo ""
 
 # Stop existing PM2 process if running
@@ -293,7 +273,7 @@ echo ""
 ###############################################################################
 
 if [ "$SKIP_NGINX" = false ]; then
-  log_info "Step 6/6: Configuring Nginx..."
+  log_info "Step 5/5: Configuring Nginx..."
   echo ""
 
   # Install Nginx if not present

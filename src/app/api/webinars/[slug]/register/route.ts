@@ -146,6 +146,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         id: result.registration!.id,
         email: result.registration!.email,
         sessionType: result.registration!.sessionType,
+        accessToken: result.registration!.accessToken,
         accessUrl: `/webinar/${slug}/watch?token=${result.registration!.accessToken}`,
       },
     })

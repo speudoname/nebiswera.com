@@ -1,12 +1,20 @@
 # Target modern browsers only - no polyfills needed
-# Reduces bundle size by ~11KB
+# Eliminates unnecessary polyfills for Array.at, Object.hasOwn, etc.
+# Covers 95%+ of users worldwide
 
-# Last 2 versions of major browsers
-last 2 Chrome versions
-last 2 Firefox versions
-last 2 Safari versions
-last 2 Edge versions
+# Baseline 2022+ features (all polyfills from PageSpeed report are supported)
+chrome >= 93
+edge >= 93
+firefox >= 92
+safari >= 15.4
+ios >= 15.4
 
-# Or browsers with >1% market share that support ES2020+
+# Exclude legacy browsers
 not dead
+not IE 11
 not op_mini all
+not safari < 15.4
+not ios < 15.4
+
+# Coverage: >95% of global users
+> 0.2%

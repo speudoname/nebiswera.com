@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { HeroVideoPlayer } from './HeroVideoPlayer'
 
-const HERO_POSTER = 'https://cdn.nebiswera.com/hero/video-poster.jpg'
+const HERO_POSTER = 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail_8f42b11e.jpg'
 
 interface HeroSectionProps {
   locale: string
@@ -22,15 +22,15 @@ export async function HeroSection({ locale }: HeroSectionProps) {
       <div className="hero-container">
         <div className="hero-content">
           <p className="hero-eyebrow">
-            <span className="text-primary-600">{t('eyebrowStart')}</span>
+            <span className="text-primary">{t('eyebrowStart')}</span>
             <span className="text-secondary"> {t('eyebrowEmphasis')} </span>
-            <span className="text-primary-600">{t('eyebrowEnd')}</span>
+            <span className="text-primary">{t('eyebrowEnd')}</span>
           </p>
 
           <h1 className="hero-title">
             <span className="text-dark">{t('titlePart1')}</span>
-            <span className="text-primary-600"> — </span>
-            <span className="text-primary-600">{t('titlePart2')}</span>
+            <span className="text-primary"> — </span>
+            <span className="text-primary">{t('titlePart2')}</span>
           </h1>
 
           <h2 className="hero-subtitle">

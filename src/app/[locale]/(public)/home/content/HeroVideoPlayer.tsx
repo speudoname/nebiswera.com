@@ -7,7 +7,7 @@ const HERO_VIDEO = {
   videoId: '973721e6-63ae-4773-877f-021b677f08f7',
   hlsUrl: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/playlist.m3u8',
   mp4Url: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/play_720p.mp4',
-  poster: 'https://cdn.nebiswera.com/hero/video-poster.jpg',
+  poster: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail_8f42b11e.jpg',
 }
 
 interface HeroVideoPlayerProps {

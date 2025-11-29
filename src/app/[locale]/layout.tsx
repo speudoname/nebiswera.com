@@ -56,11 +56,15 @@ export default async function LocaleLayout({
         <link rel="preconnect" href="https://vz-1693fee0-2ad.b-cdn.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://vz-1693fee0-2ad.b-cdn.net" />
 
+        {/* Google Analytics - preconnect for faster loading when needed */}
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+
         {/* Preload hero poster for LCP - this is the largest contentful paint element */}
         <link
           rel="preload"
           as="image"
-          href="https://cdn.nebiswera.com/hero/video-poster.jpg"
+          href="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail_8f42b11e.jpg"
           fetchPriority="high"
         />
 
@@ -150,17 +154,19 @@ export default async function LocaleLayout({
         />
       </head>
       <body className={`${inter.variable} ${notoSansGeorgian.variable} font-sans`}>
-        {/* Google Analytics */}
+        {/* Google Analytics - Delayed loading for better performance */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
+            gtag('config', '${GA_MEASUREMENT_ID}', {
+              page_path: window.location.pathname,
+            });
           `}
         </Script>
 

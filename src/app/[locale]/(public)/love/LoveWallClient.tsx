@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Star } from 'lucide-react'
+import Image from 'next/image'
 import { Card } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { VideoPlayer } from '@/components/ui/VideoPlayer'
@@ -114,10 +115,12 @@ export function LoveWallClient() {
               <div className="flex items-start gap-4 mb-4">
                 {/* Profile Photo */}
                 {testimonial.profilePhoto ? (
-                  <img
+                  <Image
                     src={testimonial.profilePhoto}
                     alt={testimonial.name}
-                    className="w-12 h-12 rounded-full object-cover shadow-neu"
+                    width={48}
+                    height={48}
+                    className="rounded-full object-cover shadow-neu"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-primary-100 shadow-neu flex items-center justify-center text-primary-600 font-semibold">
@@ -162,11 +165,13 @@ export function LoveWallClient() {
               {testimonial.images.length > 0 && (
                 <div className="mt-4 flex gap-2">
                   {testimonial.images.slice(0, 3).map((img, i) => (
-                    <img
+                    <Image
                       key={i}
                       src={img}
                       alt=""
-                      className="w-16 h-16 object-cover rounded-neu shadow-neu"
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-neu shadow-neu"
                     />
                   ))}
                 </div>

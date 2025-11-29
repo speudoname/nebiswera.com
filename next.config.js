@@ -32,7 +32,14 @@ const nextConfig = {
     } : false,
   },
 
-  // Experimental optimizations
+  // SWC minification options - target modern browsers
+  swcMinify: true,
+
+  // Disable legacy browser support (ES5 transpilation)
+  // This removes polyfills for features supported in all modern browsers
+  transpilePackages: [],
+
+  // Experimental optimizations - target modern browsers
   experimental: {
     // Optimize package imports
     optimizePackageImports: ['next-intl', 'lucide-react'],

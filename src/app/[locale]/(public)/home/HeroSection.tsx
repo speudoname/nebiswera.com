@@ -20,24 +20,47 @@ export async function HeroSection({ locale }: HeroSectionProps) {
   const t = await getTranslations('home')
 
   return (
-    <section className="pt-4 pb-16 md:pt-8 md:pb-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center max-w-3xl">
-          <p className="eyebrow mb-4 md:mb-4">
-            <span className="text-primary-600">{t('eyebrowStart')}</span>
-            <span className="text-text-secondary"> {t('eyebrowEmphasis')} </span>
-            <span className="text-primary-600">{t('eyebrowEnd')}</span>
+    <section
+      className="pt-4 pb-16 md:pt-8 md:pb-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base"
+      style={{
+        paddingTop: '1rem',
+        paddingBottom: '4rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
+        background: 'linear-gradient(to bottom, #F0EBF8, #E8E0F0)',
+      }}
+    >
+      <div
+        className="flex-1 flex items-center justify-center"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          className="text-center max-w-3xl"
+          style={{
+            textAlign: 'center',
+            maxWidth: '48rem',
+            width: '100%',
+          }}
+        >
+          <p className="eyebrow mb-4 md:mb-4" style={{ marginBottom: '1rem' }}>
+            <span className="text-primary-600" style={{ color: '#8B5CF6' }}>{t('eyebrowStart')}</span>
+            <span className="text-text-secondary" style={{ color: '#5B4478' }}> {t('eyebrowEmphasis')} </span>
+            <span className="text-primary-600" style={{ color: '#8B5CF6' }}>{t('eyebrowEnd')}</span>
           </p>
-          <h1 className="hero-title mb-4 md:mb-6">
-            <span className="text-text-primary">{t('titlePart1')}</span>
-            <span className="text-primary-600"> — </span>
-            <span className="text-primary-600">{t('titlePart2')}</span>
+          <h1 className="hero-title mb-4 md:mb-6" style={{ marginBottom: '1rem' }}>
+            <span className="text-text-primary" style={{ color: '#2D1B4E' }}>{t('titlePart1')}</span>
+            <span className="text-primary-600" style={{ color: '#8B5CF6' }}> — </span>
+            <span className="text-primary-600" style={{ color: '#8B5CF6' }}>{t('titlePart2')}</span>
           </h1>
-          <h2 className="hero-subtitle mb-6 md:mb-8">
+          <h2 className="hero-subtitle mb-6 md:mb-8" style={{ marginBottom: '1.5rem' }}>
             {t('subtitle')}
           </h2>
 
-          {/* Video Container with inline styles for instant paint - NO CSS dependency */}
+          {/* Video Container - 100% CSS-independent for instant LCP paint */}
           <div
             className="hero-video-container mb-6 md:mb-8 shadow-neu"
             style={{
@@ -50,7 +73,7 @@ export async function HeroSection({ locale }: HeroSectionProps) {
               overflow: 'hidden',
             }}
           >
-            {/* LCP Image - inline styles for ZERO render delay */}
+            {/* LCP Image - ZERO CSS dependency */}
             <img
               src={HERO_POSTER}
               alt=""

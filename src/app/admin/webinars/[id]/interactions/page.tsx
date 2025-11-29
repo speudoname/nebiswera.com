@@ -11,7 +11,11 @@ export default async function InteractionsPage({ params }: PageProps) {
 
   const webinar = await prisma.webinar.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      title: true,
+      videoDuration: true,
+      hlsUrl: true,
       interactions: {
         orderBy: { triggersAt: 'asc' },
       },
@@ -39,6 +43,7 @@ export default async function InteractionsPage({ params }: PageProps) {
 
       <InteractionsEditor
         webinarId={id}
+        videoUrl={webinar.hlsUrl || ''}
         videoDuration={webinar.videoDuration || 3600}
         initialInteractions={webinar.interactions.map((i) => ({
           id: i.id,

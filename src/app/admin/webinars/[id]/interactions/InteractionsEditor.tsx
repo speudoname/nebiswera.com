@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
+import { VideoTimelineEditor } from './VideoTimelineEditor'
 import {
   Plus,
   Trash2,
@@ -39,6 +40,7 @@ interface Interaction {
 
 interface InteractionsEditorProps {
   webinarId: string
+  videoUrl: string
   videoDuration: number
   initialInteractions: Interaction[]
 }
@@ -67,6 +69,7 @@ const POSITIONS = [
 
 export function InteractionsEditor({
   webinarId,
+  videoUrl,
   videoDuration,
   initialInteractions,
 }: InteractionsEditorProps) {
@@ -211,51 +214,56 @@ export function InteractionsEditor({
         </div>
       )}
 
-      {/* Timeline view */}
-      <Card variant="raised" padding="lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Interaction Timeline</h2>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Interaction
-          </Button>
-        </div>
+      {/* Video Timeline Editor */}
+      {videoUrl && (
+        <VideoTimelineEditor
+          videoUrl={videoUrl}
+          videoDuration={videoDuration}
+          interactions={interactions}
+          onInteractionClick={(interaction) => setEditingId(interaction.id)}
+          onInteractionMove={async (id, newTime) => {
+            const interaction = interactions.find((i) => i.id === id)
+            if (!interaction) return
 
-        {/* Timeline */}
-        <div className="relative">
-          {/* Timeline bar */}
-          <div className="h-2 bg-neu-dark rounded-full relative">
-            {interactions.map((interaction) => {
-              const position = (interaction.triggerTime / videoDuration) * 100
-              const Icon = getInteractionIcon(interaction.type)
-              return (
-                <button
-                  key={interaction.id}
-                  className={`absolute -top-3 w-8 h-8 rounded-full flex items-center justify-center transform -translate-x-1/2 transition-all hover:scale-110 ${
-                    interaction.enabled
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-400 text-white'
-                  }`}
-                  style={{ left: `${position}%` }}
-                  onClick={() => setEditingId(interaction.id)}
-                  title={`${interaction.title} at ${formatTime(interaction.triggerTime)}`}
-                >
-                  <Icon className="w-4 h-4" />
-                </button>
+            setIsSaving(true)
+            try {
+              const response = await fetch(
+                `/api/admin/webinars/${webinarId}/interactions/${id}`,
+                {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ...interaction, triggerTime: newTime }),
+                }
               )
-            })}
-          </div>
 
-          {/* Time markers */}
-          <div className="flex justify-between mt-2 text-xs text-text-muted">
-            <span>0:00</span>
-            <span>{formatTime(Math.floor(videoDuration / 4))}</span>
-            <span>{formatTime(Math.floor(videoDuration / 2))}</span>
-            <span>{formatTime(Math.floor((videoDuration * 3) / 4))}</span>
-            <span>{formatTime(videoDuration)}</span>
-          </div>
-        </div>
-      </Card>
+              if (!response.ok) throw new Error('Failed to update interaction')
+
+              const data = await response.json()
+              setInteractions(
+                interactions.map((i) => (i.id === id ? { ...i, triggerTime: newTime } : i))
+              )
+            } catch (error) {
+              console.error(error)
+              alert('Failed to update interaction position')
+            } finally {
+              setIsSaving(false)
+            }
+          }}
+          onAddInteraction={(time) => {
+            setNewInteraction({ ...newInteraction, triggerTime: time })
+            setShowAddModal(true)
+          }}
+          onDeleteInteraction={handleDeleteInteraction}
+        />
+      )}
+
+      {/* Add Interaction Button */}
+      <div className="flex justify-center">
+        <Button onClick={() => setShowAddModal(true)} size="lg">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Interaction
+        </Button>
+      </div>
 
       {/* Interactions list */}
       <div className="space-y-4">

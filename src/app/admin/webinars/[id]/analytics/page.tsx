@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { AnalyticsDashboard } from './AnalyticsDashboard'
+import { InteractionAnalytics } from './InteractionAnalytics'
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -24,7 +25,7 @@ export default async function WebinarAnalyticsPage({ params }: PageProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Analytics</h1>
@@ -38,7 +39,13 @@ export default async function WebinarAnalyticsPage({ params }: PageProps) {
         </a>
       </div>
 
+      {/* General Analytics */}
       <AnalyticsDashboard webinarId={id} />
+
+      {/* Interaction-Specific Analytics */}
+      <div className="pt-8 border-t border-neu-dark">
+        <InteractionAnalytics webinarId={id} />
+      </div>
     </div>
   )
 }

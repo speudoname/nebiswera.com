@@ -99,8 +99,9 @@ export default function ContactProfilePage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id: contactId } = use(params)
   const router = useRouter()
+  const resolvedParams = use(params)
+  const contactId = resolvedParams.id
 
   const [contact, setContact] = useState<Contact | null>(null)
   const [activities, setActivities] = useState<Activity[]>([])

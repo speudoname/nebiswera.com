@@ -24,11 +24,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         webinar: { slug },
       },
       include: {
-        webinar: true,
-        session: {
+        webinar: {
           select: {
-            scheduledAt: true,
-            type: true,
+            title: true,
+            customThankYouPageHtml: true,
           },
         },
       },
@@ -38,39 +37,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Invalid access token' }, { status: 404 })
     }
 
-    // Calculate sessionScheduledAt based on session type
-    let sessionScheduledAt: Date | null = null
-
-    switch (registration.sessionType) {
-      case 'SCHEDULED':
-        // Use actual scheduled time from session
-        sessionScheduledAt = registration.session?.scheduledAt || null
-        break
-
-      case 'JUST_IN_TIME':
-        // Calculate start time as NOW + justInTimeMinutes
-        const now = new Date()
-        const jitMinutes = (registration.webinar as any).justInTimeMinutes || 15
-        sessionScheduledAt = new Date(now.getTime() + jitMinutes * 60 * 1000)
-        break
-
-      case 'ON_DEMAND':
-      case 'REPLAY':
-        // These should redirect immediately (no scheduled time)
-        sessionScheduledAt = null
-        break
-
-      default:
-        sessionScheduledAt = null
-    }
-
     return NextResponse.json({
       webinarTitle: registration.webinar.title,
       email: registration.email,
       firstName: registration.firstName,
       lastName: registration.lastName,
       sessionType: registration.sessionType,
-      sessionScheduledAt: sessionScheduledAt,
+      sessionScheduledAt: registration.sessionStartTime,
       customThankYouHtml: registration.webinar.customThankYouPageHtml,
     })
   } catch (error) {

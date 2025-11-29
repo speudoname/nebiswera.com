@@ -56,45 +56,48 @@ export function ThankYouClient({ slug, token, locale }: ThankYouClientProps) {
   useEffect(() => {
     if (!data) return
 
-    const watchUrl = `/${locale}/webinar/${slug}/watch?token=${token}`
+    // Determine redirect URL based on session type
+    let redirectUrl = `/${locale}/webinar/${slug}/watch?token=${token}`
 
-    // ON_DEMAND or REPLAY: Redirect immediately after 2 seconds
-    if (data.sessionType === 'ON_DEMAND' || data.sessionType === 'REPLAY') {
-      const timer = setTimeout(() => {
-        router.push(watchUrl)
-      }, 2000)
-      return () => clearTimeout(timer)
+    // REPLAY goes to a different page (replay room, not watch room)
+    if (data.sessionType === 'REPLAY') {
+      redirectUrl = `/${locale}/webinar/${slug}/replay?token=${token}`
     }
 
-    // SCHEDULED or JUST_IN_TIME: Calculate time until start and set up countdown
-    if (data.sessionScheduledAt) {
-      const startTime = new Date(data.sessionScheduledAt).getTime()
-      const now = Date.now()
-      const msUntilStart = startTime - now
+    // Check if we have a session start time
+    if (!data.sessionScheduledAt) {
+      // No start time means redirect immediately
+      router.push(redirectUrl)
+      return
+    }
 
-      // If already started or starts very soon, redirect immediately
-      if (msUntilStart <= 0) {
-        router.push(watchUrl)
-        return
+    // Calculate time until start
+    const startTime = new Date(data.sessionScheduledAt).getTime()
+    const now = Date.now()
+    const msUntilStart = startTime - now
+
+    // If time has passed (or is NOW), redirect immediately
+    if (msUntilStart <= 0) {
+      router.push(redirectUrl)
+      return
+    }
+
+    // Time is in the future - set up countdown
+    setTimeUntilStart(Math.floor(msUntilStart / 1000))
+
+    const interval = setInterval(() => {
+      const newMs = startTime - Date.now()
+      const newSeconds = Math.floor(newMs / 1000)
+
+      if (newSeconds <= 0) {
+        clearInterval(interval)
+        router.push(redirectUrl)
+      } else {
+        setTimeUntilStart(newSeconds)
       }
+    }, 1000)
 
-      // Update countdown every second
-      setTimeUntilStart(Math.floor(msUntilStart / 1000))
-
-      const interval = setInterval(() => {
-        const newMs = startTime - Date.now()
-        const newSeconds = Math.floor(newMs / 1000)
-
-        if (newSeconds <= 0) {
-          clearInterval(interval)
-          router.push(watchUrl)
-        } else {
-          setTimeUntilStart(newSeconds)
-        }
-      }, 1000)
-
-      return () => clearInterval(interval)
-    }
+    return () => clearInterval(interval)
   }, [data, locale, slug, token, router])
 
   if (loading) {
@@ -132,11 +135,11 @@ export function ThankYouClient({ slug, token, locale }: ThankYouClientProps) {
     }
   }
 
-  const showCountdown =
-    (data.sessionType === 'SCHEDULED' || data.sessionType === 'JUST_IN_TIME') &&
-    timeUntilStart !== null &&
-    timeUntilStart > 0
-  const showAutoRedirectMessage = data.sessionType === 'ON_DEMAND' || data.sessionType === 'REPLAY'
+  // Show countdown if there's time remaining (any session type)
+  const showCountdown = timeUntilStart !== null && timeUntilStart > 0
+
+  // Show "redirecting" message if time is 0 or no start time
+  const showRedirectingMessage = !showCountdown
 
   return (
     <div className="min-h-screen bg-neu-base py-12 px-4">
@@ -164,7 +167,7 @@ export function ThankYouClient({ slug, token, locale }: ThankYouClientProps) {
             <p className="font-semibold text-text-primary">{data.email}</p>
           </div>
 
-          {showAutoRedirectMessage && (
+          {showRedirectingMessage && (
             <div className="flex items-center justify-center gap-2 text-primary-600">
               <Loader2 className="w-5 h-5 animate-spin" />
               <p>

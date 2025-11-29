@@ -73,6 +73,7 @@ export async function registerForWebinar(
   // Determine session type and validate
   let finalSessionId = sessionId
   let finalSessionType: WebinarSessionType = sessionType || 'SCHEDULED'
+  let selectedSession: { scheduledAt: Date | null } | null = null
 
   if (sessionId) {
     // Validate the session exists and belongs to this webinar
@@ -88,6 +89,7 @@ export async function registerForWebinar(
     }
 
     finalSessionType = session.type
+    selectedSession = session
   } else if (sessionType === 'ON_DEMAND') {
     // For on-demand, we don't need a specific session
     if (!webinar.scheduleConfig?.onDemandEnabled) {
@@ -104,16 +106,19 @@ export async function registerForWebinar(
     return { success: false, error: 'Please select a session or viewing option' }
   }
 
-  // Check for existing registration with same email for this webinar
+  // Check for existing registration with same email, session, and session type
+  // Allow multiple registrations per email for different sessions/types
   const existingRegistration = await prisma.webinarRegistration.findFirst({
     where: {
       webinarId,
       email: email.toLowerCase(),
+      sessionId: finalSessionId || null,
+      sessionType: finalSessionType,
     },
   })
 
   if (existingRegistration) {
-    // Return existing registration instead of creating duplicate
+    // Return existing registration for this specific session/type
     return {
       success: true,
       registration: {
@@ -129,6 +134,28 @@ export async function registerForWebinar(
   // Generate unique access token
   const accessToken = generateAccessToken()
 
+  // Calculate sessionStartTime based on session type
+  let sessionStartTime: Date | null = null
+
+  switch (finalSessionType) {
+    case 'SCHEDULED':
+      // Use the actual scheduled time from the session
+      sessionStartTime = selectedSession?.scheduledAt || null
+      break
+
+    case 'JUST_IN_TIME':
+      // Calculate NOW + justInTimeMinutes
+      const jitMinutes = (webinar as any).justInTimeMinutes || 15
+      sessionStartTime = new Date(Date.now() + jitMinutes * 60 * 1000)
+      break
+
+    case 'ON_DEMAND':
+    case 'REPLAY':
+      // Immediate start - set to NOW
+      sessionStartTime = new Date()
+      break
+  }
+
   // Create registration FIRST (without contactId - we'll add it in the sync)
   const registration = await prisma.webinarRegistration.create({
     data: {
@@ -142,6 +169,7 @@ export async function registerForWebinar(
       customFieldResponses: customFieldResponses ? customFieldResponses : undefined,
       accessToken,
       sessionType: finalSessionType,
+      sessionStartTime, // Calculated start time for this session
       timezone: timezone || 'UTC',
       source: source || 'direct',
       utmSource: utmParams?.utm_source,

@@ -1,6 +1,6 @@
 import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
-import { HomeClient } from './home/HomeClient'
+import { HeroSection } from './home/HeroSection'
 import { PhilosophySection } from './home/content/PhilosophySection'
 import { ProblemAwarenessSection } from './home/content/ProblemAwarenessSection'
 import { SecretRevealSection } from './home/content/SecretRevealSection'
@@ -11,7 +11,6 @@ import { TestimonialShowcase } from './home/content/TestimonialShowcase'
 import { WorkshopOfferSection } from './home/content/WorkshopOfferSection'
 import { WorkshopThreeThings } from './home/content/WorkshopThreeThings'
 import { WhatItIsNotSection } from './home/content/WhatItIsNotSection'
-import { getTranslations } from 'next-intl/server'
 
 export async function generateMetadata({
   params,
@@ -28,20 +27,24 @@ export default async function HomePage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  const t = await getTranslations('home')
 
   return (
     <>
-      {/* Preload hero poster for faster LCP - only on home page */}
+      {/* Critical CSS for LCP - inlined to bypass render-blocking stylesheets */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .hero-video-container{position:relative;width:100%;max-width:36rem;margin:0 auto;aspect-ratio:16/9;border-radius:1rem;overflow:hidden}
+        .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+      `}} />
+      {/* Preload hero poster for faster LCP - self-hosted on R2 for same-origin performance */}
       <link
         rel="preload"
         as="image"
-        href="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg"
+        href="https://cdn.nebiswera.com/hero/video-poster.jpg"
         fetchPriority="high"
       />
       <div className="overflow-x-hidden">
-        {/* Hero Section */}
-        <HomeClient />
+        {/* Hero Section - Server Component for instant LCP */}
+        <HeroSection locale={locale} />
 
         {/* Secret Reveal */}
         <SecretRevealSection />

@@ -15,16 +15,19 @@ export interface HeroVideoRef {
 }
 
 /**
- * Hero video player optimized for instant playback using HLS streaming
- * - Uses HLS for instant start (no buffering wait)
- * - Falls back to MP4 for unsupported browsers
- * - Autoplay, muted, loop - perfect for hero sections
+ * Hero video player optimized for LCP performance
+ *
+ * Key optimization: Shows poster as <img> immediately for fast LCP,
+ * then loads video in background and swaps when ready.
+ * This eliminates the "element render delay" caused by waiting for
+ * HLS.js to load and video to initialize.
  */
 export const HeroVideo = forwardRef<HeroVideoRef, HeroVideoProps>(
   ({ hlsSrc, mp4Fallback, poster, className = '' }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const hlsRef = useRef<any>(null)
     const [isMuted, setIsMuted] = useState(true)
+    const [videoReady, setVideoReady] = useState(false)
 
     useImperativeHandle(ref, () => ({
       get muted() {
@@ -48,11 +51,19 @@ export const HeroVideo = forwardRef<HeroVideoRef, HeroVideoProps>(
         hlsRef.current = null
       }
 
+      const handleCanPlay = () => {
+        setVideoReady(true)
+      }
+
+      video.addEventListener('canplay', handleCanPlay)
+
       // Check if browser supports HLS natively (Safari, iOS)
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = hlsSrc
         video.play().catch(() => {})
-        return
+        return () => {
+          video.removeEventListener('canplay', handleCanPlay)
+        }
       }
 
       // Dynamically import hls.js for other browsers
@@ -99,6 +110,7 @@ export const HeroVideo = forwardRef<HeroVideoRef, HeroVideoProps>(
       })
 
       return () => {
+        video.removeEventListener('canplay', handleCanPlay)
         if (hlsRef.current) {
           hlsRef.current.destroy()
           hlsRef.current = null
@@ -107,17 +119,32 @@ export const HeroVideo = forwardRef<HeroVideoRef, HeroVideoProps>(
     }, [hlsSrc, mp4Fallback])
 
     return (
-      <video
-        ref={videoRef}
-        className={className}
-        poster={poster}
-        autoPlay
-        muted
-        loop
-        playsInline
-        // @ts-expect-error - fetchPriority is valid but not in React types yet
-        fetchPriority="high"
-      />
+      <div className="relative w-full h-full">
+        {/* Static poster image - renders immediately for fast LCP */}
+        {!videoReady && (
+          <img
+            src={poster}
+            alt=""
+            width={640}
+            height={360}
+            className={`absolute inset-0 ${className}`}
+            fetchPriority="high"
+          />
+        )}
+
+        {/* Video - hidden until ready to avoid layout shift */}
+        <video
+          ref={videoRef}
+          className={`${className} ${videoReady ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+          poster={poster}
+          autoPlay
+          muted
+          loop
+          playsInline
+          // @ts-expect-error - fetchPriority is valid but not in React types yet
+          fetchPriority="high"
+        />
+      </div>
     )
   }
 )

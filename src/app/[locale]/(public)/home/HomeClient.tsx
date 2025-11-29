@@ -7,11 +7,13 @@ import { Button } from '@/components/ui'
 import { HeroVideo, type HeroVideoRef } from '@/components/ui/HeroVideo'
 import { ArrowRight, BookOpen, Volume2, VolumeX } from 'lucide-react'
 
-// Bunny.net video URLs
+// Hero video URLs
+// Poster is self-hosted on R2 for faster LCP (same CDN as rest of site)
+// Video streaming is on Bunny.net for HLS adaptive streaming
 const HERO_VIDEO = {
   hls: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/playlist.m3u8',
   mp4: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/play_720p.mp4',
-  poster: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail.jpg',
+  poster: 'https://cdn.nebiswera.com/hero/video-poster.jpg',
 }
 
 export function HomeClient() {

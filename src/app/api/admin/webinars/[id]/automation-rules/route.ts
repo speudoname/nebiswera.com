@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { isAdmin } from '@/lib/auth/utils'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -9,9 +8,7 @@ interface RouteParams {
 
 // GET /api/admin/webinars/[id]/automation-rules - Get all automation rules for a webinar
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions)
-
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -47,9 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // POST /api/admin/webinars/[id]/automation-rules - Create new automation rule
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions)
-
-  if (!session || session.user.role !== 'ADMIN') {
+  if (!(await isAdmin(request))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

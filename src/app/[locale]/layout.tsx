@@ -49,14 +49,15 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <head>
-        {/* Preconnect to CDNs for faster resource loading */}
-        <link rel="preconnect" href="https://cdn.nebiswera.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://cdn.nebiswera.com" />
-        {/* Bunny.net video CDN - critical for LCP on home page */}
-        <link rel="preconnect" href="https://vz-1693fee0-2ad.b-cdn.net" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://vz-1693fee0-2ad.b-cdn.net" />
+        {/* CRITICAL: Preconnect hints MUST be first for optimal performance */}
+        {/* Bunny CDN video - 380ms savings for LCP element */}
+        <link rel="preconnect" href="https://vz-1693fee0-2ad.b-cdn.net" crossOrigin="" />
+        {/* Bunny CDN images */}
+        <link rel="preconnect" href="https://cdn.nebiswera.com" crossOrigin="" />
 
-        {/* Google Analytics - preconnect for faster loading when needed */}
+        {/* DNS prefetch fallback for older browsers */}
+        <link rel="dns-prefetch" href="https://vz-1693fee0-2ad.b-cdn.net" />
+        <link rel="dns-prefetch" href="https://cdn.nebiswera.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
@@ -74,14 +75,14 @@ export default async function LocaleLayout({
           as="font"
           type="font/woff2"
           href="/_next/static/media/e889be32d4886456-s.woff2"
-          crossOrigin="anonymous"
+          crossOrigin=""
         />
         <link
           rel="preload"
           as="font"
           type="font/woff2"
           href="/_next/static/media/e4af272ccee01ff0-s.p.woff2"
-          crossOrigin="anonymous"
+          crossOrigin=""
         />
 
         {/* Critical CSS for instant LCP - NO Tailwind dependency for above-fold content */}

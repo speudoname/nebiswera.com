@@ -8,6 +8,7 @@ import {
   sendRegistrationConfirmation,
   scheduleSessionReminder,
 } from './notifications'
+import { syncWebinarRegistrationToContact, syncWebinarAttendance, syncWebinarCompletion } from '@/lib/contact-sync'
 
 interface RegistrationInput {
   email: string
@@ -125,17 +126,14 @@ export async function registerForWebinar(
     }
   }
 
-  // Find or create contact in CRM
-  const contact = await findOrCreateContact(email, firstName, lastName)
-
   // Generate unique access token
   const accessToken = generateAccessToken()
 
-  // Create registration
+  // Create registration FIRST (without contactId - we'll add it in the sync)
   const registration = await prisma.webinarRegistration.create({
     data: {
       webinarId,
-      contactId: contact.id,
+      contactId: null, // Will be set by sync function
       sessionId: finalSessionId,
       email: email.toLowerCase(),
       firstName: firstName || null,
@@ -153,6 +151,23 @@ export async function registerForWebinar(
       utmTerm: utmParams?.utm_term,
     },
   })
+
+  // Sync to CRM contact (creates/updates contact, adds activity, applies automation rules)
+  await syncWebinarRegistrationToContact(
+    {
+      webinarId,
+      webinarTitle: webinar.title,
+      email: email.toLowerCase(),
+      firstName: firstName || null,
+      lastName: lastName || null,
+      phone: phone || null,
+      customFieldResponses,
+      sessionType: finalSessionType,
+      timezone: timezone || 'UTC',
+      source: source || 'direct',
+    },
+    registration.id
+  )
 
   // Track analytics event
   await prisma.webinarAnalyticsEvent.create({
@@ -191,49 +206,6 @@ export async function registerForWebinar(
       sessionType: registration.sessionType,
     },
   }
-}
-
-/**
- * Find existing contact or create new one in CRM schema
- */
-async function findOrCreateContact(
-  email: string,
-  firstName?: string,
-  lastName?: string
-) {
-  const normalizedEmail = email.toLowerCase()
-
-  // Try to find existing contact
-  let contact = await prisma.contact.findUnique({
-    where: { email: normalizedEmail },
-  })
-
-  if (!contact) {
-    // Create new contact
-    contact = await prisma.contact.create({
-      data: {
-        email: normalizedEmail,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        source: 'webinar',
-        status: 'ACTIVE',
-      },
-    })
-  } else if (firstName || lastName) {
-    // Update contact if we have new name info
-    const updates: { firstName?: string; lastName?: string } = {}
-    if (firstName && !contact.firstName) updates.firstName = firstName
-    if (lastName && !contact.lastName) updates.lastName = lastName
-
-    if (Object.keys(updates).length > 0) {
-      contact = await prisma.contact.update({
-        where: { id: contact.id },
-        data: updates,
-      })
-    }
-  }
-
-  return contact
 }
 
 /**
@@ -308,13 +280,52 @@ export async function updateWatchProgress(
   progress: number,
   lastPosition: number
 ): Promise<void> {
+  const registration = await prisma.webinarRegistration.findUnique({
+    where: { id: registrationId },
+    include: {
+      webinar: {
+        select: {
+          title: true,
+          videoDuration: true,
+          completionPercent: true,
+        },
+      },
+    },
+  })
+
+  if (!registration) return
+
+  const wasCompleted = !!registration.completedAt
+  const completionThreshold = registration.webinar.completionPercent || 80
+  const isNowCompleted = progress >= completionThreshold
+
   await prisma.webinarRegistration.update({
     where: { id: registrationId },
     data: {
       maxVideoPosition: lastPosition,
-      ...(progress >= 90 ? { completedAt: new Date() } : {}),
+      status: isNowCompleted ? 'COMPLETED' : registration.status,
+      ...(isNowCompleted && !wasCompleted ? { completedAt: new Date() } : {}),
     },
   })
+
+  // Sync completion to CRM contact (only if just completed)
+  if (isNowCompleted && !wasCompleted) {
+    const updatedRegistration = await prisma.webinarRegistration.findUnique({
+      where: { id: registrationId },
+      include: {
+        webinar: {
+          select: {
+            title: true,
+            videoDuration: true,
+          },
+        },
+      },
+    })
+
+    if (updatedRegistration) {
+      await syncWebinarCompletion(updatedRegistration)
+    }
+  }
 }
 
 /**
@@ -323,14 +334,25 @@ export async function updateWatchProgress(
 export async function markAsAttended(registrationId: string): Promise<void> {
   const registration = await prisma.webinarRegistration.findUnique({
     where: { id: registrationId },
+    include: {
+      webinar: {
+        select: {
+          title: true,
+          videoDuration: true,
+        },
+      },
+    },
   })
 
   if (!registration || registration.joinedAt) return
 
   await prisma.webinarRegistration.update({
     where: { id: registrationId },
-    data: { joinedAt: new Date(), attendedAt: new Date() },
+    data: { joinedAt: new Date(), attendedAt: new Date(), status: 'ATTENDING' },
   })
+
+  // Sync attendance to CRM contact
+  await syncWebinarAttendance(registration)
 
   // Track analytics event
   await prisma.webinarAnalyticsEvent.create({

@@ -288,6 +288,7 @@ model Contact {
   tags               ContactTag[]
   activities         ContactActivity[]
   campaignRecipients CampaignRecipient[]
+  webinarRegistrations WebinarRegistration[] @relation("ContactWebinarRegistrations")
 
   @@index([email])
   @@index([source])
@@ -407,16 +408,20 @@ model ContactActivity {
 }
 
 enum ActivityType {
-  CREATED        // Contact created
-  UPDATED        // Contact info updated
-  TAG_ADDED      // Tag added
-  TAG_REMOVED    // Tag removed
-  STATUS_CHANGED // Status changed
-  EMAIL_SENT     // Email sent (linked from EmailLog)
-  EMAIL_OPENED   // Email opened
-  EMAIL_BOUNCED  // Email bounced
-  IMPORTED       // Imported from file
-  NOTE_ADDED     // Note added
+  CREATED              // Contact created
+  UPDATED              // Contact info updated
+  TAG_ADDED            // Tag added
+  TAG_REMOVED          // Tag removed
+  STATUS_CHANGED       // Status changed
+  EMAIL_SENT           // Email sent (linked from EmailLog)
+  EMAIL_OPENED         // Email opened
+  EMAIL_BOUNCED        // Email bounced
+  IMPORTED             // Imported from file
+  NOTE_ADDED           // Note added
+  WEBINAR_REGISTERED   // Registered for webinar
+  WEBINAR_ATTENDED     // Attended webinar
+  WEBINAR_COMPLETED    // Completed webinar (watched past threshold)
+  WEBINAR_MISSED       // Registered but didn't attend
 
   @@schema("crm")
 }
@@ -648,6 +653,7 @@ model Webinar {
   interactions      WebinarInteraction[]
   registrations     WebinarRegistration[]
   notifications     WebinarNotification[]
+  automationRules   WebinarAutomationRule[]
   analyticsEvents   WebinarAnalyticsEvent[]
   chatMessages      WebinarChatMessage[]
   videoProcessingJob VideoProcessingJob?
@@ -806,8 +812,9 @@ model WebinarRegistration {
   // Example: {"company": "Acme Inc", "jobTitle": "Developer"}
   customFieldResponses Json?
 
-  // Link to CRM contact (if exists)
-  contactId       String?               // References Contact in crm schema
+  // Link to CRM contact (synced automatically on registration)
+  contactId       String?
+  contact         Contact?              @relation("ContactWebinarRegistrations", fields: [contactId], references: [id], onDelete: SetNull, map: "fk_webinar_registration_contact")
 
   // Access
   accessToken     String                @unique @default(cuid()) // For unique watch link
@@ -1113,6 +1120,41 @@ enum WebinarNotificationSentStatus {
   SENT
   FAILED
   CANCELLED
+
+  @@schema("webinar")
+}
+
+// ===========================================
+// Webinar Automation Rules (Tag Assignment)
+// ===========================================
+
+model WebinarAutomationRule {
+  id              String              @id @default(cuid())
+  webinarId       String
+  webinar         Webinar             @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  // Trigger event
+  trigger         WebinarAutomationTrigger
+
+  // Action: Assign tags to contact
+  tagIds          String[]            // Tag IDs to assign when trigger fires
+
+  // Settings
+  enabled         Boolean             @default(true)
+
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([webinarId, trigger])
+  @@schema("webinar")
+  @@map("webinar_automation_rules")
+}
+
+enum WebinarAutomationTrigger {
+  REGISTERED      // When user registers for webinar
+  ATTENDED        // When user joins watch room
+  COMPLETED       // When user completes webinar (watches past threshold)
+  MISSED          // When user registers but doesn't attend scheduled session
 
   @@schema("webinar")
 }

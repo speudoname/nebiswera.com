@@ -54,6 +54,19 @@ export default async function LocaleLayout({
         <link rel="preconnect" href="https://vz-1693fee0-2ad.b-cdn.net" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://vz-1693fee0-2ad.b-cdn.net" />
 
+        {/* Preload hero poster for LCP - this is the largest contentful paint element */}
+        <link
+          rel="preload"
+          as="image"
+          href="https://cdn.nebiswera.com/hero/video-poster.jpg"
+          fetchPriority="high"
+        />
+
+        {/* Critical CSS for LCP - ONLY hero section styles, no Tailwind conflicts */}
+        <style dangerouslySetInnerHTML={{__html: `
+          .hero-video-container{position:relative;width:100%;max-width:36rem;margin:0 auto;aspect-ratio:16/9;border-radius:1rem;overflow:hidden}
+          .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+        `}} />
 
         <script
           type="application/ld+json"

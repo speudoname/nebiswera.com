@@ -15,6 +15,7 @@ import {
   Bell,
   BarChart3,
   Users,
+  User,
 } from 'lucide-react'
 import { VideoUploader } from './VideoUploader'
 import { ScheduleConfigForm } from './ScheduleConfigForm'

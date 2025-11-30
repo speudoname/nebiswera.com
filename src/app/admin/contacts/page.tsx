@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Button, Input, Modal, Pagination } from '@/components/ui'
-import { FilterBar, ContactRow, TagBadge } from '@/components/admin'
+import { FilterBar, ContactRow, TagBadge } from '../components'
 import {
   AlertTriangle,
   Loader2,

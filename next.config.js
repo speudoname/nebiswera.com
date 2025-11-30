@@ -11,13 +11,26 @@ const nextConfig = {
   // Disable powered-by header
   poweredByHeader: false,
 
-  // Optimize images
+  // Images - Bunny CDN handles ALL optimization (not Next.js)
+  // IMPORTANT: Do NOT remove 'unoptimized: true' - we rely on Bunny's optimizer
   images: {
-    formats: ['image/avif', 'image/webp'],
+    unoptimized: true, // Next.js does NO optimization - Bunny CDN handles it all
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'cdn.nebiswera.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nebiswera-cdn.b-cdn.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nebiswera-images.b-cdn.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vz-1693fee0-2ad.b-cdn.net',
       },
     ],
   },

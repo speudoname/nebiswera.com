@@ -1,9 +1,12 @@
 'use client'
 
+import React from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { Brain, Target, Heart, ArrowRight } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui'
+import { BunnyImage } from '@/components/ui/BunnyImage'
 import type { Locale } from '@/i18n/config'
 
 const content: Record<Locale, {
@@ -71,59 +74,207 @@ const iconMap = {
   heart: Heart,
 }
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.1,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94], // Smooth easing
+    },
+  },
+}
+
+const titleVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: 'easeOut',
+    },
+  },
+}
+
 export function WorkshopThreeThings() {
   const locale = useLocale() as Locale
   const t = content[locale]
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-primary-50 via-neu-base to-primary-50">
-      <div className="max-w-6xl mx-auto">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-neu-base relative overflow-hidden">
+      {/* Background image */}
+      <div className="absolute inset-0 pointer-events-none">
+        <BunnyImage
+          src="https://nebiswera-cdn.b-cdn.net/images/nebiswera6.jpg"
+          alt=""
+          width={640}
+          height={640}
+          className="w-full h-full object-cover"
+          priority={false}
+          quality={50}
+          sizes="100vw"
+        />
+      </div>
+      {/* Primary color overlay */}
+      <div className="absolute inset-0 bg-primary-50 opacity-65 pointer-events-none"></div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Three Pillars */}
         <div className="mb-12 md:mb-16">
-          <h3 className="text-2xl md:text-3xl font-bold text-text-primary text-center mb-8 md:mb-10">
-            {t.pillarsTitle}
-          </h3>
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-            {t.pillars.map((pillar, index) => {
-              const Icon = iconMap[pillar.icon]
-              return (
-                <div
-                  key={index}
-                  className="bg-neu-base rounded-neu-md p-6 md:p-8 shadow-neu text-center"
-                >
+          {isMounted ? (
+            <motion.h3
+              className="text-2xl md:text-3xl font-bold text-text-primary text-center mb-8 md:mb-10"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={titleVariants}
+            >
+              {t.pillarsTitle}
+            </motion.h3>
+          ) : (
+            <h3 className="text-2xl md:text-3xl font-bold text-text-primary text-center mb-8 md:mb-10">
+              {t.pillarsTitle}
+            </h3>
+          )}
+          {isMounted ? (
+            <motion.div
+              className="grid md:grid-cols-3 gap-6 md:gap-8"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={containerVariants}
+            >
+              {t.pillars.map((pillar, index) => {
+                const Icon = iconMap[pillar.icon]
+                return (
+                  <motion.div
+                    key={index}
+                    className="bg-neu-base rounded-neu-md p-6 md:p-8 text-center"
+                    style={{ boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.1)' }}
+                    variants={itemVariants}
+                  >
                   <div className="w-16 h-16 mx-auto mb-4 md:mb-6 rounded-full bg-primary-100 flex items-center justify-center shadow-neu-sm">
                     <Icon className="w-8 h-8 text-primary-600" />
                   </div>
                   <h4 className="text-lg md:text-xl font-semibold text-text-primary mb-3">
                     {pillar.title}
                   </h4>
-                  <p className="text-text-secondary text-sm md:text-base leading-relaxed">
-                    {pillar.description}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
+                    <p className="text-text-secondary text-sm md:text-base leading-relaxed">
+                      {pillar.description}
+                    </p>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+              {t.pillars.map((pillar, index) => {
+                const Icon = iconMap[pillar.icon]
+                return (
+                  <div
+                    key={index}
+                    className="bg-neu-base rounded-neu-md p-6 md:p-8 text-center"
+                    style={{ boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.1)' }}
+                  >
+                    <div className="w-16 h-16 mx-auto mb-4 md:mb-6 rounded-full bg-primary-100 flex items-center justify-center shadow-neu-sm">
+                      <Icon className="w-8 h-8 text-primary-600" />
+                    </div>
+                    <h4 className="text-lg md:text-xl font-semibold text-text-primary mb-3">
+                      {pillar.title}
+                    </h4>
+                    <p className="text-text-secondary text-sm md:text-base leading-relaxed">
+                      {pillar.description}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Transformation Box */}
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-neu-lg p-8 md:p-10 shadow-neu-darkbg mb-8 md:mb-12 text-center">
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
-            {t.transformationTitle}
-          </h3>
-          <p className="text-base md:text-lg text-white/95 leading-relaxed max-w-3xl mx-auto">
-            {t.transformationText}
-          </p>
-        </div>
+        {isMounted ? (
+          <motion.div
+            className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-neu-lg p-8 md:p-10 shadow-neu-darkbg mb-8 md:mb-12 text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={itemVariants}
+          >
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              {t.transformationTitle}
+            </h3>
+            <p className="text-base md:text-lg text-white/95 leading-relaxed max-w-3xl mx-auto">
+              {t.transformationText}
+            </p>
+          </motion.div>
+        ) : (
+          <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-neu-lg p-8 md:p-10 shadow-neu-darkbg mb-8 md:mb-12 text-center">
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              {t.transformationTitle}
+            </h3>
+            <p className="text-base md:text-lg text-white/95 leading-relaxed max-w-3xl mx-auto">
+              {t.transformationText}
+            </p>
+          </div>
+        )}
 
         {/* CTA */}
-        <div className="text-center">
-          <Link href={`/${locale}/auth/register`}>
-            <Button size="lg" rightIcon={ArrowRight} variant="primary">
-              {t.cta}
-            </Button>
-          </Link>
-        </div>
+        {isMounted ? (
+          <motion.div
+            className="text-center"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={itemVariants}
+          >
+            <Link href={`/${locale}/auth/register`}>
+              <Button
+                size="lg"
+                rightIcon={ArrowRight}
+                variant="primary"
+                style={{ boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.1)' }}
+              >
+                {t.cta}
+              </Button>
+            </Link>
+          </motion.div>
+        ) : (
+          <div className="text-center">
+            <Link href={`/${locale}/auth/register`}>
+              <Button
+                size="lg"
+                rightIcon={ArrowRight}
+                variant="primary"
+                style={{ boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.1)' }}
+              >
+                {t.cta}
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   )

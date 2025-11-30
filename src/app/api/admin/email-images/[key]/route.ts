@@ -1,23 +1,9 @@
-// API endpoint for deleting email campaign images from R2
+// API endpoint for deleting email campaign images from Bunny Storage
 import { NextRequest, NextResponse } from 'next/server'
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { deleteFromBunnyStorage } from '@/lib/bunny-storage'
 import { isAdmin } from '@/lib/auth/utils'
 
 export const runtime = 'nodejs'
-
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID!
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY!
-const BUCKET_NAME = process.env.R2_BUCKET_NAME || 'nebiswera'
-
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: R2_ACCESS_KEY_ID,
-    secretAccessKey: R2_SECRET_ACCESS_KEY,
-  },
-})
 
 export async function DELETE(
   request: NextRequest,
@@ -39,12 +25,7 @@ export async function DELETE(
       )
     }
 
-    const command = new DeleteObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: decodedKey,
-    })
-
-    await s3Client.send(command)
+    await deleteFromBunnyStorage(decodedKey)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

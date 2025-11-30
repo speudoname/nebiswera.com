@@ -1,8 +1,12 @@
 'use client'
 
+import React from 'react'
 import { useLocale } from 'next-intl'
 import { Brain } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { BunnyImage } from '@/components/ui/BunnyImage'
 import type { Locale } from '@/i18n/config'
+import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
 
 const content: Record<Locale, {
   eyebrow: string
@@ -38,48 +42,137 @@ const content: Record<Locale, {
 export function WhatItIsNotSection() {
   const locale = useLocale() as Locale
   const t = content[locale]
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const FeaturedImageCard = () => (
+    <div className="flex justify-center mb-8">
+      <div className="w-40 h-40 md:w-48 md:h-48 rounded-neu overflow-hidden shadow-neu-md">
+        <BunnyImage
+          src="https://nebiswera-cdn.b-cdn.net/images/nebiswera1.jpg"
+          alt="Nebiswera"
+          width={256}
+          height={256}
+          className="w-full h-full object-cover"
+          quality={75}
+          sizes="(max-width: 768px) 160px, 192px"
+        />
+      </div>
+    </div>
+  )
+
+  const HeaderContent = () => (
+    <div className="text-center mb-12 md:mb-16">
+      <p className="eyebrow text-primary-600 mb-4">
+        {t.eyebrow}
+      </p>
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-6">
+        {t.title}
+      </h2>
+    </div>
+  )
+
+  const MainTextContent = () => (
+    <div className="bg-neu-base rounded-neu-lg p-8 md:p-10 shadow-neu mb-10 md:mb-12">
+      <div className="space-y-6 md:space-y-8">
+        {t.mainText.map((paragraph, index) => (
+          <p
+            key={index}
+            className="text-base md:text-lg text-text-primary leading-relaxed"
+          >
+            {paragraph}
+          </p>
+        ))}
+      </div>
+    </div>
+  )
+
+  const WhatItIsContent = () => (
+    <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-neu-lg p-8 md:p-10 shadow-neu-md">
+      <div className="flex items-start gap-4 mb-4">
+        <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary-200 flex items-center justify-center shadow-neu-sm">
+          <Brain className="w-6 h-6 md:w-7 md:h-7 text-primary-600" />
+        </div>
+        <h3 className="text-xl md:text-2xl font-bold text-primary-600 pt-2">
+          {t.whatItIsTitle}
+        </h3>
+      </div>
+      <p className="text-base md:text-lg text-text-primary leading-relaxed">
+        {t.whatItIsText}
+      </p>
+    </div>
+  )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-base to-neu-light overflow-hidden">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <p className="eyebrow text-primary-600 mb-4">
-            {t.eyebrow}
-          </p>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-6">
-            {t.title}
-          </h2>
-        </div>
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-base to-neu-light relative overflow-hidden">
+      {/* Background artwork - more visible */}
+      <div className="absolute inset-0 opacity-15 pointer-events-none">
+        <BunnyImage
+          src="https://nebiswera-cdn.b-cdn.net/images/nebiswera5.jpg"
+          alt=""
+          width={640}
+          height={640}
+          className="w-full h-full object-cover"
+          priority={false}
+          quality={50}
+          sizes="100vw"
+        />
+      </div>
 
-        {/* Main Text - Book-like paragraphs */}
-        <div className="bg-neu-base rounded-neu-lg p-8 md:p-10 shadow-neu mb-10 md:mb-12">
-          <div className="space-y-6 md:space-y-8">
-            {t.mainText.map((paragraph, index) => (
-              <p
-                key={index}
-                className="text-base md:text-lg text-text-primary leading-relaxed"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
+      <div className="max-w-4xl mx-auto relative z-10">
+        {isMounted ? (
+          <>
+            {/* Small card image on top */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={scaleUpVariants}
+            >
+              <FeaturedImageCard />
+            </motion.div>
 
-        {/* What it IS - Highlighted section */}
-        <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-neu-lg p-8 md:p-10 shadow-neu-md">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="flex-shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary-200 flex items-center justify-center shadow-neu-sm">
-              <Brain className="w-6 h-6 md:w-7 md:h-7 text-primary-600" />
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold text-primary-600 pt-2">
-              {t.whatItIsTitle}
-            </h3>
-          </div>
-          <p className="text-base md:text-lg text-text-primary leading-relaxed">
-            {t.whatItIsText}
-          </p>
-        </div>
+            {/* Header */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
+              <HeaderContent />
+            </motion.div>
+
+            {/* Main Text - Book-like paragraphs */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
+              <MainTextContent />
+            </motion.div>
+
+            {/* What it IS - Highlighted section */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
+              <WhatItIsContent />
+            </motion.div>
+          </>
+        ) : (
+          <>
+            <FeaturedImageCard />
+            <HeaderContent />
+            <MainTextContent />
+            <WhatItIsContent />
+          </>
+        )}
       </div>
     </section>
   )

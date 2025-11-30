@@ -110,18 +110,18 @@ export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
         <source src={HERO_VIDEO.mp4Url} type="video/mp4" />
       </video>
 
-      {/* Unmute button - your branded UI */}
+      {/* Unmute button - compact design */}
       <button
         onClick={toggleMute}
-        className="absolute top-6 right-6 bg-primary-500 text-white px-6 py-4 rounded-neu shadow-neu-md hover:shadow-neu-lg hover:bg-primary-600 active:shadow-neu-pressed transition-all z-10"
+        className="absolute top-4 right-4 md:top-6 md:right-6 bg-primary-500 text-white rounded-neu shadow-neu-md hover:shadow-neu-lg hover:bg-primary-600 active:shadow-neu-pressed transition-all z-10 p-3 md:px-6 md:py-4"
         aria-label={isMuted ? 'Unmute video' : 'Mute video'}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row items-center gap-1 md:gap-2">
           {isMuted ? (
             <>
-              <VolumeX className="w-6 h-6" />
-              <span className="font-semibold text-sm">
-                {locale === 'ka' ? 'ხმის ჩართვა' : 'Click for Sound'}
+              <VolumeX className="w-6 h-6 md:w-6 md:h-6" />
+              <span className="font-medium text-[10px] md:text-sm leading-tight md:leading-normal">
+                {locale === 'ka' ? 'ხმის ჩართვა' : 'Turn on sound'}
               </span>
             </>
           ) : (

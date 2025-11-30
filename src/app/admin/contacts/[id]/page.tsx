@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button, Badge, Input, Modal } from '@/components/ui'
-import { TagBadge } from '@/components/admin'
+import { TagBadge } from '../../components'
 import {
   ArrowLeft,
   Mail,
@@ -97,10 +97,11 @@ const activityIcons: Record<string, typeof Clock> = {
 export default function ContactProfilePage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }> | { id: string }
 }) {
   const router = useRouter()
-  const resolvedParams = use(params)
+  // Handle both Promise (production) and object (development)
+  const resolvedParams = params instanceof Promise ? use(params) : params
   const contactId = resolvedParams.id
 
   const [contact, setContact] = useState<Contact | null>(null)

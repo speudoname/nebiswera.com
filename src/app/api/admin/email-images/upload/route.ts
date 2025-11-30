@@ -1,6 +1,6 @@
-// API endpoint for uploading email campaign images to R2
+// API endpoint for uploading email campaign images to Bunny CDN
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToR2, generateEmailImageKey } from '@/lib/storage/r2'
+import { uploadToBunnyStorage, generateEmailImageKey } from '@/lib/bunny-storage'
 import { isAdmin } from '@/lib/auth/utils'
 
 export const runtime = 'nodejs'
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await uploadFile.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to R2
-    const url = await uploadToR2(buffer, key, uploadFile.type)
+    // Upload to Bunny Storage
+    const url = await uploadToBunnyStorage(buffer, key)
 
     return NextResponse.json({
       success: true,

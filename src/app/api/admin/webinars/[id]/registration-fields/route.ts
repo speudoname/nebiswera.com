@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import type { NextRequest } from 'next/server'
-import type { RegistrationFieldConfig } from '@/types/registration-fields'
+import type { RegistrationFieldConfig } from '@/app/api/webinars/lib/registration-fields'
 
 interface RouteParams {
   params: Promise<{ id: string }>

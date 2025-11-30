@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button, Input, Card } from '@/components/ui'
 import { Plus, X, Save } from 'lucide-react'
-import type { CustomField, RegistrationFieldConfig } from '@/types/registration-fields'
+import type { CustomField, RegistrationFieldConfig } from '@/app/api/webinars/lib/registration-fields'
 
 interface RegistrationFieldsFormProps {
   webinarId: string

@@ -1,6 +1,6 @@
-// API endpoint for server-side file uploads to R2
+// API endpoint for server-side file uploads to Bunny CDN
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToR2, generateTestimonialKey } from '@/lib/storage/r2'
+import { uploadToBunnyStorage, generateUniqueFilename } from '@/lib/bunny-storage'
 import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
 
@@ -70,28 +70,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate unique ID for this upload
-    const uploadId = nanoid()
-
-    // Get file extension
-    const ext = uploadFile.name.split('.').pop() ||
-                (uploadType === 'audio' ? 'webm' : uploadType === 'video' ? 'webm' : 'jpg')
-
     // Generate unique filename
-    const uniqueFilename = `${uploadType}-${Date.now()}.${ext}`
-    const key = generateTestimonialKey(uploadId, uniqueFilename)
+    const uniqueFilename = generateUniqueFilename(uploadFile.name)
+
+    // Determine folder based on type
+    const folder = uploadType === 'image' ? 'testimonials/images' :
+                   uploadType === 'audio' ? 'testimonials/audio' :
+                   'testimonials/video'
+
+    const path = `${folder}/${uniqueFilename}`
 
     // Convert file to buffer
     const arrayBuffer = await uploadFile.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to R2
-    const url = await uploadToR2(buffer, key, uploadFile.type)
+    // Upload to Bunny Storage
+    const url = await uploadToBunnyStorage(buffer, path)
 
     return NextResponse.json({
       success: true,
       url,
-      key,
+      key: path,
     })
   } catch (error: any) {
     console.error('Error uploading file:', error)

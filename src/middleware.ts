@@ -4,54 +4,67 @@ import { getToken } from 'next-auth/jwt'
 import createIntlMiddleware from 'next-intl/middleware'
 import { locales, defaultLocale, type Locale } from '@/i18n/config'
 import { AUTH_COOKIE_NAME } from '@/lib/auth/utils'
-import { handleAdminRoutes } from '@/lib/middleware/admin'
-import { handleRouteProtection } from '@/lib/middleware/routes'
-import { handleEmailVerification } from '@/lib/middleware/verification'
-import { handleLocaleRedirect } from '@/lib/middleware/locale'
+import {
+  handleAdminRoutes,
+  handleRouteProtection,
+  handleEmailVerification,
+  handleLocaleRedirect,
+  LOCALE_COOKIE_NAME,
+  LOCALE_PATTERN,
+  LOCALE_EXTRACT_PATTERN,
+} from '@/lib/middleware'
 
-// Cookie name for storing user's locale preference (set by client)
-const LOCALE_COOKIE_NAME = 'NEXT_LOCALE'
-
-// Create the internationalization middleware
+// Create the internationalization middleware (singleton)
 const intlMiddleware = createIntlMiddleware({
   locales,
   defaultLocale,
   localePrefix: 'always',
 })
 
-// Paths that should be excluded from locale handling
-const publicPaths = ['/api', '/_next', '/favicon.ico', '/admin']
-
+/**
+ * Extracts pathname without locale prefix
+ * Uses pre-compiled regex for performance
+ */
 function getPathnameWithoutLocale(pathname: string): string {
-  const localePattern = new RegExp(`^/(${locales.join('|')})`)
-  return pathname.replace(localePattern, '') || '/'
+  return pathname.replace(LOCALE_PATTERN, '') || '/'
 }
 
-function getLocaleFromPathname(pathname: string): string | null {
-  const match = pathname.match(new RegExp(`^/(${locales.join('|')})`))
-  return match ? match[1] : null
+/**
+ * Extracts locale from pathname
+ * Uses pre-compiled regex for performance
+ */
+function getLocaleFromPathname(pathname: string): Locale | null {
+  const match = pathname.match(LOCALE_EXTRACT_PATTERN)
+  return match ? (match[1] as Locale) : null
 }
 
+/**
+ * Main middleware function
+ *
+ * Flow:
+ * 1. Admin routes (/admin/*) - handled separately with their own auth
+ * 2. Root redirect (/) - redirect to preferred locale
+ * 3. Locale detection - ensure URL has locale prefix
+ * 4. Auth token retrieval - for route protection
+ * 5. Route protection - redirect unauthenticated users from protected routes
+ * 6. Email verification - enforce verification after grace period
+ * 7. Locale preference - redirect to user's preferred locale if different
+ * 8. i18n middleware - handle remaining locale logic
+ */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 1. Skip locale handling for API routes, static files, and admin panel
-  if (publicPaths.some((path) => pathname.startsWith(path))) {
-    // 2. Handle admin routes separately
+  // 1. Handle admin routes (separate auth flow, no i18n)
+  if (pathname.startsWith('/admin')) {
     const adminResponse = await handleAdminRoutes(request)
-    if (adminResponse) return adminResponse
-
-    // For other public paths (api, static), continue
-    if (pathname.startsWith('/api')) {
-      return NextResponse.next()
-    }
+    return adminResponse ?? NextResponse.next()
   }
 
-  // 3. Handle root redirect
+  // 2. Handle root redirect to preferred locale
   const rootRedirect = handleLocaleRedirect(request)
   if (rootRedirect) return rootRedirect
 
-  // 4. Get locale
+  // 3. Get locale from pathname
   const locale = getLocaleFromPathname(pathname)
 
   // If no locale in pathname, let intl middleware handle the redirect
@@ -59,24 +72,30 @@ export async function middleware(request: NextRequest) {
     return intlMiddleware(request)
   }
 
-  // 5. Get auth token
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-    cookieName: AUTH_COOKIE_NAME,
-  })
+  // 4. Get auth token (with error handling)
+  let token = null
+  try {
+    token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+      cookieName: AUTH_COOKIE_NAME,
+    })
+  } catch (error) {
+    console.error('[Middleware] Auth token error:', error)
+    // Continue without token - protected routes will redirect to login
+  }
 
   const pathnameWithoutLocale = getPathnameWithoutLocale(pathname)
+  const isLoggedIn = !!token
   const userPreferredLocale = token?.preferredLocale as Locale | undefined
 
-  // For anonymous users, check cookie for stored preference
-  const isLoggedIn = !!token
+  // For anonymous users, check cookie for stored locale preference
   const storedLocale = !isLoggedIn
     ? (request.cookies.get(LOCALE_COOKIE_NAME)?.value as Locale | undefined)
     : undefined
   const effectivePreferredLocale = userPreferredLocale || storedLocale
 
-  // 6. Route Protection
+  // 5. Route Protection
   const protectionRedirect = handleRouteProtection({
     request,
     token,
@@ -85,7 +104,7 @@ export async function middleware(request: NextRequest) {
   })
   if (protectionRedirect) return protectionRedirect
 
-  // 7. Email Verification
+  // 6. Email Verification
   const verificationRedirect = handleEmailVerification({
     request,
     token,
@@ -94,18 +113,28 @@ export async function middleware(request: NextRequest) {
   })
   if (verificationRedirect) return verificationRedirect
 
-  // 8. Preferred Locale Redirect
+  // 7. Preferred Locale Redirect
   // Redirect users to their preferred locale if different from current URL
-  if (effectivePreferredLocale && locale !== effectivePreferredLocale && locales.includes(effectivePreferredLocale)) {
+  if (
+    effectivePreferredLocale &&
+    locale !== effectivePreferredLocale &&
+    locales.includes(effectivePreferredLocale)
+  ) {
     const newUrl = new URL(request.url)
     newUrl.pathname = pathname.replace(`/${locale}`, `/${effectivePreferredLocale}`)
     return NextResponse.redirect(newUrl)
   }
 
-  // 9. Final: Intl Middleware
+  // 8. Final: i18n Middleware
   return intlMiddleware(request)
 }
 
+/**
+ * Matcher configuration
+ * Excludes static assets and API routes at the config level for performance
+ */
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.png|.*\\.ico|.*\\.webmanifest).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.png|.*\\.ico|.*\\.webmanifest).*)',
+  ],
 }

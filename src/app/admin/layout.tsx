@@ -37,6 +37,17 @@ function AdminLayoutContent({
 }) {
   const pathname = usePathname()
 
+  // Full-screen routes without admin sidebar
+  const isFullScreen = pathname?.includes('/interactions')
+
+  if (isFullScreen) {
+    return (
+      <div className="min-h-screen bg-neu-base">
+        {children}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-neu-base">
       {/* Sidebar */}

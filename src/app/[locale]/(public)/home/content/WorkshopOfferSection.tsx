@@ -1,8 +1,11 @@
 'use client'
 
+import React from 'react'
 import { useLocale } from 'next-intl'
 import { Calendar, Clock } from 'lucide-react'
+import { motion } from 'framer-motion'
 import type { Locale } from '@/i18n/config'
+import { fadeUpVariants, staggerContainerVariants, staggerItemVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
 
 const content: Record<Locale, {
   eyebrow: string
@@ -54,62 +57,124 @@ const content: Record<Locale, {
 export function WorkshopOfferSection() {
   const locale = useLocale() as Locale
   const t = content[locale]
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const HeaderContent = () => (
+    <div className="text-center mb-12 md:mb-16">
+      <p className="eyebrow text-primary-600 mb-4">
+        {t.eyebrow}
+      </p>
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3">
+        {t.title}
+      </h2>
+      <p className="text-lg md:text-xl text-text-secondary">
+        {t.subtitle}
+      </p>
+    </div>
+  )
+
+  const ScheduleContent = () => (
+    <div className="bg-neu-base rounded-neu-lg p-6 md:p-8 shadow-neu mb-8 md:mb-12">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-neu bg-primary-100 flex items-center justify-center shadow-neu-sm">
+          <Calendar className="w-6 h-6 text-primary-600" />
+        </div>
+        <h3 className="text-xl md:text-2xl font-bold text-text-primary">
+          {t.scheduleTitle}
+        </h3>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4 mb-4">
+        {t.schedule.map((day, index) => (
+          <div key={index} className="bg-neu-light rounded-neu p-4 shadow-neu-inset text-center">
+            <div className="font-semibold text-primary-600 mb-1">{day.day}</div>
+            <div className="text-text-secondary text-sm flex items-center justify-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>{day.time}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-center text-sm text-text-secondary italic">
+        + {t.followUp}
+      </p>
+    </div>
+  )
+
+  const StatsContent = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
+      {t.stats.map((stat, index) => (
+        <div key={index} className="bg-neu-base rounded-neu p-6 shadow-neu text-center">
+          <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
+            {stat.number}
+          </div>
+          <div className="text-sm md:text-base text-text-secondary">
+            {stat.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 
   return (
     <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-primary-50 via-neu-base to-primary-50">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <p className="eyebrow text-primary-600 mb-4">
-            {t.eyebrow}
-          </p>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3">
-            {t.title}
-          </h2>
-          <p className="text-lg md:text-xl text-text-secondary">
-            {t.subtitle}
-          </p>
-        </div>
+        {isMounted ? (
+          <>
+            {/* Header - animated */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
+              <HeaderContent />
+            </motion.div>
 
-        {/* Schedule Card */}
-        <div className="bg-neu-base rounded-neu-lg p-6 md:p-8 shadow-neu mb-8 md:mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-neu bg-primary-100 flex items-center justify-center shadow-neu-sm">
-              <Calendar className="w-6 h-6 text-primary-600" />
-            </div>
-            <h3 className="text-xl md:text-2xl font-bold text-text-primary">
-              {t.scheduleTitle}
-            </h3>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4 mb-4">
-            {t.schedule.map((day, index) => (
-              <div key={index} className="bg-neu-light rounded-neu p-4 shadow-neu-inset text-center">
-                <div className="font-semibold text-primary-600 mb-1">{day.day}</div>
-                <div className="text-text-secondary text-sm flex items-center justify-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{day.time}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-sm text-text-secondary italic">
-            + {t.followUp}
-          </p>
-        </div>
+            {/* Schedule Card - animated */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={scaleUpVariants}
+            >
+              <ScheduleContent />
+            </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6">
-          {t.stats.map((stat, index) => (
-            <div key={index} className="bg-neu-base rounded-neu p-6 shadow-neu text-center">
-              <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
-                {stat.number}
-              </div>
-              <div className="text-sm md:text-base text-text-secondary">
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
+            {/* Stats Grid - staggered animation */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={staggerContainerVariants}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6"
+            >
+              {t.stats.map((stat, index) => (
+                <motion.div
+                  key={index}
+                  className="bg-neu-base rounded-neu p-6 shadow-neu text-center"
+                  variants={staggerItemVariants}
+                >
+                  <div className="text-3xl md:text-4xl font-bold text-primary-600 mb-2">
+                    {stat.number}
+                  </div>
+                  <div className="text-sm md:text-base text-text-secondary">
+                    {stat.label}
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </>
+        ) : (
+          <>
+            <HeaderContent />
+            <ScheduleContent />
+            <StatsContent />
+          </>
+        )}
       </div>
     </section>
   )

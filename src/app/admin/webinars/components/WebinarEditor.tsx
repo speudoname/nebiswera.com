@@ -20,7 +20,7 @@ import {
 import { VideoUploader } from './VideoUploader'
 import { ScheduleConfigForm } from './ScheduleConfigForm'
 import { RegistrationFieldsForm } from './RegistrationFieldsForm'
-import type { RegistrationFieldConfig } from '@/types/registration-fields'
+import type { RegistrationFieldConfig } from '@/app/api/webinars/lib/registration-fields'
 
 interface WebinarEditorProps {
   webinarId?: string

@@ -1,8 +1,11 @@
 'use client'
 
+import React from 'react'
 import { useLocale } from 'next-intl'
 import { Compass, PenTool, Sparkles } from 'lucide-react'
+import { motion } from 'framer-motion'
 import type { Locale } from '@/i18n/config'
+import { fadeUpVariants, staggerContainerVariants, staggerItemVariants, defaultViewport } from '@/lib/animations'
 
 const content: Record<Locale, {
   title: string
@@ -55,43 +58,102 @@ const icons = [Compass, PenTool, Sparkles]
 export function PhilosophySection() {
   const locale = useLocale() as Locale
   const t = content[locale]
+  const [isMounted, setIsMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const HeaderContent = () => (
+    <div className="text-center mb-12 md:mb-16">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3">
+        {t.title}
+      </h2>
+      <p className="text-lg md:text-xl text-text-secondary">
+        {t.subtitle}
+      </p>
+    </div>
+  )
+
+  const StepsGrid = () => (
+    <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+      {t.steps.map((step, index) => {
+        const Icon = icons[index]
+        return (
+          <div
+            key={index}
+            className="bg-neu-base rounded-neu-md p-6 md:p-8 shadow-neu text-center"
+          >
+            <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full bg-primary-100 flex items-center justify-center shadow-neu-sm">
+              <Icon className="w-7 h-7 md:w-8 md:h-8 text-primary-600" />
+            </div>
+            <div className="text-sm font-medium text-primary-600 mb-2">
+              {locale === 'ka' ? `ნაბიჯი ${index + 1}` : `Step ${index + 1}`}
+            </div>
+            <h3 className="text-lg md:text-xl font-semibold text-text-primary mb-3">
+              {step.title}
+            </h3>
+            <p className="text-text-secondary text-sm md:text-base leading-relaxed">
+              {step.description}
+            </p>
+          </div>
+        )
+      })}
+    </div>
+  )
 
   return (
     <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
       <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-12 md:mb-16">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3">
-            {t.title}
-          </h2>
-          <p className="text-lg md:text-xl text-text-secondary">
-            {t.subtitle}
-          </p>
-        </div>
+        {isMounted ? (
+          <>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
+              <HeaderContent />
+            </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-          {t.steps.map((step, index) => {
-            const Icon = icons[index]
-            return (
-              <div
-                key={index}
-                className="bg-neu-base rounded-neu-md p-6 md:p-8 shadow-neu text-center"
-              >
-                <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full bg-primary-100 flex items-center justify-center shadow-neu-sm">
-                  <Icon className="w-7 h-7 md:w-8 md:h-8 text-primary-600" />
-                </div>
-                <div className="text-sm font-medium text-primary-600 mb-2">
-                  {locale === 'ka' ? `ნაბიჯი ${index + 1}` : `Step ${index + 1}`}
-                </div>
-                <h3 className="text-lg md:text-xl font-semibold text-text-primary mb-3">
-                  {step.title}
-                </h3>
-                <p className="text-text-secondary text-sm md:text-base leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-            )
-          })}
-        </div>
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={staggerContainerVariants}
+              className="grid md:grid-cols-3 gap-6 md:gap-8"
+            >
+              {t.steps.map((step, index) => {
+                const Icon = icons[index]
+                return (
+                  <motion.div
+                    key={index}
+                    className="bg-neu-base rounded-neu-md p-6 md:p-8 shadow-neu text-center"
+                    variants={staggerItemVariants}
+                  >
+                    <div className="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 md:mb-6 rounded-full bg-primary-100 flex items-center justify-center shadow-neu-sm">
+                      <Icon className="w-7 h-7 md:w-8 md:h-8 text-primary-600" />
+                    </div>
+                    <div className="text-sm font-medium text-primary-600 mb-2">
+                      {locale === 'ka' ? `ნაბიჯი ${index + 1}` : `Step ${index + 1}`}
+                    </div>
+                    <h3 className="text-lg md:text-xl font-semibold text-text-primary mb-3">
+                      {step.title}
+                    </h3>
+                    <p className="text-text-secondary text-sm md:text-base leading-relaxed">
+                      {step.description}
+                    </p>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+          </>
+        ) : (
+          <>
+            <HeaderContent />
+            <StepsGrid />
+          </>
+        )}
       </div>
     </section>
   )

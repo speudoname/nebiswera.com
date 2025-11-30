@@ -52,12 +52,12 @@ export default async function LocaleLayout({
         {/* CRITICAL: Preconnect hints MUST be first for optimal performance */}
         {/* Bunny CDN video - 380ms savings for LCP element */}
         <link rel="preconnect" href="https://vz-1693fee0-2ad.b-cdn.net" crossOrigin="" />
-        {/* Bunny CDN images */}
-        <link rel="preconnect" href="https://cdn.nebiswera.com" crossOrigin="" />
+        {/* Bunny CDN images & static files */}
+        <link rel="preconnect" href="https://nebiswera-cdn.b-cdn.net" crossOrigin="" />
 
         {/* DNS prefetch fallback for older browsers */}
         <link rel="dns-prefetch" href="https://vz-1693fee0-2ad.b-cdn.net" />
-        <link rel="dns-prefetch" href="https://cdn.nebiswera.com" />
+        <link rel="dns-prefetch" href="https://nebiswera-cdn.b-cdn.net" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
@@ -94,29 +94,32 @@ export default async function LocaleLayout({
           @font-face{font-family:__Noto_Sans_Georgian_Fallback_95a335;src:local("Arial");ascent-override:100.45%;descent-override:27.46%;line-gap-override:0.00%;size-adjust:106.33%}
 
 
-          /* Hero Section Layout */
-          .hero-section{padding:1rem 1rem 4rem;background:linear-gradient(to bottom,#F0EBF8,#E8E0F0)}
-          @media(min-width:768px){.hero-section{padding:2rem 2rem 6rem}}
-          .hero-container{display:flex;align-items:center;justify-content:center;min-height:60vh}
+          /* Hero Section Layout - Natural content height */
+          .hero-section{padding:2rem 1rem 3rem;background:linear-gradient(to bottom,#F0EBF8,#E8E0F0);display:flex;align-items:center}
+          @media(min-width:768px){.hero-section{padding:3rem 2rem 4rem}}
+          .hero-container{display:flex;align-items:center;justify-content:center;width:100%}
           .hero-content{text-align:center;max-width:48rem;width:100%;padding:0 1rem}
 
-          /* Hero Typography */
-          .hero-eyebrow{font-size:0.875rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem;font-weight:500}
-          @media(min-width:768px){.hero-eyebrow{font-size:1rem}}
-          .hero-title{font-size:2.5rem;line-height:1.2;font-weight:800;margin-bottom:1rem;letter-spacing:-0.025em}
-          @media(min-width:768px){.hero-title{font-size:3rem}}
-          .hero-subtitle{font-size:1.25rem;line-height:1.5;color:#6B2D5C;margin-bottom:1.5rem}
-          @media(min-width:768px){.hero-subtitle{font-size:1.5rem}}
-          @media(min-width:1024px){.hero-subtitle{font-size:1.875rem}}
+          /* Hero Typography - Bold and commanding */
+          .hero-eyebrow{font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;font-weight:500}
+          @media(min-width:768px){.hero-eyebrow{font-size:1.125rem;margin-bottom:1rem}}
+          .hero-title{font-size:3.25rem;line-height:1.1;font-weight:800;margin-bottom:1rem;letter-spacing:-0.025em}
+          @media(min-width:640px){.hero-title{font-size:3.5rem}}
+          @media(min-width:768px){.hero-title{font-size:3.75rem;margin-bottom:1.25rem}}
+          @media(min-width:1024px){.hero-title{font-size:4rem}}
+          .hero-subtitle{font-size:1.375rem;line-height:1.35;color:#6B2D5C;margin-bottom:1.25rem}
+          @media(min-width:768px){.hero-subtitle{font-size:1.5rem;margin-bottom:1.5rem}}
 
           /* Color Utilities - Brand coral/orange for consistency with buttons */
           .text-primary{color:#F27059}
           .text-secondary{color:#6B2D5C}
           .text-dark{color:#2D1B4E}
 
-          /* Hero Video Container - Using padding-bottom trick for reliable 16:9 aspect ratio */
-          .hero-video-container{position:relative;width:100%;max-width:36rem;margin:0 auto 1.5rem;padding-bottom:56.25%;height:0;border-radius:1rem;overflow:hidden;box-shadow:6px 6px 12px #B8B4BD,-6px -6px 12px #FFFFFF}
-          @media(min-width:768px){.hero-video-container{margin-bottom:2rem}}
+          /* Hero Video Container - Maintains 16:9 aspect ratio */
+          .hero-video-container{position:relative;width:100%;max-width:48rem;margin:0 auto 1rem;aspect-ratio:16/9;height:auto;max-height:30vh;border-radius:1rem;overflow:hidden;box-shadow:6px 6px 12px #B8B4BD,-6px -6px 12px #FFFFFF}
+          @media(min-width:768px){.hero-video-container{margin-bottom:1.5rem;max-height:20vh}}
+          @media(min-width:1024px){.hero-video-container{max-height:22vh}}
+          @media(min-width:1440px){.hero-video-container{max-height:24vh}}
           .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
           /* Button Base Styles */

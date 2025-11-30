@@ -33,7 +33,8 @@ export async function uploadVideoToBunny(
 }
 
 /**
- * Upload a file to R2 via server API (for images and audio only)
+ * Upload a file to Bunny CDN via server API (for images and audio)
+ * Note: Function name kept as uploadFileToR2 for backwards compatibility
  */
 export async function uploadFileToR2(
   file: File | Blob,

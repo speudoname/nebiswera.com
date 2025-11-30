@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button, Input, Modal, Pagination } from '@/components/ui'
-import { FilterBar, UserRow } from '@/components/admin'
+import { FilterBar, UserRow } from '../components'
 import { AlertTriangle, Loader2 } from 'lucide-react'
 
 interface User {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button, Modal, Pagination, Badge } from '@/components/ui'
-import { FilterBar, EmailLogRow } from '@/components/admin'
+import { FilterBar, EmailLogRow } from '../components'
 import { Loader2 } from 'lucide-react'
 
 interface EmailLog {

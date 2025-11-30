@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, ArrowRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
-import type { RegistrationFieldConfig, RegistrationFormData, CustomField } from '@/types/registration-fields'
+import type { RegistrationFieldConfig, RegistrationFormData, CustomField } from '@/app/api/webinars/lib/registration-fields'
 
 interface Session {
   id: string

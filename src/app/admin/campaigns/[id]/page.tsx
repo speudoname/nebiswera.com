@@ -52,9 +52,11 @@ interface Recipient {
 export default function CampaignStatsPage({
   params,
 }: {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }> | { id: string }
 }) {
-  const { id } = use(params)
+  // Handle both Promise (production) and object (development)
+  const resolvedParams = params instanceof Promise ? use(params) : params
+  const id = resolvedParams.id
   const [campaign, setCampaign] = useState<Campaign | null>(null)
   const [recipients, setRecipients] = useState<Recipient[]>([])
   const [loading, setLoading] = useState(true)

@@ -78,6 +78,7 @@ export function InteractionsEditor({
   const [showAddModal, setShowAddModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [hoveredInteractionId, setHoveredInteractionId] = useState<string | null>(null)
 
   // New interaction form state
   const [newInteraction, setNewInteraction] = useState<Partial<Interaction>>({
@@ -220,6 +221,8 @@ export function InteractionsEditor({
           videoUrl={videoUrl}
           videoDuration={videoDuration}
           interactions={interactions}
+          highlightedInteractionId={hoveredInteractionId}
+          onInteractionHover={setHoveredInteractionId}
           onInteractionClick={(interaction) => setEditingId(interaction.id)}
           onInteractionMove={async (id, newTime) => {
             const interaction = interactions.find((i) => i.id === id)

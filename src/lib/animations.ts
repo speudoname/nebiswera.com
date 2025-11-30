@@ -14,7 +14,7 @@ export const fadeUpVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94], // Custom easing
+      ease: [0.25, 0.46, 0.45, 0.94] as any, // Custom cubic-bezier easing
     },
   },
 }
@@ -42,7 +42,7 @@ export const scaleUpVariants = {
     scale: 1,
     transition: {
       duration: 0.7,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      ease: [0.25, 0.46, 0.45, 0.94] as any,
     },
   },
 }
@@ -58,7 +58,7 @@ export const slideLeftVariants = {
     x: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      ease: [0.25, 0.46, 0.45, 0.94] as any,
     },
   },
 }
@@ -74,7 +74,7 @@ export const slideRightVariants = {
     x: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      ease: [0.25, 0.46, 0.45, 0.94] as any,
     },
   },
 }

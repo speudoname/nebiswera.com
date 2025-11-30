@@ -28,14 +28,19 @@
     "contact": "კონტაქტი"
   },
   "home": {
-    "eyebrowStart": "შენი მომავალი —",
-    "eyebrowEmphasis": "შენზე არის",
+    "eyebrowStart": "მომავალი —",
+    "eyebrowEmphasis": "შენზეა",
     "eyebrowEnd": "— დამოკიდებული",
     "titlePart1": "ისწავლე შენი ბედის",
     "titlePart2": "შენი ნებით წერა",
     "subtitle": "რასაც აირჩევ, ის მოხდება.",
     "getStarted": "დაწყება",
-    "learnMore": "გაიგე მეტი"
+    "learnMore": "გაიგე მეტი",
+    "ctaBold": "გაინტერესებს მარტივი ფორმულა ->",
+    "ctaRegular": "რომელიც შეცვლის შენს მომავალს? ->",
+    "ctaAccentBold": "ნებისწერის საოცარი თეორემა!",
+    "ctaSubtitle": "...რომ ცხადად გააცნობიერო - შენი ნების ძალა?",
+    "rating": "4.9 ვარსკვლავი 500+ შეფასებიდან"
   },
   "auth": {
     "login": {

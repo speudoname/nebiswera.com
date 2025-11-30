@@ -1,8 +1,6 @@
 import { getTranslations } from 'next-intl/server'
-import { HeroVideoPlayer } from './HeroVideoPlayer'
 import { HeroEmailCapture } from './HeroEmailCapture'
-
-const HERO_POSTER = 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail_8f42b11e.jpg'
+import { BunnyImage } from '@/components/ui/BunnyImage'
 
 interface HeroSectionProps {
   locale: string
@@ -40,18 +38,47 @@ export async function HeroSection({ locale }: HeroSectionProps) {
           {/* Email Capture Form */}
           <HeroEmailCapture />
 
-          {/* Video Container with LCP poster image */}
-          <div className="hero-video-container">
-            <img
-              src={HERO_POSTER}
-              alt=""
-              width={1920}
-              height={1080}
-              className="hero-poster"
-              fetchPriority="high"
-              decoding="async"
-            />
-            <HeroVideoPlayer locale={locale} />
+          {/* CTA Text */}
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <p style={{ fontSize: '1.5rem', lineHeight: '1.4', marginBottom: '0.75rem' }}>
+              <span style={{ fontWeight: 'bold', color: '#2D1B4E' }}>{t('ctaBold')}</span>{' '}
+              <span style={{ fontWeight: 'normal', color: '#2D1B4E' }}>{t('ctaRegular')}</span>{' '}
+              <span style={{ fontWeight: 'bold', color: '#8B5CF6' }}>{t('ctaAccentBold')}</span>
+            </p>
+
+            {/* Star Rating */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              {/* Stars Row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg
+                    key={star}
+                    style={{ width: '1.25rem', height: '1.25rem', color: '#FBBF24', fill: '#FBBF24' }}
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                ))}
+              </div>
+              {/* Rating Text */}
+              <span style={{ fontSize: '0.875rem', color: '#2D1B4E', textAlign: 'center' }}>{t('rating')}</span>
+            </div>
+          </div>
+
+          {/* Board Image */}
+          <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ width: '100%', maxWidth: '24rem', borderRadius: '1rem', overflow: 'hidden', boxShadow: '6px 6px 12px #B8B4BD, -6px -6px 12px #FFFFFF' }}>
+              <BunnyImage
+                src="https://nebiswera-cdn.b-cdn.net/images/board.jpg"
+                alt="Nebiswera Board"
+                width={600}
+                height={400}
+                className="w-full h-auto"
+                priority={false}
+                quality={75}
+                sizes="(max-width: 768px) 100vw, 384px"
+              />
+            </div>
           </div>
         </div>
       </div>

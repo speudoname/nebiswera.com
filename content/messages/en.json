@@ -35,7 +35,12 @@
     "titlePart2": "by Your Will",
     "subtitle": "What you choose becomes.",
     "getStarted": "Get Started",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "ctaBold": "Then you need to learn ->",
+    "ctaRegular": "the Nebiswera theorem",
+    "ctaAccentBold": "",
+    "ctaSubtitle": "Are you ready to reclaim the power that has never been taken from anyone?",
+    "rating": "4.9 stars out of 500+ reviews"
   },
   "auth": {
     "login": {

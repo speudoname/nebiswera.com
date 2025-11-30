@@ -87,7 +87,7 @@ export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
     const video = videoRef.current
     if (video) {
       video.muted = !video.muted
-      setIsMuted(!video.muted)
+      setIsMuted(video.muted)
     }
   }
 

@@ -1,4 +1,5 @@
-import { Inter, Noto_Sans_Georgian } from 'next/font/google'
+import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
@@ -17,9 +18,8 @@ const inter = Inter({
   preload: true,
 })
 
-const notoSansGeorgian = Noto_Sans_Georgian({
-  subsets: ['georgian'],
-  weight: ['400', '500', '600', '700', '800'],
+const adapterGeorgian = localFont({
+  src: '../../../public/fonts/AdapterGeorgianText-VF.ttf',
   variable: '--font-georgian',
   display: 'optional',
   preload: true,
@@ -69,14 +69,7 @@ export default async function LocaleLayout({
           fetchPriority="high"
         />
 
-        {/* Preload critical fonts - Georgian (primary) and Latin (primary) */}
-        <link
-          rel="preload"
-          as="font"
-          type="font/woff2"
-          href="/_next/static/media/e889be32d4886456-s.woff2"
-          crossOrigin=""
-        />
+        {/* Preload critical fonts - Latin (primary) */}
         <link
           rel="preload"
           as="font"
@@ -90,8 +83,6 @@ export default async function LocaleLayout({
           /* Font Definitions - Inlined to avoid render-blocking request */
           @font-face{font-family:__Inter_1b85de;font-style:normal;font-weight:100 900;font-display:optional;src:url(/_next/static/media/e4af272ccee01ff0-s.p.woff2) format("woff2");unicode-range:u+00??,u+0131,u+0152-0153,u+02bb-02bc,u+02c6,u+02da,u+02dc,u+0304,u+0308,u+0329,u+2000-206f,u+20ac,u+2122,u+2191,u+2193,u+2212,u+2215,u+feff,u+fffd}
           @font-face{font-family:__Inter_Fallback_1b85de;src:local("Arial");ascent-override:90.49%;descent-override:22.56%;line-gap-override:0.00%;size-adjust:107.06%}
-          @font-face{font-family:__Noto_Sans_Georgian_95a335;font-style:normal;font-weight:100 900;font-stretch:100%;font-display:optional;src:url(/_next/static/media/e889be32d4886456-s.woff2) format("woff2");unicode-range:u+0589,u+10a0-10ff,u+1c90-1cba,u+1cbd-1cbf,u+205a,u+2d00-2d2f,u+2e31}
-          @font-face{font-family:__Noto_Sans_Georgian_Fallback_95a335;src:local("Arial");ascent-override:100.45%;descent-override:27.46%;line-gap-override:0.00%;size-adjust:106.33%}
 
 
           /* Hero Section Layout - Natural content height */
@@ -101,14 +92,18 @@ export default async function LocaleLayout({
           .hero-content{text-align:center;max-width:48rem;width:100%;padding:0 0.5rem}
 
           /* Hero Typography - Bold and commanding */
-          .hero-eyebrow{font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;font-weight:500}
-          @media(min-width:768px){.hero-eyebrow{font-size:1.125rem;margin-bottom:1rem}}
+          .hero-eyebrow{font-size:1rem;text-transform:uppercase;margin-bottom:0.75rem;font-weight:500}
+          .hero-eyebrow:lang(en){letter-spacing:0.05em}
+          @media(min-width:768px){.hero-eyebrow{font-size:1.25rem;margin-bottom:1rem}}
+          @media(min-width:1024px){.hero-eyebrow{font-size:1.375rem}}
           .hero-title{font-size:3.25rem;line-height:1.1;font-weight:800;margin-bottom:1rem;letter-spacing:-0.025em}
           @media(min-width:640px){.hero-title{font-size:3.5rem}}
-          @media(min-width:768px){.hero-title{font-size:3.75rem;margin-bottom:1.25rem}}
-          @media(min-width:1024px){.hero-title{font-size:4rem}}
+          @media(min-width:768px){.hero-title{font-size:4.5rem;margin-bottom:1.25rem}}
+          @media(min-width:1024px){.hero-title{font-size:5rem}}
+          @media(min-width:1280px){.hero-title{font-size:5.5rem}}
           .hero-subtitle{font-size:1.375rem;line-height:1.35;color:#6B2D5C;margin-bottom:1.25rem}
-          @media(min-width:768px){.hero-subtitle{font-size:1.5rem;margin-bottom:1.5rem}}
+          @media(min-width:768px){.hero-subtitle{font-size:1.75rem;margin-bottom:1.5rem}}
+          @media(min-width:1024px){.hero-subtitle{font-size:1.875rem}}
 
           /* Color Utilities - Brand coral/orange for consistency with buttons */
           .text-primary{color:#F27059}
@@ -155,7 +150,7 @@ export default async function LocaleLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${notoSansGeorgian.variable} font-sans`}>
+      <body className={`${inter.variable} ${adapterGeorgian.variable} font-sans`}>
         {/* Google Analytics - Delayed loading for better performance */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}

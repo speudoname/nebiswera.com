@@ -11,28 +11,34 @@ import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animatio
 const content: Record<Locale, {
   eyebrow: string
   title: string
-  mainText: string[]
+  mainText: Array<{ type: 'paragraph' | 'highlight'; text: string }>
   whatItIsTitle: string
   whatItIsText: string
 }> = {
   ka: {
     eyebrow: 'რა არ არის ნებისწერა',
-    title: 'ნებისწერა არც თერაპიაა, არც ქოუჩინგია და არც ზებუნებრივი იდეა.',
+    title: 'ნებისწერა არც თერაპიაა, არც ქოუჩინგი და მასში არც არაფერია ზებუნებრივი',
     mainText: [
-      'ნებისწერა არ არის თერაპია. ჩვენ არ ვკურნავთ ტრავმებს, რადგან არ გვჯერა რომ ტრავმები არსებობს ისე როგორც ჩვეულებრივ წარმოგიდგენიათ. ჩვენ არ გეპყრობით როგორც დაზიანებულს, როგორც ავადმყოფს, როგორც ვინმეს ვისაც განკურნება სჭირდება. თქვენ არ უნდა მოელოდეთ რომ გამოხატოთ საკუთარი თავი, გაიხსნათ ან განიკურნოთ. თქვენ ჯანმრთელი ხართ და არაფერი გიშლით — უბრალოდ ინსტრუმენტები გჭირდებათ. თუ კაცს ვთხოვთ ხე მოჭრას და ერთ-ერთს არ შეუძლია ამის გაკეთება იმიტომ რომ არ აქვს ხერხი, ეს არ ნიშნავს რომ ავადაა და მკურნალობა სჭირდება — უბრალოდ ინსტრუმენტი სჭირდება.',
-      'ნებისწერა არც კოუჩინგია, არც ტრენინგი და არც დამრიგებლობა. ჩვენ არ გეუბნებით როგორ იცხოვროთ, რა გააკეთოთ, როგორ გააკეთოთ. არ გიზავთ, არ გადაგიზავთ, არ გიდგენთ გეგმას და არც მოგთხოვთ რომ იმოქმედოთ. ეს თქვენზეა დამოკიდებული — ჩვენ უბრალოდ ვასწავლით. ეს სასწავლო სესიაა, ისევე როგორც ხატვის შესწავლა, სადაც მასწავლებელი გასწავლით პერსპექტივის წესებს, ჩრდილებსა და შუქს, როგორ გამოიყენოთ ფანქარი და როგორ შეუხამოთ ფერები — ასევე ჩვენც ვასწავლით როგორ დაწეროთ ბედი ნებით.',
-      'და ბოლოს, ნებისწერა არ არის ჯადოსნური წამალი, ეზოთერული იდეა ან მაგიური გამოსავალი. აქ არ არის მანტრები, ვიბრაციების აწევა ან რაიმე რიტუალები, სადაც უბრალოდ რაღაცას აკეთებ და შედეგი მოდის. ნებისწერა არის ლოგიკური და რაციონალური გზა იმისა, რომ ცხოვრებაზე შეხედო როგორც რაღაცაზე, რაც შენზეა დამოკიდებული. ეს პროცესია რომელიც გაძლიერებს, ხდები მთავარი — არა ჯადოსნური პროცედურა რომელსაც მიმართავ შედეგის მისაღებად, არამედ შენი არჩევანია რაც მნიშვნელობას იძენს და შედეგს იძლევა.',
+      { type: 'paragraph', text: 'ნებისწერა არ არის თერაპია. ჩვენ არ ვკურნავთ ტრავმებს, რადგან არ გვჯერა რომ ტრავმები არსებობს ისე როგორც ჩვეულებრივ წარმოგიდგენიათ. ჩვენ არ გეპყრობით როგორც დაზიანებულს, როგორც ავადმყოფს, როგორც ვინმეს ვისაც განკურნება სჭირდება. თქვენ ჯანმრთელი ხართ და არაფერი გიშლით — უბრალოდ ინსტრუმენტები გჭირდებათ. თუ კაცს ვთხოვთ ხე მოჭრას და ერთ-ერთს არ შეუძლია ამის გაკეთება იმიტომ რომ არ აქვს ხერხი, ეს არ ნიშნავს რომ ავადაა და მკურნალობა სჭირდება — უბრალოდ ინსტრუმენტი სჭირდება.' },
+      { type: 'highlight', text: 'ნებისწერა ინსტრუმენტია, რომ შენი რეალობა შექმნა.' },
+      { type: 'paragraph', text: 'ნებისწერა არც ქოუჩინგია, არც ტრენინგი და არც დამრიგებლობა. ჩვენ არ გეუბნებით როგორ იცხოვროთ, რა გააკეთოთ, როგორ გააკეთოთ. არ გიდგენთ გეგმას და არც მოგთხოვთ რომ იმოქმედოთ. ეს თქვენზეა დამოკიდებული — ჩვენ უბრალოდ გასწავლით. ეს სასწავლო სესიაა, ისევე როგორც ხატვის შესწავლა, სადაც მასწავლებელი გასწავლით პერსპექტივის წესებს, ჩრდილებსა და შუქს, როგორ გამოიყენოთ ფანქარი და როგორ შეუხამოთ ფერები — ასევე ჩვენც ვასწავლით როგორ დაწეროთ ბედი ნებით.' },
+      { type: 'highlight', text: 'ნებისწერა უნარია, რომელსაც შეიძენ და მთელი ცხოვრება გამოგადგება.' },
+      { type: 'paragraph', text: 'და ბოლოს, ნებისწერა არ არის ჯადოსნური წამალი, ეზოთერული იდეა ან მაგიური გამოსავალი. აქ არ არის მანტრები, ვიბრაციების აწევა ან რაიმე რიტუალები, სადაც უბრალოდ რაღაცას აკეთებ და შედეგი მოდის. ნებისწერა არის ლოგიკური და რაციონალური გზა იმისა, რომ ცხოვრებას შეხედო როგორც რამეს, რაც შენზეა დამოკიდებული. ეს პროცესია რომელიც გაძლიერებს, ხდები ავტორიც და მთავარი გმირი იმ ამბისა რომეშიც ცხოვრობ— არა ჯადოსნური პროცედურა რომელსაც მიმართავ შედეგის მისაღებად, არამედ შენი არჩევანის ძალა - რაც მნიშვნელობას იძენს და შედეგს იძლევა.' },
+      { type: 'highlight', text: 'ნებისწერა ლოგიკურია, პრაქტიკულია და გამოსავლადია.' },
     ],
     whatItIsTitle: 'რა არის მაშინ ნებისწერა?',
-    whatItIsText: 'ნებისწერა არის სწავლება — როგორც ხატვის გაკვეთილი. როგორც ხატვის მასწავლებელი გასწავლით პერსპექტივის წესებს, ჩრდილებსა და შუქს, როგორ გამოიყენოთ ფანქარი და როგორ შეუხამოთ ფერები — ასევე ჩვენც ვასწავლით როგორ დაწეროთ ბედი ნებით. თქვენზეა დამოკიდებული რას აკეთებთ ამ ცოდნით.',
+    whatItIsText: 'ნებისწერა არის სწავლება — თეორემა, ანუ ფორმულა - რომელსაც ერთხელ ისწავლი და ყოველტვის გამოგადგება. ეს არ არის რამე რასაც დიდი ხანი სჭირდება რომ გამოგივიდეს. იმისათვის რომ ნებისწერა გამოგივიდეს გაუგებარი და ძნელი განსახორციელებელი ქმედებები არ არის საჭირო.\n\nროგორც ხატვის გაკვეთილი. როგორც ხატვის მასწავლებელი გასწავლით პერსპექტივის წესებს, ჩრდილებსა და შუქს, როგორ გამოიყენოთ ფანქარი და როგორ შეუხამოთ ფერები — ასევე ჩვენც ვასწავლით როგორ დაწეროთ ბედი ნებით. თქვენზეა დამოკიდებული რას აკეთებთ ამ ცოდნით.\n\nროგორც პითაგორას თეორემით შეგიძლიათ გამოთვალოთ სამკუთხედის გვერდების სიგრძეები, ასევე ნებისწერის ფორმულების მეშვეობით შეგიძლია ნებისმიერ დროს გაერკვეთ საკუთარი ნების ასავალ დასავალში.',
   },
   en: {
     eyebrow: 'What Nebiswera is NOT',
     title: 'Not Therapy, Not Coaching, Not a Magical Solution',
     mainText: [
-      'Nebiswera is not therapy. We don\'t cure traumas because we don\'t believe traumas exist the way you typically imagine them. We don\'t treat you as damaged, as sick, as someone who needs healing. You should not expect to express yourself, open up, or be healed. You are healthy and nothing is wrong with you — you simply need tools. If we ask a man to cut down a tree and he cannot do it because he doesn\'t have a saw, it doesn\'t mean he is ill and needs treatment — he simply needs a tool.',
-      'Nebiswera is not coaching, training, or tutoring either. We don\'t tell you how to live, what to do, or how to do it. We don\'t push you, guide you, create plans for you, or demand that you take action. That\'s up to you — we simply teach. This is a teaching session, much like learning to draw, where a teacher teaches you the rules of perspective, shadows and light, how to use a pencil and how to match colors — similarly, we teach you how to write fate with will.',
-      'And finally, Nebiswera is not a magical potion, an esoteric idea, or a magical solution. There are no mantras, raising vibrations, or rituals where you simply do something and results arrive. Nebiswera is a logical and rational way of looking at life as something that depends on you. It\'s a process that empowers you, puts you in charge — not a magical procedure you can call upon to get results, but rather your choice is what matters and produces results.',
+      { type: 'paragraph', text: 'Nebiswera is not therapy. We don\'t cure traumas because we don\'t believe traumas exist the way you typically imagine them. We don\'t treat you as damaged, as sick, as someone who needs healing. You are healthy and nothing is wrong with you — you simply need tools. If we ask a man to cut down a tree and he cannot do it because he doesn\'t have a saw, it doesn\'t mean he is ill and needs treatment — he simply needs a tool.' },
+      { type: 'highlight', text: 'Nebiswera is a tool to create your reality.' },
+      { type: 'paragraph', text: 'Nebiswera is not coaching, training, or tutoring either. We don\'t tell you how to live, what to do, or how to do it. We don\'t create plans for you or demand that you take action. That\'s up to you — we simply teach. This is a teaching session, much like learning to draw, where a teacher teaches you the rules of perspective, shadows and light, how to use a pencil and how to match colors — similarly, we teach you how to write fate with will.' },
+      { type: 'highlight', text: 'Nebiswera is a skill you acquire and will serve you for life.' },
+      { type: 'paragraph', text: 'And finally, Nebiswera is not a magical potion, an esoteric idea, or a magical solution. There are no mantras, raising vibrations, or rituals where you simply do something and results arrive. Nebiswera is a logical and rational way of looking at life as something that depends on you. It\'s a process that empowers you, you become the author and main hero of the story you live in — not a magical procedure you can call upon to get results, but rather the power of your choice - which gains meaning and produces results.' },
+      { type: 'highlight', text: 'Nebiswera is logical, practical, and applicable.' },
     ],
     whatItIsTitle: 'So What Is Nebiswera?',
     whatItIsText: 'Nebiswera is teaching — like a drawing lesson. Just as a drawing teacher teaches you the rules of perspective, shadows and light, how to use a pencil and how to match colors — we also teach you how to write fate with will. What you do with this knowledge is up to you.',
@@ -66,10 +72,7 @@ export function WhatItIsNotSection() {
 
   const HeaderContent = () => (
     <div className="text-center mb-12 md:mb-16">
-      <p className="eyebrow text-primary-600 mb-4">
-        {t.eyebrow}
-      </p>
-      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-6">
+      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-6 leading-tight">
         {t.title}
       </h2>
     </div>
@@ -78,13 +81,24 @@ export function WhatItIsNotSection() {
   const MainTextContent = () => (
     <div className="bg-neu-base rounded-neu-lg p-8 md:p-10 shadow-neu mb-10 md:mb-12">
       <div className="space-y-6 md:space-y-8">
-        {t.mainText.map((paragraph, index) => (
-          <p
-            key={index}
-            className="text-base md:text-lg text-text-primary leading-relaxed"
-          >
-            {paragraph}
-          </p>
+        {t.mainText.map((item, index) => (
+          item.type === 'highlight' ? (
+            <div
+              key={index}
+              className="bg-gradient-to-r from-primary-100 to-primary-50 rounded-neu p-6 md:p-8 shadow-neu-inset"
+            >
+              <p className="text-xl md:text-2xl font-bold text-primary-600 leading-tight text-center">
+                {item.text}
+              </p>
+            </div>
+          ) : (
+            <p
+              key={index}
+              className="text-base md:text-lg text-text-primary leading-relaxed"
+            >
+              {item.text}
+            </p>
+          )
         ))}
       </div>
     </div>
@@ -100,9 +114,13 @@ export function WhatItIsNotSection() {
           {t.whatItIsTitle}
         </h3>
       </div>
-      <p className="text-base md:text-lg text-text-primary leading-relaxed">
-        {t.whatItIsText}
-      </p>
+      <div className="space-y-4">
+        {t.whatItIsText.split('\n\n').map((paragraph, index) => (
+          <p key={index} className="text-base md:text-lg text-text-primary leading-relaxed">
+            {paragraph}
+          </p>
+        ))}
+      </div>
     </div>
   )
 

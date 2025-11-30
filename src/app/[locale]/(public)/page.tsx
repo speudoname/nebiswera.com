@@ -5,6 +5,7 @@ import { PhilosophySection } from './home/content/PhilosophySection'
 import { ProblemAwarenessSection } from './home/content/ProblemAwarenessSection'
 import { SecretRevealSection } from './home/content/SecretRevealSection'
 import { TransformationPromiseSection } from './home/content/TransformationPromiseSection'
+import { PowerOfWillSection } from './home/content/PowerOfWillSection'
 import { SocialProofSection } from './home/content/SocialProofSection'
 import { CTASection } from './home/content/CTASection'
 import { TestimonialShowcase } from './home/content/TestimonialShowcase'
@@ -32,32 +33,35 @@ export default async function HomePage({
 
   return (
     <div className="overflow-x-hidden">
-      {/* Hero Section */}
-      <HeroSection locale={locale} />
+      {/* Transformation Promise - NEW HERO */}
+      <TransformationPromiseSection />
 
-        {/* Secret Reveal */}
-        <SecretRevealSection />
+      {/* Old Hero Section */}
+      <HeroSection locale={locale} />
 
         {/* Testimonials #1 */}
         <TestimonialShowcase count={3} darkBackground={true} />
 
-        {/* Problem Awareness */}
-        <ProblemAwarenessSection />
-
-        {/* Your Life Becomes Yours Again - Hope after problem */}
-        <LifeBecomesYoursSection />
-
-        {/* What Is Nebiswera - Creates curiosity about the solution */}
-        <WhatIsNebisweraSection />
+        {/* Power of Will Section */}
+        <PowerOfWillSection />
 
         {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
         <WhatItIsNotSection />
 
+        {/* Your Life Becomes Yours Again - Hope after problem */}
+        <LifeBecomesYoursSection />
+
+        {/* Problem Awareness */}
+        <ProblemAwarenessSection />
+
+        {/* What Is Nebiswera - Creates curiosity about the solution */}
+        <WhatIsNebisweraSection />
+
         {/* Testimonials #2 */}
         <TestimonialShowcase count={2} darkBackground={true} />
 
-        {/* Transformation Promise */}
-        <TransformationPromiseSection />
+        {/* Secret Reveal */}
+        <SecretRevealSection />
 
         {/* 3-Day Workshop Offer - Part 1 (Header, Schedule, Stats) */}
         <WorkshopOfferSection />

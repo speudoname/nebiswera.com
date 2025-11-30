@@ -26,7 +26,7 @@ export const fadeInVariants = {
     opacity: 1,
     transition: {
       duration: 0.5,
-      ease: 'easeOut',
+      ease: 'easeOut' as any,
     },
   },
 }
@@ -102,7 +102,7 @@ export const staggerItemVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: 'easeOut',
+      ease: 'easeOut' as any,
     },
   },
 }

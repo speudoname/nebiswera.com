@@ -96,7 +96,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94], // Smooth easing
+      ease: [0.25, 0.46, 0.45, 0.94] as any, // Smooth easing
     },
   },
 }
@@ -108,7 +108,7 @@ const titleVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: 'easeOut',
+      ease: 'easeOut' as any,
     },
   },
 }

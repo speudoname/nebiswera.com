@@ -91,7 +91,7 @@ export function WhatIsNebisweraSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-neu-base">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
       <div className="max-w-5xl mx-auto">
         {isMounted ? (
           <>

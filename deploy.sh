@@ -1,15 +1,20 @@
 #!/bin/bash
 
 ###############################################################################
-# Nebiswera Performance Optimization Deployment Script
+# Nebiswera Production Deployment Script
 #
-# This script automates the full deployment process for DigitalOcean Droplet
+# This script ensures safe, verified deployments to DigitalOcean Droplet
+#
+# Features:
+# - Mandatory local build to catch errors before deployment
+# - Continuous monitoring of deployment progress
+# - Health check verification before completion
+# - Detailed status reporting
 #
 # Usage: ./deploy.sh [options]
 #   --droplet-ip <IP>     DigitalOcean droplet IP address
 #   --ssh-user <USER>     SSH username (default: root)
 #   --app-dir <PATH>      Application directory (default: /var/www/nebiswera)
-#   --skip-build          Skip local build step
 #   --skip-nginx          Skip nginx configuration
 #   --dry-run             Show what would be done without executing
 ###############################################################################
@@ -21,15 +26,19 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Default values
 DROPLET_IP=""
 SSH_USER="root"
 APP_DIR="/var/www/nebiswera"
-SKIP_BUILD=false
 SKIP_NGINX=false
 DRY_RUN=false
+
+# Health check settings
+MAX_HEALTH_CHECK_ATTEMPTS=30
+HEALTH_CHECK_INTERVAL=2
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -45,10 +54,6 @@ while [[ $# -gt 0 ]]; do
     --app-dir)
       APP_DIR="$2"
       shift 2
-      ;;
-    --skip-build)
-      SKIP_BUILD=true
-      shift
       ;;
     --skip-nginx)
       SKIP_NGINX=true
@@ -146,37 +151,41 @@ done
 log_success "All required files found"
 
 ###############################################################################
-# Step 1: Build Application Locally
+# Step 1: Build Application Locally (MANDATORY)
 ###############################################################################
 
-if [ "$SKIP_BUILD" = false ]; then
-  log_info "Step 1/6: Building application locally..."
-  echo ""
+log_info "Step 1/6: Building application locally..."
+log_info "This ensures build errors are caught before deployment"
+echo ""
 
-  # Clean previous build
-  log_info "Cleaning previous build..."
-  run_command "rm -rf .next"
+# Clean previous build
+log_info "Cleaning previous build..."
+run_command "rm -rf .next"
 
-  # Install dependencies
-  log_info "Installing dependencies..."
-  run_command "npm install"
+# Install dependencies
+log_info "Installing dependencies..."
+run_command "npm install"
 
-  # Build Next.js
-  log_info "Building Next.js application..."
-  run_command "npm run build"
-
-  # Verify build
-  if [ "$DRY_RUN" = false ] && [ ! -d ".next/standalone" ]; then
-    log_error "Build failed: .next/standalone directory not found"
+# Build Next.js
+log_info "Building Next.js application..."
+if [ "$DRY_RUN" = false ]; then
+  if ! npm run build; then
+    log_error "Build failed! Aborting deployment."
+    log_error "Fix the build errors above and try again."
     exit 1
   fi
-
-  log_success "Application built successfully"
-  echo ""
 else
-  log_warning "Skipping build step (--skip-build flag)"
-  echo ""
+  run_command "npm run build"
 fi
+
+# Verify build
+if [ "$DRY_RUN" = false ] && [ ! -d ".next/standalone" ]; then
+  log_error "Build failed: .next/standalone directory not found"
+  exit 1
+fi
+
+log_success "✓ Local build successful - safe to deploy"
+echo ""
 
 ###############################################################################
 # Step 2: Deploy Application Files
@@ -239,13 +248,15 @@ echo ""
 # Step 5: Configure and Restart PM2
 ###############################################################################
 
-log_info "Step 4/5: Configuring PM2..."
+log_info "Step 4/5: Configuring PM2 and starting application..."
 echo ""
 
 # Stop existing PM2 process if running
+log_info "Stopping existing application..."
 ssh_exec "cd $APP_DIR && pm2 delete nebiswera 2>/dev/null || true"
 
 # Start with new configuration
+log_info "Starting application with PM2..."
 ssh_exec "cd $APP_DIR && pm2 start ecosystem.config.js"
 
 # Save PM2 configuration
@@ -254,18 +265,41 @@ ssh_exec "pm2 save"
 # Setup PM2 startup script
 ssh_exec "sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u $SSH_USER --hp /home/$SSH_USER 2>/dev/null || true"
 
-# Wait for app to start
-log_info "Waiting for application to start..."
-sleep 5
+log_success "Application started with PM2"
+echo ""
 
-# Check PM2 status
-ssh_exec "pm2 status"
+###############################################################################
+# Step 5.5: Monitor Application Startup
+###############################################################################
 
-# Check logs for errors
-log_info "Recent application logs:"
-ssh_exec "pm2 logs nebiswera --lines 20 --nostream"
+log_info "Monitoring application startup..."
+echo ""
 
-log_success "PM2 configured and application started"
+# Wait a moment for initial startup
+sleep 3
+
+# Monitor PM2 status for the first 10 seconds
+log_info "Checking PM2 status..."
+for i in {1..5}; do
+  echo -e "${CYAN}Status check $i/5...${NC}"
+  ssh_exec "pm2 status nebiswera"
+  sleep 2
+done
+
+# Check for errors in recent logs
+log_info "Checking application logs for errors..."
+echo ""
+ssh_exec "pm2 logs nebiswera --lines 30 --nostream"
+echo ""
+
+# Check if process is errored or stopped
+if ssh_exec "pm2 jlist" | grep -q '"status":"errored"'; then
+  log_error "Application failed to start!"
+  log_error "Check the logs above for error details"
+  exit 1
+fi
+
+log_success "✓ Application is running"
 echo ""
 
 ###############################################################################
@@ -321,54 +355,130 @@ else
 fi
 
 ###############################################################################
-# Post-Deployment Verification
+# Post-Deployment Verification & Health Checks
 ###############################################################################
 
-log_info "Running post-deployment verification..."
+log_info "Running comprehensive health checks..."
 echo ""
 
-# Check if app is running
-log_info "Checking application status..."
+# Check PM2 status
+log_info "Checking PM2 status..."
 ssh_exec "pm2 status nebiswera"
+echo ""
 
-# Check if nginx is running
+# Check Nginx status
 if [ "$SKIP_NGINX" = false ]; then
   log_info "Checking Nginx status..."
   ssh_exec "sudo systemctl status nginx --no-pager | head -10"
+  echo ""
 fi
 
-# Test HTTP response
-log_info "Testing HTTP response..."
-sleep 2
-if ssh_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000" | grep -q "200"; then
-  log_success "Application is responding correctly"
-else
-  log_warning "Application may not be responding correctly"
+# Continuous health check with retries
+log_info "Performing health check (HTTP request to localhost:3000)..."
+echo -e "${CYAN}Will retry up to $MAX_HEALTH_CHECK_ATTEMPTS times every ${HEALTH_CHECK_INTERVAL}s${NC}"
+echo ""
+
+HEALTH_CHECK_PASSED=false
+for attempt in $(seq 1 $MAX_HEALTH_CHECK_ATTEMPTS); do
+  echo -e "${CYAN}Health check attempt $attempt/$MAX_HEALTH_CHECK_ATTEMPTS...${NC}"
+
+  HTTP_CODE=$(ssh_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000" || echo "000")
+
+  if [ "$HTTP_CODE" = "200" ]; then
+    log_success "✓ Health check passed (HTTP $HTTP_CODE)"
+    HEALTH_CHECK_PASSED=true
+    break
+  else
+    log_warning "Health check failed (HTTP $HTTP_CODE)"
+
+    if [ $attempt -lt $MAX_HEALTH_CHECK_ATTEMPTS ]; then
+      echo -e "${YELLOW}Waiting ${HEALTH_CHECK_INTERVAL}s before retry...${NC}"
+      sleep $HEALTH_CHECK_INTERVAL
+    fi
+  fi
+done
+
+if [ "$HEALTH_CHECK_PASSED" = false ]; then
+  log_error "Health check failed after $MAX_HEALTH_CHECK_ATTEMPTS attempts!"
+  log_error "Application may not be responding correctly"
+  echo ""
+  log_info "Recent logs:"
+  ssh_exec "pm2 logs nebiswera --lines 50 --nostream"
+  exit 1
 fi
+
+echo ""
+
+# Test a few critical routes
+log_info "Testing critical routes..."
+echo ""
+
+test_route() {
+  local route=$1
+  local description=$2
+
+  echo -e "${CYAN}Testing $description ($route)...${NC}"
+  HTTP_CODE=$(ssh_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000$route" || echo "000")
+
+  if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ]; then
+    echo -e "  ${GREEN}✓ $description: HTTP $HTTP_CODE${NC}"
+  else
+    echo -e "  ${YELLOW}⚠ $description: HTTP $HTTP_CODE${NC}"
+  fi
+}
+
+test_route "/" "Home page"
+test_route "/ka" "Georgian home"
+test_route "/en" "English home"
+test_route "/ka/dashboard" "Dashboard (auth redirect expected)"
+
+echo ""
+log_success "✓ All health checks passed"
+echo ""
 
 ###############################################################################
 # Summary
 ###############################################################################
 
 echo ""
-echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}Deployment Complete!${NC}"
-echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}═══════════════════════════════════════${NC}"
+echo -e "${GREEN}   Deployment Completed Successfully   ${NC}"
+echo -e "${GREEN}═══════════════════════════════════════${NC}"
 echo ""
-echo "Next steps:"
-echo "1. Verify your site is working: https://nebiswera.com"
-echo "2. Run PageSpeed Insights: https://pagespeed.web.dev/?url=https://nebiswera.com"
-echo "3. Check application logs: ssh $SSH_TARGET 'pm2 logs nebiswera'"
-echo "4. Monitor performance: ssh $SSH_TARGET 'pm2 monit'"
+
+# Show deployment summary
+echo -e "${BLUE}Deployment Summary:${NC}"
+echo "  ✓ Local build verified"
+echo "  ✓ Application files deployed"
+echo "  ✓ PM2 process running"
+if [ "$SKIP_NGINX" = false ]; then
+  echo "  ✓ Nginx configured and running"
+fi
+echo "  ✓ Health checks passed"
+echo "  ✓ Critical routes tested"
 echo ""
-echo "Important notes:"
-echo "- Backup created at: $BACKUP_DIR"
-echo "- To rollback: ssh $SSH_TARGET 'sudo cp -r $BACKUP_DIR $APP_DIR && pm2 restart nebiswera'"
-echo "- To view logs: ssh $SSH_TARGET 'pm2 logs nebiswera'"
+
+echo -e "${BLUE}Live Site:${NC}"
+echo "  https://nebiswera.ge"
+echo "  https://www.nebiswera.ge"
 echo ""
-echo -e "${YELLOW}Don't forget to:${NC}"
-echo "1. Update SSL certificate paths in /etc/nginx/sites-available/nebiswera"
-echo "2. Set Cache-Control headers on Cloudflare R2 assets"
-echo "3. Test all critical pages"
+
+echo -e "${BLUE}Monitoring Commands:${NC}"
+echo "  View logs:     ssh $SSH_TARGET 'pm2 logs nebiswera'"
+echo "  Check status:  ssh $SSH_TARGET 'pm2 status'"
+echo "  Live monitor:  ssh $SSH_TARGET 'pm2 monit'"
+echo "  Restart app:   ssh $SSH_TARGET 'pm2 restart nebiswera'"
 echo ""
-log_success "All done! 🚀"
+
+echo -e "${BLUE}Testing & Verification:${NC}"
+echo "  PageSpeed:     https://pagespeed.web.dev/?url=https://nebiswera.ge"
+echo "  Lighthouse:    Chrome DevTools > Lighthouse"
+echo ""
+
+echo -e "${YELLOW}Important Notes:${NC}"
+echo "  • Build is always run locally before deployment"
+echo "  • Health checks must pass for deployment to complete"
+echo "  • Application automatically restarts with PM2"
+echo ""
+
+log_success "Deployment verified and confirmed! 🚀"

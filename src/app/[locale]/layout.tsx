@@ -95,10 +95,10 @@ export default async function LocaleLayout({
 
 
           /* Hero Section Layout - Natural content height */
-          .hero-section{padding:2rem 1rem 3rem;background:linear-gradient(to bottom,#F0EBF8,#E8E0F0);display:flex;align-items:center}
+          .hero-section{padding:2rem 0.5rem 3rem;background:linear-gradient(to bottom,#F0EBF8,#E8E0F0);display:flex;align-items:center}
           @media(min-width:768px){.hero-section{padding:3rem 2rem 4rem}}
           .hero-container{display:flex;align-items:center;justify-content:center;width:100%}
-          .hero-content{text-align:center;max-width:48rem;width:100%;padding:0 1rem}
+          .hero-content{text-align:center;max-width:48rem;width:100%;padding:0 0.5rem}
 
           /* Hero Typography - Bold and commanding */
           .hero-eyebrow{font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;font-weight:500}
@@ -116,10 +116,8 @@ export default async function LocaleLayout({
           .text-dark{color:#2D1B4E}
 
           /* Hero Video Container - Maintains 16:9 aspect ratio */
-          .hero-video-container{position:relative;width:100%;max-width:48rem;margin:0 auto 1rem;aspect-ratio:16/9;height:auto;max-height:30vh;border-radius:1rem;overflow:hidden;box-shadow:6px 6px 12px #B8B4BD,-6px -6px 12px #FFFFFF}
-          @media(min-width:768px){.hero-video-container{margin-bottom:1.5rem;max-height:20vh}}
-          @media(min-width:1024px){.hero-video-container{max-height:22vh}}
-          @media(min-width:1440px){.hero-video-container{max-height:24vh}}
+          .hero-video-container{position:relative;width:100%;max-width:48rem;margin:2.5rem auto 1rem;aspect-ratio:16/9;height:auto;border-radius:1rem;overflow:hidden;box-shadow:6px 6px 12px #B8B4BD,-6px -6px 12px #FFFFFF}
+          @media(min-width:768px){.hero-video-container{margin-top:3rem;margin-bottom:1.5rem}}
           .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
           /* Button Base Styles */

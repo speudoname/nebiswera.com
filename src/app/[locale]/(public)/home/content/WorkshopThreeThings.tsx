@@ -2,10 +2,9 @@
 
 import React from 'react'
 import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { Brain, Target, Heart, ArrowRight } from 'lucide-react'
+import { Brain, Target, Heart } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui'
+import { EmailCaptureForm } from '@/components/ui'
 import { BunnyImage } from '@/components/ui/BunnyImage'
 import type { Locale } from '@/i18n/config'
 
@@ -244,36 +243,15 @@ export function WorkshopThreeThings() {
         {/* CTA */}
         {isMounted ? (
           <motion.div
-            className="text-center"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={itemVariants}
           >
-            <Link href={`/${locale}/auth/register`}>
-              <Button
-                size="lg"
-                rightIcon={ArrowRight}
-                variant="primary"
-                style={{ boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.1)' }}
-              >
-                {t.cta}
-              </Button>
-            </Link>
+            <EmailCaptureForm variant="inline" />
           </motion.div>
         ) : (
-          <div className="text-center">
-            <Link href={`/${locale}/auth/register`}>
-              <Button
-                size="lg"
-                rightIcon={ArrowRight}
-                variant="primary"
-                style={{ boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.3), -8px -8px 16px rgba(255, 255, 255, 0.1)' }}
-              >
-                {t.cta}
-              </Button>
-            </Link>
-          </div>
+          <EmailCaptureForm variant="inline" />
         )}
       </div>
     </section>

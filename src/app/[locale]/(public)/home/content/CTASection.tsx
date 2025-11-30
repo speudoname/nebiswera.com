@@ -3,9 +3,9 @@
 import React from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Button } from '@/components/ui'
+import { EmailCaptureForm } from '@/components/ui'
 import type { Locale } from '@/i18n/config'
 import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
 
@@ -69,27 +69,9 @@ export function CTASection() {
     </p>
   )
 
-  const CTAButtons = () => (
-    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-      <Link href={`/${locale}/auth/register`} className="w-full sm:w-auto">
-        <Button
-          size="lg"
-          variant="outline-light"
-          rightIcon={ArrowRight}
-          className="w-full sm:w-auto bg-white !text-text-primary hover:bg-white/90 shadow-neu-darkbg-hover"
-        >
-          {t.primaryCTA}
-        </Button>
-      </Link>
-      <Link href={`/${locale}/about`} className="w-full sm:w-auto">
-        <Button
-          size="lg"
-          variant="ghost"
-          className="w-full sm:w-auto text-white border-2 border-white/30 hover:bg-white/10"
-        >
-          {t.secondaryCTA}
-        </Button>
-      </Link>
+  const CTAForm = () => (
+    <div className="mb-8">
+      <EmailCaptureForm variant="inline" />
     </div>
   )
 
@@ -134,14 +116,14 @@ export function CTASection() {
               <SubtitleContent />
             </motion.div>
 
-            {/* CTA Buttons */}
+            {/* CTA Form */}
             <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={defaultViewport}
               variants={scaleUpVariants}
             >
-              <CTAButtons />
+              <CTAForm />
             </motion.div>
 
             {/* Urgency Message */}
@@ -159,7 +141,7 @@ export function CTASection() {
             <DecorativeElement />
             <HeaderContent />
             <SubtitleContent />
-            <CTAButtons />
+            <CTAForm />
             <UrgencyMessage />
           </>
         )}

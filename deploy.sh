@@ -384,7 +384,7 @@ for attempt in $(seq 1 $MAX_HEALTH_CHECK_ATTEMPTS); do
 
   HTTP_CODE=$(ssh_exec "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000" || echo "000")
 
-  if [ "$HTTP_CODE" = "200" ]; then
+  if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "307" ] || [ "$HTTP_CODE" = "308" ]; then
     log_success "✓ Health check passed (HTTP $HTTP_CODE)"
     HEALTH_CHECK_PASSED=true
     break

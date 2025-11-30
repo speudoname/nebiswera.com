@@ -11,6 +11,8 @@ import { TestimonialShowcase } from './home/content/TestimonialShowcase'
 import { WorkshopOfferSection } from './home/content/WorkshopOfferSection'
 import { WorkshopThreeThings } from './home/content/WorkshopThreeThings'
 import { WhatItIsNotSection } from './home/content/WhatItIsNotSection'
+import { LifeBecomesYoursSection } from './home/content/LifeBecomesYoursSection'
+import { WhatIsNebisweraSection } from './home/content/WhatIsNebisweraSection'
 
 export async function generateMetadata({
   params,
@@ -41,6 +43,12 @@ export default async function HomePage({
 
         {/* Problem Awareness */}
         <ProblemAwarenessSection />
+
+        {/* Your Life Becomes Yours Again - Hope after problem */}
+        <LifeBecomesYoursSection />
+
+        {/* What Is Nebiswera - Creates curiosity about the solution */}
+        <WhatIsNebisweraSection />
 
         {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
         <WhatItIsNotSection />

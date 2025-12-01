@@ -1,5 +1,4 @@
-import { Inter } from 'next/font/google'
-import localFont from 'next/font/local'
+import { Inter, Noto_Sans_Georgian } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
@@ -18,8 +17,9 @@ const inter = Inter({
   preload: true,
 })
 
-const adapterGeorgian = localFont({
-  src: '../../../public/fonts/AdapterGeorgianText-VF.ttf',
+const notoSansGeorgian = Noto_Sans_Georgian({
+  subsets: ['georgian'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-georgian',
   display: 'optional',
   preload: true,
@@ -150,7 +150,7 @@ export default async function LocaleLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${adapterGeorgian.variable} font-sans`}>
+      <body className={`${inter.variable} ${notoSansGeorgian.variable} ${locale === 'ka' ? 'font-georgian' : 'font-sans'}`}>
         {/* Google Analytics - Delayed loading for better performance */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}

@@ -87,7 +87,7 @@ export function WhatItIsNotSection() {
               key={index}
               className="bg-gradient-to-r from-primary-100 to-primary-50 rounded-neu p-6 md:p-8 shadow-neu-inset"
             >
-              <p className="text-xl md:text-2xl font-bold text-primary-600 leading-tight text-center">
+              <p className="text-xl md:text-2xl font-bold text-primary-600 leading-tight text-center font-georgian">
                 {item.text}
               </p>
             </div>

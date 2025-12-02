@@ -8,7 +8,9 @@ import type { Locale } from '@/i18n/config'
 import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
 
 const content: Record<Locale, {
-  titlePart1: string
+  titlePart1?: string
+  titlePart1Mobile?: string
+  titlePart1Desktop?: string
   titlePart2a: string
   titlePart2b: string
   titlePart3: string
@@ -17,7 +19,8 @@ const content: Record<Locale, {
   subtitle2: string
 }> = {
   ka: {
-    titlePart1: 'თუკი ათავისუფლებ',
+    titlePart1Mobile: 'თუკი გა\u00ADათავისუფლებ',
+    titlePart1Desktop: 'თუკი გაათავისუფლებ',
     titlePart2a: 'შენში',
     titlePart2b: 'ნების ძალას,',
     titlePart3: 'შეძლებ მოახდინო',
@@ -63,8 +66,11 @@ export function PowerOfWillSection() {
 
   const ContentOnly = () => (
     <div className="text-center">
-      <h2 className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl text-text-primary mb-6 md:mb-8 leading-none">
-        <span className="font-normal">{t.titlePart1} </span>
+      <h2 className="text-5xl sm:text-6xl md:text-6xl lg:text-7xl text-text-primary mb-6 md:mb-8" style={{ lineHeight: '1.15' }}>
+        {/* Mobile version with გა- prefix */}
+        <span className="font-normal md:hidden">{t.titlePart1Mobile || t.titlePart1} </span>
+        {/* Desktop version without გა- prefix */}
+        <span className="font-normal hidden md:inline">{t.titlePart1Desktop || t.titlePart1} </span>
         <span className="font-bold underline">{t.titlePart2a}</span>
         <span className="font-bold"> {t.titlePart2b} </span>
         <span className="font-bold text-primary-600">{t.titlePart3} </span>

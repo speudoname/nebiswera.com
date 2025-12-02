@@ -71,6 +71,10 @@
     "test": {
       "title": "Take the Self-Assessment Test — Nebiswera",
       "description": "Discover what's holding you back and how you can change your life. Start with our free 5-minute self-assessment test."
+    },
+    "schedule": {
+      "title": "3-Day Workshop — Schedule & Details | Nebiswera",
+      "description": "29 hours that will change your life. Learn the workshop schedule, program, and what to expect during 3 intensive days of transformation."
     }
   }
 }

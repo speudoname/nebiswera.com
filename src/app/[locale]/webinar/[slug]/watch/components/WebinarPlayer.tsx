@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Hls from 'hls.js'
 import { TIMING } from '@/lib/webinar/constants'
+import { formatTime } from '@/lib'
 
 interface WebinarPlayerProps {
   hlsUrl: string
@@ -335,10 +336,4 @@ export function WebinarPlayer({
       )}
     </div>
   )
-}
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins}:${secs.toString().padStart(2, '0')}`
 }

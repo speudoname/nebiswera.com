@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Z_INDEX } from './constants'
-import { formatTime } from './utils'
+import { formatTime } from '@/lib'
 import {
   Play,
   Pause,
@@ -390,7 +390,7 @@ export function VideoTimelineEditor({
 
         {/* Time Display */}
         <div className="absolute bottom-2 left-2 bg-black/80 text-white px-2 py-1 rounded text-xs font-mono">
-          {formatTime(currentTime, true)} / {formatTime(videoDuration)}
+          {formatTime(currentTime, { includeMs: true })} / {formatTime(videoDuration)}
         </div>
       </div>
 
@@ -582,7 +582,7 @@ export function VideoTimelineEditor({
               style={{ left: getTimePosition(hoveredTime) }}
             >
               <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap font-mono">
-                {formatTime(hoveredTime, true)}
+                {formatTime(hoveredTime, { includeMs: true })}
               </div>
             </div>
           )}

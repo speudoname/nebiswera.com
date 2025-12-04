@@ -2,43 +2,7 @@
  * Utilities for Interaction Builder
  */
 
-// ============================================================================
-// Time Formatting
-// ============================================================================
-
-/**
- * Format seconds to mm:ss or h:mm:ss format
- * @param seconds - Time in seconds
- * @param includeMs - Whether to include deciseconds (tenths of seconds)
- * @returns Formatted time string
- */
-export function formatTime(seconds: number, includeMs = false): string {
-  const hrs = Math.floor(seconds / 3600)
-  const mins = Math.floor((seconds % 3600) / 60)
-  const secs = Math.floor(seconds % 60)
-  const ms = Math.floor((seconds % 1) * 10)
-
-  if (hrs > 0) {
-    return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-  if (includeMs) {
-    return `${mins}:${secs.toString().padStart(2, '0')}.${ms}`
-  }
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-/**
- * Parse time string (mm:ss or seconds) to total seconds
- * @param timeStr - Time string in format "mm:ss" or raw number string
- * @returns Total seconds
- */
-export function parseTime(timeStr: string): number {
-  const parts = timeStr.split(':')
-  if (parts.length === 2) {
-    return parseInt(parts[0]) * 60 + parseInt(parts[1])
-  }
-  return parseInt(timeStr) || 0
-}
+import { formatTime } from '@/lib'
 
 // ============================================================================
 // URL Validation

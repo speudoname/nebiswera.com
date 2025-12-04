@@ -7,7 +7,7 @@ import { VideoTimelineEditor } from './VideoTimelineEditor'
 import { Plus, Save } from 'lucide-react'
 
 // Import shared utilities
-import { formatTime, parseTime } from './lib/timeUtils'
+import { formatTime, parseTime } from '@/lib'
 import { POSITIONS, type Interaction } from './lib/interactionTypes'
 import { getDefaultInteraction } from './lib/interactionDefaults'
 import { useInteractionAPI } from './hooks/useInteractionAPI'

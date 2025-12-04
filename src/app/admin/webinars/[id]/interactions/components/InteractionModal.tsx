@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { X } from 'lucide-react'
-import { formatTime, parseTime } from '../lib/timeUtils'
+import { formatTime, parseTime } from '@/lib'
 import { INTERACTION_TYPES, POSITIONS, type Interaction } from '../lib/interactionTypes'
 import { InteractionConfigFields } from './interaction-configs'
 

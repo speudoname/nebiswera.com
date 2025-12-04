@@ -9,7 +9,7 @@
 import { Card } from '@/components/ui/Card'
 import { Edit2, Trash2 } from 'lucide-react'
 import { getInteractionIcon } from '../lib/interactionTypes'
-import { formatTime } from '../lib/timeUtils'
+import { formatTime } from '@/lib'
 import type { Interaction } from '../lib/interactionTypes'
 
 interface InteractionListItemProps {

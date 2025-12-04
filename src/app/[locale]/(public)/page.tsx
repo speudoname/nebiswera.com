@@ -15,6 +15,7 @@ import { ThyWillBeDoneSection } from './home/content/ThyWillBeDoneSection'
 import { FreedomSection } from './home/content/FreedomSection'
 import { LifeBecomesYoursSection } from './home/content/LifeBecomesYoursSection'
 import { WhatIsNebisweraSection } from './home/content/WhatIsNebisweraSection'
+import { BecomeTheEngineerSection } from './home/content/BecomeTheEngineerSection'
 
 export async function generateMetadata({
   params,
@@ -51,6 +52,9 @@ export default async function HomePage({
 
         {/* What Is Nebiswera - Creates curiosity about the solution */}
         <WhatIsNebisweraSection />
+
+        {/* Become the Engineer - Control reality, don't just consume it */}
+        <BecomeTheEngineerSection />
 
         {/* Know What You Want - First step */}
         <KnowWhatYouWantSection />

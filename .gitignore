@@ -42,6 +42,11 @@ next-env.d.ts
 *.swp
 *.swo
 
+# Backup files
+*.bak
+*.backup
+*.old
+
 /src/generated/prisma
 test.html
 tsconfig.tsbuildinfo

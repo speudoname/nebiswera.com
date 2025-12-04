@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -30,7 +30,7 @@ async function generateUniqueSlug(baseSlug: string): Promise<string> {
 // POST /api/admin/webinars/[id]/duplicate - Duplicate a webinar
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse('Unauthorized')
   }
 
   const { id } = await params
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!original) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Generate unique slug
@@ -152,12 +152,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json(duplicate, { status: 201 })
+    return successResponse(duplicate, 201)
   } catch (error) {
     console.error('Failed to duplicate webinar:', error)
-    return NextResponse.json(
-      { error: 'Failed to duplicate webinar' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }

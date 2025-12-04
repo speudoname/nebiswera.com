@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { NotificationTriggerType, NotificationChannel } from '@prisma/client'
 import {
@@ -15,7 +15,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/notifications - List all notifications with stats
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse('Unauthorized')
   }
 
   const { id } = await params
@@ -88,20 +88,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })
     )
 
-    return NextResponse.json({ notifications: notificationsWithStats })
+    return successResponse({ notifications: notificationsWithStats })
   } catch (error) {
     console.error('Failed to fetch notifications:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch notifications' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }
 
 // POST /api/admin/webinars/[id]/notifications - Create a new notification
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse('Unauthorized')
   }
 
   const { id } = await params
@@ -114,7 +111,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const body = await request.json()
@@ -127,10 +124,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       })
 
       if (existingDefaults > 0) {
-        return NextResponse.json(
-          { error: 'Default notifications already exist' },
-          { status: 400 }
-        )
+        return badRequestResponse('Default notifications already exist')
       }
 
       await createDefaultNotifications(id)
@@ -140,7 +134,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         orderBy: [{ triggerType: 'asc' }, { triggerMinutes: 'asc' }],
       })
 
-      return NextResponse.json({
+      return successResponse({
         message: 'Default notifications created',
         notifications: notifications.map((n) => ({
           id: n.id,
@@ -183,21 +177,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'AFTER_END',
     ]
     if (!validTriggerTypes.includes(triggerType)) {
-      return NextResponse.json({ error: 'Invalid trigger type' }, { status: 400 })
+      return badRequestResponse('Invalid trigger type')
     }
 
     // Validate channel
     const validChannels: NotificationChannel[] = ['EMAIL', 'SMS']
     if (channel && !validChannels.includes(channel)) {
-      return NextResponse.json({ error: 'Invalid channel' }, { status: 400 })
+      return badRequestResponse('Invalid channel')
     }
 
     // Validate required fields for custom EMAIL notifications (not template-based)
     if (!templateKey && channel === 'EMAIL' && (!subject || !bodyHtml)) {
-      return NextResponse.json(
-        { error: 'Subject and body are required for custom email notifications' },
-        { status: 400 }
-      )
+      return badRequestResponse('Subject and body are required for custom email notifications')
     }
 
     // Calculate sort order if not provided
@@ -234,7 +225,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json({
+    return successResponse({
       notification: {
         id: notification.id,
         templateKey: notification.templateKey,
@@ -260,9 +251,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to create notification:', error)
-    return NextResponse.json(
-      { error: 'Failed to create notification' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }

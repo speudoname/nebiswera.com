@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -10,7 +10,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/sessions - Get all sessions for a webinar
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse('Unauthorized')
   }
 
   const { id } = await params
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json({
+    return successResponse({
       sessions: sessions.map((s) => ({
         id: s.id,
         scheduledAt: s.scheduledAt.toISOString(),
@@ -42,6 +42,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch sessions:', error)
-    return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 })
+    return errorResponse(error)
   }
 }

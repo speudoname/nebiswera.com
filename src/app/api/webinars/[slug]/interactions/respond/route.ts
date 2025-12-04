@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import { checkRateLimitByToken } from '@/lib/rate-limit'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -17,11 +17,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { token, interactionId, response, eventType } = body
 
     if (!token) {
-      return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+      return unauthorizedResponse('Access token required')
     }
 
     if (!interactionId) {
-      return NextResponse.json({ error: 'Interaction ID required' }, { status: 400 })
+      return badRequestResponse('Interaction ID required')
     }
 
     // Find webinar by slug
@@ -31,14 +31,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Validate access token
     const validation = await validateAccessToken(webinar.id, token)
 
     if (!validation.valid || !validation.registration) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse('Invalid access token')
     }
 
     const registration = validation.registration
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!interaction) {
-      return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+      return notFoundResponse('Interaction not found')
     }
 
     // Handle different event types
@@ -221,15 +221,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         break
 
       default:
-        return NextResponse.json({ error: 'Invalid event type' }, { status: 400 })
+        return badRequestResponse('Invalid event type')
     }
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
     console.error('Failed to save interaction response:', error)
-    return NextResponse.json(
-      { error: 'Failed to save response' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }

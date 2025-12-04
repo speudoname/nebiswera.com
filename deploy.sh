@@ -32,7 +32,7 @@ NC='\033[0m' # No Color
 # Default values
 DROPLET_IP=""
 SSH_USER="root"
-APP_DIR="/var/www/nebiswera"
+APP_DIR="/var/www/nebiswera.com"
 SKIP_NGINX=false
 DRY_RUN=false
 
@@ -459,8 +459,8 @@ echo "  ✓ Critical routes tested"
 echo ""
 
 echo -e "${BLUE}Live Site:${NC}"
-echo "  https://nebiswera.ge"
-echo "  https://www.nebiswera.ge"
+echo "  https://nebiswera.com"
+echo "  https://www.nebiswera.com"
 echo ""
 
 echo -e "${BLUE}Monitoring Commands:${NC}"
@@ -471,7 +471,7 @@ echo "  Restart app:   ssh $SSH_TARGET 'pm2 restart nebiswera'"
 echo ""
 
 echo -e "${BLUE}Testing & Verification:${NC}"
-echo "  PageSpeed:     https://pagespeed.web.dev/?url=https://nebiswera.ge"
+echo "  PageSpeed:     https://pagespeed.web.dev/?url=https://nebiswera.com"
 echo "  Lighthouse:    Chrome DevTools > Lighthouse"
 echo ""
 

@@ -1150,7 +1150,7 @@ function AddNotificationModal({
                         type="email"
                         value={fromEmail}
                         onChange={(e) => setFromEmail(e.target.value)}
-                        placeholder={emailSettings?.emailFromAddress || 'noreply@nebiswera.ge'}
+                        placeholder={emailSettings?.emailFromAddress || 'noreply@nebiswera.com'}
                       />
                     </div>
                     <Input
@@ -1436,7 +1436,7 @@ function CustomNotificationEditForm({
                 type="email"
                 value={fromEmail}
                 onChange={(e) => setFromEmail(e.target.value)}
-                placeholder={emailSettings?.emailFromAddress || 'noreply@nebiswera.ge'}
+                placeholder={emailSettings?.emailFromAddress || 'noreply@nebiswera.com'}
               />
             </div>
             <Input

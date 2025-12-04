@@ -1,18 +1,30 @@
 # Deploy to Production
 
-Deploy the application to production droplet:
+Deploy the application to production using the deployment script.
 
-1. Check git status and warn about uncommitted changes
-2. Stage all changes with `git add -A`
-3. Create a commit with descriptive message about what changed
-4. Push to GitHub (main branch)
-5. Build application locally
-6. Deploy to droplet at 104.236.100.157
-7. Verify deployment success
+## Steps
 
-The commit message should:
-- Summarize what changed (features, fixes, updates)
-- Include the Claude Code footer with co-authorship
-- Be concise but descriptive
+1. Check git status for uncommitted changes
+2. If there are changes:
+   - Stage all changes with `git add -A`
+   - Create a commit with descriptive message (include Claude Code footer)
+   - Push to GitHub (main branch)
+3. Run the deployment script:
+   ```bash
+   ./deploy.sh --droplet-ip 104.236.100.157
+   ```
 
-After deployment completes, report the deployment URL and any warnings.
+## Deployment Script Options
+
+- `--droplet-ip <IP>` - DigitalOcean droplet IP (required)
+- `--ssh-user <USER>` - SSH username (default: root)
+- `--app-dir <PATH>` - Application directory on server
+- `--skip-nginx` - Skip nginx configuration
+- `--dry-run` - Show what would be done without executing
+
+## After Deployment
+
+Report:
+- Deployment URL: https://www.nebiswera.com
+- Any warnings or errors from the script
+- Health check status

@@ -23,7 +23,7 @@ const content: Record<Locale, {
           'მომსახურების მიმწოდებელი: მცირე მეწარმე "ლევან ბახია"',
           'პირადი ნომერი: 01031000466',
           'ტელეფონი: +995 99 789 229',
-          'ელ-ფოსტა: hello@nebiswera.ge'
+          'ელ-ფოსტა: hello@nebiswera.com'
         ]
       },
       {
@@ -79,7 +79,7 @@ const content: Record<Locale, {
           'Service Provider: Individual Entrepreneur "Levan Bakhia"',
           'Personal ID: 01031000466',
           'Phone: +995 99 789 229',
-          'Email: hello@nebiswera.ge'
+          'Email: hello@nebiswera.com'
         ]
       },
       {

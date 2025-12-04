@@ -63,10 +63,10 @@ export function ContactContent() {
           <div>
             <h3 className="font-medium text-text-primary">{t.emailLabel}</h3>
             <a
-              href="mailto:hello@nebiswera.ge"
+              href="mailto:hello@nebiswera.com"
               className="text-primary-600 hover:text-primary-700 transition-colors"
             >
-              hello@nebiswera.ge
+              hello@nebiswera.com
             </a>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { registerForWebinar } from '@/app/api/webinars/lib/registration'
 import { getAvailableSessionsForRegistration } from '@/app/api/webinars/lib/session-generator'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { notFoundResponse, forbiddenResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -38,14 +39,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     if (webinar.status !== 'PUBLISHED') {
-      return NextResponse.json(
-        { error: 'Webinar is not available for registration' },
-        { status: 403 }
-      )
+      return forbiddenResponse('Webinar is not available for registration')
     }
 
     // Get available sessions
@@ -99,14 +97,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     if (webinar.status !== 'PUBLISHED') {
-      return NextResponse.json(
-        { error: 'Webinar is not available for registration' },
-        { status: 403 }
-      )
+      return forbiddenResponse('Webinar is not available for registration')
     }
 
     const body = await request.json()
@@ -125,7 +120,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Validate required fields
     if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+      return badRequestResponse('Email is required')
     }
 
     // Process registration
@@ -143,11 +138,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 })
+      return badRequestResponse(result.error || 'Registration failed')
     }
 
     // Return registration with access URL
-    return NextResponse.json({
+    return successResponse({
       success: true,
       registration: {
         id: result.registration!.id,
@@ -159,9 +154,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Registration failed:', error)
-    return NextResponse.json(
-      { error: 'Registration failed. Please try again.' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }

@@ -16,6 +16,7 @@ import { FreedomSection } from './home/content/FreedomSection'
 import { LifeBecomesYoursSection } from './home/content/LifeBecomesYoursSection'
 import { WhatIsNebisweraSection } from './home/content/WhatIsNebisweraSection'
 import { BecomeTheEngineerSection } from './home/content/BecomeTheEngineerSection'
+import { OperatingSystemSection } from './home/content/OperatingSystemSection'
 
 export async function generateMetadata({
   params,
@@ -55,6 +56,9 @@ export default async function HomePage({
 
         {/* Become the Engineer - Control reality, don't just consume it */}
         <BecomeTheEngineerSection />
+
+        {/* Operating System for Reality - Nebiswera as the foundation */}
+        <OperatingSystemSection />
 
         {/* Know What You Want - First step */}
         <KnowWhatYouWantSection />

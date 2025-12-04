@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
+import { isValidEmail, normalizeEmail } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { UpdateStrategy } from '@prisma/client'
 
@@ -81,8 +82,6 @@ export async function POST(request: NextRequest) {
       errors: [] as { row: number; email: string; error: string }[],
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
     for (let i = 0; i < contacts.length; i++) {
       const contact = contacts[i]
 
@@ -96,9 +95,9 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      const email = contact.email.toLowerCase().trim()
+      const email = normalizeEmail(contact.email)
 
-      if (!emailRegex.test(email)) {
+      if (!isValidEmail(email)) {
         results.failed++
         results.errors.push({
           row: i + 1,

@@ -1,5 +1,7 @@
 // Smart CSV/JSON import utilities
 
+import { EMAIL_REGEX } from '@/lib'
+
 export type FieldType = 'email' | 'firstName' | 'lastName' | 'fullName' | 'phone' | 'notes' | 'unknown'
 
 export interface ColumnMapping {
@@ -60,7 +62,6 @@ const HEADER_PATTERNS: Record<FieldType, RegExp[]> = {
 }
 
 // Content-based detection patterns
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_REGEX = /^[+]?[\d\s\-().]{7,20}$/
 
 /**

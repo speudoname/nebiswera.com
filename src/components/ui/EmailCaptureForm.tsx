@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { ArrowRight, Mail } from 'lucide-react'
+import { isValidEmail } from '@/lib'
 import type { Locale } from '@/i18n/config'
 
 const content: Record<Locale, {
@@ -64,8 +65,7 @@ export function EmailCaptureForm({ variant = 'inline', className = '' }: EmailCa
   }, [])
 
   const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
+    return isValidEmail(email)
   }
 
   const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {

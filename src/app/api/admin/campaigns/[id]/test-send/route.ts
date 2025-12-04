@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { getSettings } from '@/lib/settings'
+import { isValidEmail } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -28,8 +29,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       return NextResponse.json(
         { error: 'Invalid email address format' },
         { status: 400 }

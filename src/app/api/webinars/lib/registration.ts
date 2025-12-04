@@ -3,6 +3,7 @@
 
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
+import { isValidEmail as validateEmail } from '@/lib'
 import type { WebinarSessionType } from '@prisma/client'
 import {
   queueRegistrationNotifications,
@@ -398,11 +399,10 @@ export async function markAsAttended(registrationId: string): Promise<void> {
 }
 
 /**
- * Simple email validation
+ * Simple email validation (uses shared utility)
  */
 function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
+  return validateEmail(email)
 }
 
 /**

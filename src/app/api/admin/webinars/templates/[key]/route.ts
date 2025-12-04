@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import { getRawTemplateContent, type WebinarTemplateKey } from '@content/email-templates/webinar'
 
@@ -11,7 +12,7 @@ interface RouteParams {
 // Returns raw template content (with variable placeholders) for editing
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { key } = await params
@@ -31,9 +32,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to get template content:', error)
-    return NextResponse.json(
-      { error: 'Template not found' },
-      { status: 404 }
-    )
+    return notFoundResponse('Template not found')
   }
 }

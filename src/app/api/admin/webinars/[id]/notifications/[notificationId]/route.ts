@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse, successResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { NotificationTriggerType, NotificationChannel } from '@prisma/client'
 import { formatTriggerDescription } from '@/app/api/webinars/lib/notifications'
@@ -12,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/notifications/[notificationId]
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, notificationId } = await params
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!notification) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+      return notFoundResponse('Notification not found')
     }
 
     // Get detailed stats
@@ -81,17 +82,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch notification:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch notification' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch notification')
   }
 }
 
 // PUT /api/admin/webinars/[id]/notifications/[notificationId]
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, notificationId } = await params
@@ -106,7 +104,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+      return notFoundResponse('Notification not found')
     }
 
     const body = await request.json()
@@ -133,7 +131,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         'AFTER_END',
       ]
       if (!validTriggerTypes.includes(triggerType)) {
-        return NextResponse.json({ error: 'Invalid trigger type' }, { status: 400 })
+        return badRequestResponse('Invalid trigger type')
       }
     }
 
@@ -141,7 +139,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (channel) {
       const validChannels: NotificationChannel[] = ['EMAIL', 'SMS']
       if (!validChannels.includes(channel)) {
-        return NextResponse.json({ error: 'Invalid channel' }, { status: 400 })
+        return badRequestResponse('Invalid channel')
       }
     }
 
@@ -186,17 +184,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to update notification:', error)
-    return NextResponse.json(
-      { error: 'Failed to update notification' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to update notification')
   }
 }
 
 // PATCH /api/admin/webinars/[id]/notifications/[notificationId] - Toggle active status
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, notificationId } = await params
@@ -210,14 +205,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+      return notFoundResponse('Notification not found')
     }
 
     const body = await request.json()
 
     // Only allow toggling isActive via PATCH
     if (typeof body.isActive !== 'boolean') {
-      return NextResponse.json({ error: 'isActive boolean required' }, { status: 400 })
+      return badRequestResponse('isActive boolean required')
     }
 
     const notification = await prisma.webinarNotification.update({
@@ -233,17 +228,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to toggle notification:', error)
-    return NextResponse.json(
-      { error: 'Failed to toggle notification' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to toggle notification')
   }
 }
 
 // DELETE /api/admin/webinars/[id]/notifications/[notificationId]
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, notificationId } = await params
@@ -258,7 +250,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Notification not found' }, { status: 404 })
+      return notFoundResponse('Notification not found')
     }
 
     // Cancel any pending queue items before deleting
@@ -277,12 +269,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       where: { id: notificationId },
     })
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
     console.error('Failed to delete notification:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete notification' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete notification')
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { unauthorizedResponse, notFoundResponse, forbiddenResponse, errorResponse } from '@/lib'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import { getAblyServerClient } from '@/lib/ably'
 import type { NextRequest } from 'next/server'
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const token = searchParams.get('token')
 
   if (!token) {
-    return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+    return unauthorizedResponse('Access token required')
   }
 
   try {
@@ -32,17 +33,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     if (!webinar.chatEnabled) {
-      return NextResponse.json({ error: 'Chat is disabled for this webinar' }, { status: 403 })
+      return forbiddenResponse('Chat is disabled for this webinar')
     }
 
     // Validate access token
     const validation = await validateAccessToken(webinar.id, token)
     if (!validation.valid || !validation.registration) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse('Invalid access token')
     }
 
     const registration = validation.registration
@@ -62,9 +63,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(tokenRequest)
   } catch (error) {
     console.error('Failed to create Ably token:', error)
-    return NextResponse.json(
-      { error: 'Failed to authenticate' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to authenticate')
   }
 }

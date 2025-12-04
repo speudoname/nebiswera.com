@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -10,7 +11,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/registrants/[registrationId]/journey
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, registrationId } = await params
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!registration) {
-      return NextResponse.json({ error: 'Registration not found' }, { status: 404 })
+      return notFoundResponse('Registration not found')
     }
 
     // Get all analytics events for this user
@@ -224,10 +225,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch user journey:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch user journey' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch user journey')
   }
 }
 

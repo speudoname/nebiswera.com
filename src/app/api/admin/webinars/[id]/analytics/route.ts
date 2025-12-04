@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib'
 import { getEngagementBreakdown } from '@/app/api/webinars/lib/engagement'
 import type { NextRequest } from 'next/server'
 
@@ -29,7 +30,7 @@ function buildWhereClause(
 // GET /api/admin/webinars/[id]/analytics - Get webinar analytics (OPTIMIZED)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     ])
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const stats = coreStats[0] || { total: 0, attended: 0, completed: 0, engaged: 0, avg_watch_time: 0 }
@@ -586,9 +587,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch analytics:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch analytics')
   }
 }

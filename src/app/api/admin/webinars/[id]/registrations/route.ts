@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { Prisma, WebinarRegistrationStatus } from '@prisma/client'
 
@@ -19,7 +20,7 @@ const VALID_STATUSES: WebinarRegistrationStatus[] = [
 // GET /api/admin/webinars/[id]/registrations - Get webinar registrations with pagination
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -150,9 +151,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to fetch registrations:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch registrations' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch registrations')
   }
 }

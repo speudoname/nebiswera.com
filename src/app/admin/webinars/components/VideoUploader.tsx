@@ -98,7 +98,9 @@ export function VideoUploader({
         attempts++
         pollingRef.current = setTimeout(poll, 5000)
       } catch (err) {
-        console.error('Error polling video status:', err)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error polling video status:', err)
+        }
         consecutiveErrors++
 
         if (consecutiveErrors >= maxConsecutiveErrors) {
@@ -145,7 +147,9 @@ export function VideoUploader({
 
     try {
       // Step 1: Get upload credentials from our server
-      console.log('Getting upload credentials from server...')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Getting upload credentials from server...')
+      }
       const createRes = await fetch('/api/admin/webinars/upload/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -158,7 +162,9 @@ export function VideoUploader({
       }
 
       const { videoId, uploadUrl, authKey } = await createRes.json()
-      console.log('Got upload credentials, videoId:', videoId)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Got upload credentials, videoId:', videoId)
+      }
 
       // Step 2: Upload directly to Bunny using XHR for progress
       setStatus('uploading')
@@ -170,13 +176,17 @@ export function VideoUploader({
         if (event.lengthComputable) {
           const percentComplete = Math.round((event.loaded / event.total) * 100)
           setProgress(percentComplete)
-          console.log(`Direct upload progress: ${percentComplete}% (${formatFileSize(event.loaded)} / ${formatFileSize(event.total)})`)
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`Direct upload progress: ${percentComplete}% (${formatFileSize(event.loaded)} / ${formatFileSize(event.total)})`)
+          }
         }
       })
 
       xhr.addEventListener('load', async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          console.log('Direct upload to Bunny complete!')
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Direct upload to Bunny complete!')
+          }
 
           // Step 3: Notify our server that upload is complete
           try {
@@ -192,7 +202,9 @@ export function VideoUploader({
           // Step 4: Start polling for transcoding status
           pollVideoStatus(webinarId)
         } else {
-          console.error('Bunny upload failed:', xhr.status, xhr.statusText)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Bunny upload failed:', xhr.status, xhr.statusText)
+          }
           let errorMessage = `Upload failed: ${xhr.status}`
           try {
             const responseText = xhr.responseText
@@ -207,14 +219,18 @@ export function VideoUploader({
       })
 
       xhr.addEventListener('error', () => {
-        console.error('XHR error during direct upload')
+        if (process.env.NODE_ENV === 'development') {
+          console.error('XHR error during direct upload')
+        }
         setError('Network error during upload to Bunny')
         setStatus('error')
         onError?.('Network error during upload to Bunny')
       })
 
       xhr.addEventListener('abort', () => {
-        console.log('Upload aborted')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Upload aborted')
+        }
         setStatus('idle')
         setProgress(0)
       })
@@ -226,7 +242,9 @@ export function VideoUploader({
       xhr.send(file)
 
     } catch (err) {
-      console.error('Upload error:', err)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Upload error:', err)
+      }
       setError(err instanceof Error ? err.message : 'Failed to upload video')
       setStatus('error')
       onError?.(err instanceof Error ? err.message : 'Failed to upload video')

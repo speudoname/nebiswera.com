@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'webinarId and videoId are required' }, { status: 400 })
     }
 
-    console.log('[Bunny Direct Upload] Upload complete notification:', { webinarId, videoId, fileSize })
+    logger.info('[Bunny Direct Upload] Upload complete notification:', { webinarId, videoId, fileSize })
 
     // Update processing job to PROCESSING status
     const job = await prisma.videoProcessingJob.update({
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
       message: 'Upload complete. Bunny is now transcoding the video.',
     })
   } catch (error) {
-    console.error('[Bunny Direct Upload] Failed to mark upload complete:', error)
+    logger.error('[Bunny Direct Upload] Failed to mark upload complete:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to mark upload complete' },
       { status: 500 }

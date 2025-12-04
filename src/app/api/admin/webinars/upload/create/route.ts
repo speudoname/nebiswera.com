@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 import { createBunnyVideo, getBunnyHlsUrl, getBunnyThumbnailUrl } from '@/lib/storage/bunny'
 import type { NextRequest } from 'next/server'
 
@@ -36,10 +37,10 @@ export async function POST(request: NextRequest) {
 
     // Create video entry in Bunny
     const videoTitle = title || webinar.title || `webinar-${webinarId}`
-    console.log('[Bunny Direct Upload] Creating video entry:', videoTitle)
+    logger.info('[Bunny Direct Upload] Creating video entry:', videoTitle)
 
     const { videoId } = await createBunnyVideo(videoTitle)
-    console.log('[Bunny Direct Upload] Video created with ID:', videoId)
+    logger.info('[Bunny Direct Upload] Video created with ID:', videoId)
 
     // Create the direct upload URL
     // Bunny uses PUT to this URL with the video file as body
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       thumbnailUrl,
     })
   } catch (error) {
-    console.error('[Bunny Direct Upload] Failed to create upload:', error)
+    logger.error('[Bunny Direct Upload] Failed to create upload:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create upload' },
       { status: 500 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateAllIntervalSessions } from '@/lib/webinar/interval-session-generator'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -36,12 +37,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate sessions for all webinars
-    console.log('[CRON] Starting session generation...')
+    logger.info('[CRON] Starting session generation...')
     const result = await generateAllIntervalSessions()
 
-    console.log(`[CRON] Processed ${result.processed} webinars`)
+    logger.info(`[CRON] Processed ${result.processed} webinars`)
     if (result.errors.length > 0) {
-      console.error(`[CRON] Encountered ${result.errors.length} errors:`, result.errors)
+      logger.error(`[CRON] Encountered ${result.errors.length} errors:`, result.errors)
     }
 
     return NextResponse.json({
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('[CRON] Session generation failed:', error)
+    logger.error('[CRON] Session generation failed:', error)
     return NextResponse.json(
       {
         success: false,

@@ -2,6 +2,7 @@
 // Publishes pre-scripted messages to Ably at specified times
 
 import { publishChatMessage } from '@/lib/ably'
+import { logger } from '@/lib'
 
 export interface ChatBotMessage {
   time: number // Seconds from session start
@@ -75,11 +76,11 @@ export function startChatBot(
             createdAt: new Date().toISOString(),
           })
 
-          console.log(
+          logger.info(
             `[ChatBot] Published message from "${msg.sender}" at ${msg.time}s for webinar ${webinarId}`
           )
         } catch (error) {
-          console.error(
+          logger.error(
             `[ChatBot] Failed to publish message for webinar ${webinarId}:`,
             error
           )
@@ -92,7 +93,7 @@ export function startChatBot(
 
   activeBots.set(webinarId, bot)
 
-  console.log(
+  logger.info(
     `[ChatBot] Started for webinar ${webinarId} with ${bot.timeouts.length} scheduled messages`
   )
 
@@ -117,7 +118,7 @@ export function stopChatBot(webinarId: string): { success: boolean } {
 
   activeBots.delete(webinarId)
 
-  console.log(`[ChatBot] Stopped for webinar ${webinarId}`)
+  logger.info(`[ChatBot] Stopped for webinar ${webinarId}`)
 
   return { success: true }
 }
@@ -162,7 +163,7 @@ export function stopAllChatBots(): number {
     stopChatBot(webinarId)
   }
 
-  console.log(`[ChatBot] Stopped ${webinarIds.length} bots`)
+  logger.info(`[ChatBot] Stopped ${webinarIds.length} bots`)
 
   return webinarIds.length
 }

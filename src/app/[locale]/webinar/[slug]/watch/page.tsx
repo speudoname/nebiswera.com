@@ -1,5 +1,19 @@
+import type { Metadata } from 'next'
 import { redirect, notFound } from 'next/navigation'
 import { WatchPageClient } from './WatchPageClient'
+
+// Prevent indexing of watch pages - these are private/token-gated content
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+}
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>

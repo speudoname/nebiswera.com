@@ -3,6 +3,19 @@
 import { CheckCircle } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { DynamicRegistrationForm } from './components/DynamicRegistrationForm'
+import {
+  ImageRightTemplate,
+  ImageLeftTemplate,
+  ImageBackgroundTemplate,
+  CenteredHeroTemplate,
+  CenteredMinimalTemplate,
+  GradientOverlayTemplate,
+  VideoFocusTemplate,
+  CardFloatTemplate,
+  SplitDiagonalTemplate,
+  type LandingPageConfig,
+  type WebinarData,
+} from './templates'
 
 interface WebinarLandingClientProps {
   webinar: {
@@ -14,13 +27,125 @@ interface WebinarLandingClientProps {
     presenterBio: string | null
     presenterAvatar: string | null
     thumbnailUrl: string | null
-    scheduleConfig: any
+    scheduleConfig: {
+      eventType: string
+      startsAt: Date | null
+      endsAt: Date | null
+    } | null
   }
+  landingPageConfig: LandingPageConfig | null
   slug: string
   locale: string
 }
 
-export function WebinarLandingClient({ webinar, slug, locale }: WebinarLandingClientProps) {
+export function WebinarLandingClient({
+  webinar,
+  landingPageConfig,
+  slug,
+  locale,
+}: WebinarLandingClientProps) {
+  // If landing page config exists, use the customized template
+  if (landingPageConfig) {
+    const webinarData: WebinarData = {
+      id: webinar.id,
+      title: webinar.title,
+      description: webinar.description,
+      presenterName: webinar.presenterName,
+      presenterTitle: webinar.presenterTitle,
+      presenterBio: webinar.presenterBio,
+      presenterAvatar: webinar.presenterAvatar,
+      thumbnailUrl: webinar.thumbnailUrl,
+      scheduleConfig: webinar.scheduleConfig,
+    }
+
+    // Render the appropriate template based on config
+    switch (landingPageConfig.template) {
+      case 'IMAGE_LEFT':
+        return (
+          <ImageLeftTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'IMAGE_BACKGROUND':
+        return (
+          <ImageBackgroundTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'CENTERED_HERO':
+        return (
+          <CenteredHeroTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'CENTERED_MINIMAL':
+        return (
+          <CenteredMinimalTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'GRADIENT_OVERLAY':
+        return (
+          <GradientOverlayTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'VIDEO_FOCUS':
+        return (
+          <VideoFocusTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'CARD_FLOAT':
+        return (
+          <CardFloatTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'SPLIT_DIAGONAL':
+        return (
+          <SplitDiagonalTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+      case 'IMAGE_RIGHT':
+      default:
+        return (
+          <ImageRightTemplate
+            config={landingPageConfig}
+            webinar={webinarData}
+            slug={slug}
+            locale={locale}
+          />
+        )
+    }
+  }
+
+  // Fallback: Original default layout when no landing page config exists
   const isGeorgian = locale === 'ka'
 
   return (

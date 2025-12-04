@@ -25,8 +25,6 @@ interface WebinarData {
   language: 'ka' | 'en'
   completionPercent: number
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
-  landingPagePath?: string
-  thankYouPagePath?: string
 }
 
 interface BasicInfoTabProps {
@@ -157,34 +155,6 @@ export function BasicInfoTab({ data, onChange, webinarId }: BasicInfoTabProps) {
           </div>
         </Card>
 
-        <Card variant="raised" padding="lg">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">Page Paths</h3>
-          <p className="text-sm text-text-muted mb-4">
-            Auto-generated based on slug. These are the URLs where you'll build the landing and thank you pages.
-          </p>
-
-          <div className="space-y-4">
-            <div>
-              <Input
-                label="Landing Page Path"
-                value={data.landingPagePath || ''}
-                onChange={(e) => onChange('landingPagePath', e.target.value)}
-                placeholder="e.g., /ka/webinar/master-ai-tools"
-              />
-              <p className="text-xs text-text-muted mt-1">Auto-synced with slug</p>
-            </div>
-
-            <div>
-              <Input
-                label="Thank You Page Path"
-                value={data.thankYouPagePath || ''}
-                onChange={(e) => onChange('thankYouPagePath', e.target.value)}
-                placeholder="e.g., /ka/webinar/master-ai-tools/thank-you"
-              />
-              <p className="text-xs text-text-muted mt-1">Auto-synced with slug</p>
-            </div>
-          </div>
-        </Card>
       </div>
 
       {/* Right column - Presenter */}

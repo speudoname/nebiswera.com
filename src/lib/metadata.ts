@@ -169,3 +169,118 @@ export function getWebSiteSchema(locale: string) {
     inLanguage: locale === 'ka' ? 'ka-GE' : 'en-US',
   }
 }
+
+// ============================================================================
+// Webinar Event Schema
+// ============================================================================
+
+interface WebinarEventSchemaProps {
+  title: string
+  description: string | null
+  slug: string
+  locale: string
+  presenterName: string | null
+  thumbnailUrl: string | null
+  startDate?: Date | null
+  endDate?: Date | null
+  eventType?: 'RECURRING' | 'ONE_TIME' | 'SPECIFIC_DATES' | 'ON_DEMAND'
+}
+
+/**
+ * Event schema for webinar pages - enables rich snippets in Google search results.
+ *
+ * For recurring/scheduled webinars: uses OnlineEvent type with dates
+ * For on-demand webinars: uses Course type (more appropriate)
+ *
+ * Usage in webinar page:
+ * ```tsx
+ * <script
+ *   type="application/ld+json"
+ *   dangerouslySetInnerHTML={{ __html: JSON.stringify(getWebinarEventSchema({...})) }}
+ * />
+ * ```
+ */
+export function getWebinarEventSchema({
+  title,
+  description,
+  slug,
+  locale,
+  presenterName,
+  thumbnailUrl,
+  startDate,
+  endDate,
+  eventType = 'RECURRING',
+}: WebinarEventSchemaProps) {
+  const url = `${seoConfig.siteUrl}/${locale}/webinar/${slug}`
+  const image = thumbnailUrl || `${seoConfig.siteUrl}${seoConfig.ogImage.defaultImage}`
+
+  // For on-demand content, use Course schema instead of Event
+  if (eventType === 'ON_DEMAND') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: title,
+      description: description || title,
+      url,
+      image,
+      provider: {
+        '@type': 'Organization',
+        name: 'Nebiswera',
+        url: seoConfig.siteUrl,
+      },
+      ...(presenterName && {
+        instructor: {
+          '@type': 'Person',
+          name: presenterName,
+        },
+      }),
+      inLanguage: locale === 'ka' ? 'ka-GE' : 'en-US',
+      isAccessibleForFree: false,
+      hasCourseInstance: {
+        '@type': 'CourseInstance',
+        courseMode: 'online',
+        courseWorkload: 'PT1H', // Approximate 1 hour
+      },
+    }
+  }
+
+  // For scheduled/recurring events, use Event schema
+  const eventSchema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'EducationEvent',
+    name: title,
+    description: description || title,
+    url,
+    image,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode',
+    location: {
+      '@type': 'VirtualLocation',
+      url,
+    },
+    organizer: {
+      '@type': 'Organization',
+      name: 'Nebiswera',
+      url: seoConfig.siteUrl,
+    },
+    inLanguage: locale === 'ka' ? 'ka-GE' : 'en-US',
+  }
+
+  // Add presenter if available
+  if (presenterName) {
+    eventSchema.performer = {
+      '@type': 'Person',
+      name: presenterName,
+    }
+  }
+
+  // Add dates if available
+  if (startDate) {
+    eventSchema.startDate = startDate.toISOString()
+  }
+  if (endDate) {
+    eventSchema.endDate = endDate.toISOString()
+  }
+
+  return eventSchema
+}

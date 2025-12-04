@@ -1,5 +1,19 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ThankYouClient } from './ThankYouClient'
+
+// Prevent indexing of thank-you pages - these are private/token-gated content
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
+}
 
 interface PageProps {
   params: Promise<{

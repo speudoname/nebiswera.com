@@ -43,8 +43,6 @@ export default async function EditWebinarPage({ params }: PageProps) {
     thumbnailUrl: webinar.thumbnailUrl || undefined,
     hlsUrl: webinar.hlsUrl || undefined,
     videoStatus: webinar.videoStatus || undefined,
-    landingPagePath: webinar.landingPagePath || undefined,
-    thankYouPagePath: webinar.thankYouPagePath || undefined,
   }
 
   return (

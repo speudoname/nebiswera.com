@@ -41,7 +41,6 @@ export const seoConfig = {
    */
   indexedPages: [
     { path: '', key: 'home', priority: 1.0, changefreq: 'weekly' },
-    { path: '/test', key: 'test', priority: 0.95, changefreq: 'weekly' },
     { path: '/schedule', key: 'schedule', priority: 0.9, changefreq: 'weekly' },
     { path: '/about', key: 'about', priority: 0.8, changefreq: 'monthly' },
     { path: '/love', key: 'love', priority: 0.9, changefreq: 'weekly' },
@@ -68,6 +67,7 @@ export const seoConfig = {
     { path: '/auth/error', key: 'authError' },
     { path: '/dashboard', key: 'dashboard' },
     { path: '/profile', key: 'profile' },
+    { path: '/unsubscribe', key: 'unsubscribe' },
   ] as const,
 
   /**

@@ -101,6 +101,16 @@ export function generateEmailImageKey(filename: string): string {
 }
 
 /**
+ * Generate unique filename for webinar media (images and videos)
+ */
+export function generateWebinarMediaKey(filename: string, type: 'images' | 'videos' = 'images'): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8)
+  const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+  return `webinar-media/${type}/${timestamp}-${random}-${sanitized}`
+}
+
+/**
  * List files from Bunny Storage folder
  * @param folder - Folder path (e.g., 'email-images/')
  * @returns Array of file objects with url, name, path

@@ -620,10 +620,6 @@ model Webinar {
   videoDuration     Int?          // Duration in seconds
   videoStatus       String?       // 'processing' | 'ready' | 'failed'
 
-  // Pages (manually built, referenced here)
-  landingPagePath   String?       // e.g., "/webinar/ai-masterclass"
-  thankYouPagePath  String?       // e.g., "/webinar/ai-masterclass/thank-you"
-
   // Settings
   status            WebinarStatus @default(DRAFT)
   language          String        @default("ka") // 'ka' (Georgian), 'en' (English)
@@ -662,6 +658,7 @@ model Webinar {
   // Relations
   scheduleConfig    WebinarScheduleConfig?
   registrationFieldConfig WebinarRegistrationFieldConfig?
+  landingPageConfig WebinarLandingPageConfig?
   sessions          WebinarSession[]
   interactions      WebinarInteraction[]
   registrations     WebinarRegistration[]
@@ -772,6 +769,132 @@ model WebinarRegistrationFieldConfig {
 enum NameFieldFormat {
   SPLIT  // firstName + lastName (two separate fields)
   FULL   // fullName (single field, auto-split on save)
+
+  @@schema("webinar")
+}
+
+// Landing page configuration for webinar
+model WebinarLandingPageConfig {
+  id                String    @id @default(cuid())
+  webinarId         String    @unique
+  webinar           Webinar   @relation(fields: [webinarId], references: [id], onDelete: Cascade)
+
+  // Template choice (layout variation)
+  template          LandingPageTemplate @default(IMAGE_RIGHT)
+
+  // Header
+  logoType          LogoType  @default(TEXT)
+  logoText          String?   // Text logo (e.g., ":::...ნებისწერა...:::")
+  logoImageUrl      String?   // Image logo URL
+
+  // Section 1: Above the fold
+  heroEyebrow       String?
+  heroTitle         String?
+  heroTitleParts    Json?     // Rich text: [{ text, bold, color, italic }]
+  heroSubtitle      String?
+  heroSubtitleParts Json?     // Rich text: [{ text, bold, color, italic }]
+  heroParagraph     String?   @db.Text
+  heroButtonText    String?
+  heroBelowButtonText String?
+  heroButtonStyle   ButtonStyle @default(POPUP_FORM)
+  heroMediaType     HeroMediaType @default(IMAGE)
+  heroImageUrl      String?
+  heroVideoUrl      String?       // Video URL (for VIDEO media type)
+  heroImagePlacement ImagePlacement @default(RIGHT)
+  heroAlignment     ContentAlignment @default(LEFT) // Text alignment in hero
+
+  // Section 2: Below the fold
+  section2Title     String?   // e.g., "Here's what you'll learn"
+  // List items stored as JSON: [{ headline, subheadline, paragraph }]
+  section2Items     Json      @default("[]")
+  section2CtaText   String?   // Call to action text
+  section2SubCtaText String?  // Sub-CTA text (for date or other info)
+  section2ButtonText String?
+  section2ButtonStyle ButtonStyle @default(POPUP_FORM)
+  section2ImagePlacement ImagePlacement @default(RIGHT) // Independent section 2 layout
+  section2Alignment ContentAlignment @default(LEFT)     // Section 2 text alignment
+  presenterImageUrl String?   // Presenter photo
+  presenterImageShape PresenterImageShape @default(CIRCLE)
+
+  // Footer
+  footerDisclaimerText String? @db.Text
+
+  // Color customization (optional, defaults to site palette)
+  primaryColor      String?   // Hex color
+  backgroundColor   String?   // Hex color
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@schema("webinar")
+  @@map("webinar_landing_page_configs")
+}
+
+enum LandingPageTemplate {
+  // Classic two-column layouts
+  IMAGE_RIGHT           // 1. Two-column: text left, image right
+  IMAGE_LEFT            // 2. Two-column: image left, text right
+
+  // Centered layouts
+  CENTERED_HERO         // 3. Centered single column with video/image below headline
+  CENTERED_MINIMAL      // 4. Ultra-clean minimal centered, lots of whitespace
+
+  // Full-width image layouts
+  IMAGE_BACKGROUND      // 5. Full-width background image with text overlay
+  GRADIENT_OVERLAY      // 6. Gradient background with subtle image blend
+
+  // Feature-focused layouts
+  VIDEO_FOCUS           // 7. Large video/image prominent, compact text
+  CARD_FLOAT            // 8. Content in floating card over background
+
+  // Split layouts
+  SPLIT_DIAGONAL        // 9. Diagonal split between content and image
+
+  @@schema("webinar")
+}
+
+enum ContentAlignment {
+  LEFT
+  CENTER
+  RIGHT
+
+  @@schema("webinar")
+}
+
+enum ButtonStyle {
+  POPUP_FORM       // Opens registration form in popup/modal
+  INLINE_EMAIL     // Inline email input + button (like homepage)
+  EXPAND_FORM      // Expands registration form in-place
+
+  @@schema("webinar")
+}
+
+enum ImagePlacement {
+  LEFT
+  RIGHT
+  BACKGROUND
+  NONE
+
+  @@schema("webinar")
+}
+
+enum HeroMediaType {
+  IMAGE
+  VIDEO
+
+  @@schema("webinar")
+}
+
+enum PresenterImageShape {
+  CIRCLE
+  SQUARE
+
+  @@schema("webinar")
+}
+
+enum LogoType {
+  TEXT
+  IMAGE
 
   @@schema("webinar")
 }

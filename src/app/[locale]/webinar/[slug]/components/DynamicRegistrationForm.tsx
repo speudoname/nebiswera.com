@@ -20,9 +20,10 @@ interface RegistrationOptions {
 interface DynamicRegistrationFormProps {
   slug: string
   locale: string
+  initialEmail?: string
 }
 
-export function DynamicRegistrationForm({ slug, locale }: DynamicRegistrationFormProps) {
+export function DynamicRegistrationForm({ slug, locale, initialEmail }: DynamicRegistrationFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -33,7 +34,7 @@ export function DynamicRegistrationForm({ slug, locale }: DynamicRegistrationFor
   const [fieldConfig, setFieldConfig] = useState<RegistrationFieldConfig | null>(null)
 
   const [formData, setFormData] = useState<RegistrationFormData & { sessionId: string; sessionType: string }>({
-    email: '',
+    email: initialEmail || '',
     firstName: '',
     lastName: '',
     fullName: '',

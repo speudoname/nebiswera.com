@@ -41,6 +41,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       where: { id },
       include: {
         scheduleConfig: true,
+        landingPageConfig: true,
         interactions: true,
         notifications: true,
         chatMessages: {
@@ -65,8 +66,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         hlsUrl: original.hlsUrl,
         videoDuration: original.videoDuration,
         thumbnailUrl: original.thumbnailUrl,
-        landingPagePath: null, // Don't copy page paths
-        thankYouPagePath: null,
         status: 'DRAFT', // Always start as draft
         timezone: original.timezone,
         presenterName: original.presenterName,
@@ -94,6 +93,37 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
               maxSessionsToShow: original.scheduleConfig.maxSessionsToShow,
               blackoutDates: [],
               useAttendeeTimezone: original.scheduleConfig.useAttendeeTimezone,
+            },
+          },
+        }),
+        // Copy landing page config if exists
+        ...(original.landingPageConfig && {
+          landingPageConfig: {
+            create: {
+              template: original.landingPageConfig.template,
+              logoType: original.landingPageConfig.logoType,
+              logoText: original.landingPageConfig.logoText,
+              logoImageUrl: original.landingPageConfig.logoImageUrl,
+              heroEyebrow: original.landingPageConfig.heroEyebrow,
+              heroTitle: original.landingPageConfig.heroTitle,
+              heroSubtitle: original.landingPageConfig.heroSubtitle,
+              heroParagraph: original.landingPageConfig.heroParagraph,
+              heroButtonText: original.landingPageConfig.heroButtonText,
+              heroBelowButtonText: original.landingPageConfig.heroBelowButtonText,
+              heroButtonStyle: original.landingPageConfig.heroButtonStyle,
+              heroImageUrl: original.landingPageConfig.heroImageUrl,
+              heroImagePlacement: original.landingPageConfig.heroImagePlacement,
+              section2Title: original.landingPageConfig.section2Title,
+              section2Items: original.landingPageConfig.section2Items as object,
+              section2CtaText: original.landingPageConfig.section2CtaText,
+              section2SubCtaText: original.landingPageConfig.section2SubCtaText,
+              section2ButtonText: original.landingPageConfig.section2ButtonText,
+              section2ButtonStyle: original.landingPageConfig.section2ButtonStyle,
+              presenterImageUrl: original.landingPageConfig.presenterImageUrl,
+              presenterImageShape: original.landingPageConfig.presenterImageShape,
+              footerDisclaimerText: original.landingPageConfig.footerDisclaimerText,
+              primaryColor: original.landingPageConfig.primaryColor,
+              backgroundColor: original.landingPageConfig.backgroundColor,
             },
           },
         }),

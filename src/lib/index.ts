@@ -35,6 +35,9 @@ export {
   validationErrorResponse
 } from './api-response'
 
+// Logger utility
+export { logger } from './logger'
+
 // Existing utilities (re-export for convenience)
 export * from './db'
 export * from './email'

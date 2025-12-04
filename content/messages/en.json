@@ -24,8 +24,15 @@
     "register": "Sign Up",
     "logout": "Sign Out",
     "admin": "Admin Panel",
-    "about": "About",
-    "contact": "Contact"
+    "about": "About Author",
+    "contact": "Contact",
+    "programs": "Programs",
+    "blog": "Blog",
+    "videos": "Videos",
+    "boardGame": "Board Game",
+    "onlineCourses": "Online Courses",
+    "singleLectures": "Single Lectures",
+    "fullSchedule": "Full Schedule"
   },
   "home": {
     "eyebrowStart": "Your future —",

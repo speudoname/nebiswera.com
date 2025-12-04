@@ -3,6 +3,7 @@
 import React from 'react'
 import { useLocale } from 'next-intl'
 import { motion } from 'framer-motion'
+import { Crown } from 'lucide-react'
 import type { Locale } from '@/i18n/config'
 import { fadeUpVariants, defaultViewport } from '@/lib/animations'
 
@@ -34,6 +35,9 @@ export function ThyWillBeDoneSection() {
 
   const ContentBlock = () => (
     <div className="text-center max-w-3xl mx-auto">
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu">
+        <Crown className="w-8 h-8 md:w-10 md:h-10 text-white" />
+      </div>
       <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-text-primary mb-6 md:mb-8 leading-tight">
         {t.mainTitle}
       </h2>
@@ -49,7 +53,7 @@ export function ThyWillBeDoneSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-base to-neu-light relative overflow-hidden">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-primary-50/50 to-neu-base relative overflow-hidden">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute inset-0" style={{

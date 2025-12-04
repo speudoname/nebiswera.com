@@ -10,13 +10,16 @@ import { CTASection } from './home/content/CTASection'
 import { TestimonialShowcase } from './home/content/TestimonialShowcase'
 import { WhatItIsNotSection } from './home/content/WhatItIsNotSection'
 import { KnowWhatYouWantSection } from './home/content/KnowWhatYouWantSection'
-import { ControlYourRealitySection } from './home/content/ControlYourRealitySection'
+import { AchieveYourGoalsSection } from './home/content/AchieveYourGoalsSection'
 import { ThyWillBeDoneSection } from './home/content/ThyWillBeDoneSection'
 import { FreedomSection } from './home/content/FreedomSection'
 import { LifeBecomesYoursSection } from './home/content/LifeBecomesYoursSection'
 import { WhatIsNebisweraSection } from './home/content/WhatIsNebisweraSection'
 import { BecomeTheEngineerSection } from './home/content/BecomeTheEngineerSection'
-import { OperatingSystemSection } from './home/content/OperatingSystemSection'
+import { ExistentialNavigationSection } from './home/content/ExistentialNavigationSection'
+import { PersonalRealityOSSection } from './home/content/PersonalRealityOSSection'
+import { ClaritySection } from './home/content/ClaritySection'
+import { InnerFreedomSection } from './home/content/InnerFreedomSection'
 import { NoMoreUncertaintySection } from './home/content/NoMoreUncertaintySection'
 
 export async function generateMetadata({
@@ -46,32 +49,38 @@ export default async function HomePage({
         {/* Testimonials #1 */}
         <TestimonialShowcase count={3} darkBackground={true} />
 
+        {/* No More Uncertainty - Predictable future through principles */}
+        <NoMoreUncertaintySection />
+
         {/* Power of Will Section */}
         <PowerOfWillSection />
 
         {/* What Nebiswera is NOT (Combined: Therapy, Coaching, Magic) */}
         <WhatItIsNotSection />
 
-        {/* What Is Nebiswera - Creates curiosity about the solution */}
-        <WhatIsNebisweraSection />
-
         {/* Become the Engineer - Control reality, don't just consume it */}
         <BecomeTheEngineerSection />
 
-        {/* Operating System for Reality - Nebiswera as the foundation */}
-        <OperatingSystemSection />
+        {/* Achieve Your Goals - What areas Nebiswera helps with */}
+        <AchieveYourGoalsSection />
 
-        {/* No More Uncertainty - Predictable future through principles */}
-        <NoMoreUncertaintySection />
-
-        {/* Know What You Want - First step */}
-        <KnowWhatYouWantSection />
+        {/* Existential Navigation - Beyond personal transformation */}
+        <ExistentialNavigationSection />
 
         {/* Your Life Becomes Yours Again - Hope after problem */}
         <LifeBecomesYoursSection />
 
-        {/* Control Your Reality - Independence from external factors */}
-        <ControlYourRealitySection />
+        {/* Personal Reality OS - Technology of thinking for reality creation */}
+        <PersonalRealityOSSection />
+
+        {/* Clarity - Order the chaos, from noise to signal */}
+        <ClaritySection />
+
+        {/* Inner Freedom - What you will gain */}
+        <InnerFreedomSection />
+
+        {/* Know What You Want - First step */}
+        <KnowWhatYouWantSection />
 
         {/* Secret Reveal */}
         <SecretRevealSection />
@@ -93,6 +102,9 @@ export default async function HomePage({
 
         {/* Testimonials #3 - Videos preferred */}
         <TestimonialShowcase count={3} type="VIDEO" />
+
+        {/* What Is Nebiswera - Creates curiosity about the solution */}
+        <WhatIsNebisweraSection />
 
       {/* Final CTA */}
       <CTASection />

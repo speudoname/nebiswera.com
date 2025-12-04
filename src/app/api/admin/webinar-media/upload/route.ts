@@ -1,6 +1,8 @@
-// API endpoint for uploading webinar media to Bunny CDN
+// API endpoint for uploading webinar media
+// Images → Bunny Storage, Videos → Bunny Stream
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadToBunnyStorage, generateWebinarMediaKey } from '@/lib/bunny-storage'
+import { uploadVideo } from '@/lib/storage/bunny'
 import { isAdmin } from '@/lib/auth/utils'
 
 export const runtime = 'nodejs'
@@ -54,24 +56,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate unique filename with folder structure
-    const sanitizedFilename = uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const key = generateWebinarMediaKey(sanitizedFilename, isVideo ? 'videos' : 'images')
-
     // Convert file to buffer
     const arrayBuffer = await uploadFile.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to Bunny Storage
-    const url = await uploadToBunnyStorage(buffer, key)
+    if (isVideo) {
+      // Upload videos to Bunny Stream for proper streaming
+      const title = uploadFile.name.replace(/\.[^/.]+$/, '') // Remove extension
+      const result = await uploadVideo(title, buffer, uploadFile.type)
 
-    return NextResponse.json({
-      success: true,
-      url,
-      key,
-      type: mediaType,
-      name: uploadFile.name,
-    })
+      return NextResponse.json({
+        success: true,
+        url: result.hlsUrl,
+        videoId: result.videoId,
+        hlsUrl: result.hlsUrl,
+        thumbnailUrl: result.thumbnailUrl,
+        embedUrl: result.embedUrl,
+        type: 'videos',
+        name: uploadFile.name,
+      })
+    } else {
+      // Upload images to Bunny Storage
+      const sanitizedFilename = uploadFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const key = generateWebinarMediaKey(sanitizedFilename, 'images')
+      const url = await uploadToBunnyStorage(buffer, key)
+
+      return NextResponse.json({
+        success: true,
+        url,
+        key,
+        type: 'images',
+        name: uploadFile.name,
+      })
+    }
   } catch (error: any) {
     console.error('Error uploading webinar media:', error)
     return NextResponse.json(

@@ -2,15 +2,15 @@
 
 import React from 'react'
 import { useLocale } from 'next-intl'
-import { Cog, Wrench, Lightbulb } from 'lucide-react'
+import { Cog, Wrench, Lightbulb, Shield, Users, Brain, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { BunnyImage } from '@/components/ui/BunnyImage'
 import type { Locale } from '@/i18n/config'
-import { fadeUpVariants, staggerContainerVariants, staggerItemVariants, defaultViewport } from '@/lib/animations'
+import { fadeUpVariants, scaleUpVariants, staggerContainerVariants, staggerItemVariants, defaultViewport } from '@/lib/animations'
 
 const content: Record<Locale, {
-  hook: string
-  title: string
-  subtitle: string
+  headline: string
+  subheadline: string
   consumer: {
     label: string
     description: string
@@ -19,12 +19,16 @@ const content: Record<Locale, {
     label: string
     description: string
   }
+  independenceTitle: string
+  independenceItems: Array<{
+    label: string
+    text: string
+  }>
   conclusion: string
 }> = {
   ka: {
-    hook: 'თუ გინდა შეგეძლოს მართო რეალობა...',
-    title: 'გახდი ინჟინერი',
-    subtitle: 'და არა მომხმარებელი',
+    headline: 'თუ გინდა შეგეძლოს მართო რეალობა',
+    subheadline: 'გახდი რეალობის ინჟინერი და არა მოცემულობის მომხმარებელი',
     consumer: {
       label: 'მომხმარებელი',
       description: 'იყენებს სისტემას, იმის გარეშე რომ ესმოდეს როგორ მუშაობს. რეაგირებს გარემოებებზე. ელოდება ბედისწერას.',
@@ -33,12 +37,26 @@ const content: Record<Locale, {
       label: 'ინჟინერი',
       description: 'ესმის მექანიკა. ქმნის სისტემებს. აპროექტებს რეალობას იმისდა მიხედვით, თუ რა სურს.',
     },
+    independenceTitle: 'არ იყო დამოკიდებული',
+    independenceItems: [
+      {
+        label: 'არც გარემოზე',
+        text: 'შენი რეალობა არ არის დამოკიდებული გარე ვითარებებზე'
+      },
+      {
+        label: 'არც სხვა ადამიანებზე',
+        text: 'შენი ცხოვრება არ არის დამოკიდებული სხვების გადაწყვეტილებებზე'
+      },
+      {
+        label: 'არც რწმენებზე',
+        text: 'შენი მომავალი არ არის შეზღუდული საკუთარი რწმენებით'
+      },
+    ],
     conclusion: 'ნებისწერა გასწავლის რეალობის შექმნის მექანიკას — რომ შენ აირჩიო, და არა გარემოებებმა.',
   },
   en: {
-    hook: 'If you want to control your reality...',
-    title: 'Become the Engineer',
-    subtitle: 'Not the Consumer',
+    headline: 'If You Want to Control Your Reality',
+    subheadline: 'Become the Engineer, Not the Consumer',
     consumer: {
       label: 'Consumer',
       description: 'Uses the system without understanding how it works. Reacts to circumstances. Waits for fate.',
@@ -47,9 +65,26 @@ const content: Record<Locale, {
       label: 'Engineer',
       description: 'Understands the mechanics. Creates systems. Designs reality according to their will.',
     },
+    independenceTitle: 'Don\'t Be Dependent',
+    independenceItems: [
+      {
+        label: 'Not on environment',
+        text: 'Your reality is not dependent on external circumstances'
+      },
+      {
+        label: 'Not on other people',
+        text: 'Your life is not dependent on others\' decisions'
+      },
+      {
+        label: 'Not on beliefs',
+        text: 'Your future is not limited by your own beliefs'
+      },
+    ],
     conclusion: 'Nebiswera teaches you the mechanics of reality creation — so you choose, not circumstances.',
   },
 }
+
+const independenceIcons = [Shield, Users, Brain]
 
 export function BecomeTheEngineerSection() {
   const locale = useLocale() as Locale
@@ -60,27 +95,17 @@ export function BecomeTheEngineerSection() {
     setIsMounted(true)
   }, [])
 
-  const HookContent = () => (
-    <div className="text-center mb-8">
-      <p className="text-xl md:text-2xl text-primary-600 font-medium italic">
-        {t.hook}
-      </p>
-    </div>
-  )
-
-  const TitleContent = () => (
+  const HeaderContent = () => (
     <div className="text-center mb-12 md:mb-16">
-      <div className="flex items-center justify-center gap-4 mb-4">
-        <Cog className="w-10 h-10 md:w-14 md:h-14 text-primary-600" />
-        <div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary">
-            {t.title}
-          </h2>
-          <p className="text-2xl sm:text-3xl md:text-4xl font-light text-text-secondary">
-            {t.subtitle}
-          </p>
-        </div>
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu">
+        <Cog className="w-8 h-8 md:w-10 md:h-10 text-white" />
       </div>
+      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-4 leading-tight">
+        {t.headline}
+      </h2>
+      <p className="text-xl sm:text-2xl md:text-3xl text-primary-600 font-medium">
+        {t.subheadline}
+      </p>
     </div>
   )
 
@@ -124,11 +149,58 @@ export function BecomeTheEngineerSection() {
     </div>
   )
 
+  const IndependenceContent = () => (
+    <div className="bg-neu-base rounded-neu-lg p-8 md:p-10 shadow-neu mb-12 md:mb-16">
+      <div className="flex items-center gap-3 mb-8 justify-center">
+        <Sparkles className="w-8 h-8 text-primary-600" />
+        <h3 className="text-2xl md:text-3xl font-bold text-primary-600">
+          {t.independenceTitle}
+        </h3>
+      </div>
+      <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+        {t.independenceItems.map((item, index) => {
+          const Icon = independenceIcons[index]
+          return (
+            <div
+              key={index}
+              className="bg-neu-light rounded-neu p-6 shadow-neu-inset text-center"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center shadow-neu-sm">
+                <Icon className="w-8 h-8 text-primary-600" />
+              </div>
+              <h4 className="text-lg md:text-xl font-bold text-text-primary mb-3">
+                {item.label}
+              </h4>
+              <p className="text-sm md:text-base text-text-secondary leading-relaxed">
+                {item.text}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
   const ConclusionBox = () => (
-    <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-neu-lg p-8 md:p-10 shadow-neu-darkbg text-center">
+    <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-neu-lg p-8 md:p-10 shadow-neu-darkbg text-center mb-12 md:mb-16">
       <p className="text-xl md:text-2xl font-medium text-white leading-relaxed">
         {t.conclusion}
       </p>
+    </div>
+  )
+
+  const AuthorImage = () => (
+    <div className="flex justify-center">
+      <div className="w-full max-w-2xl rounded-neu-lg overflow-hidden shadow-neu-md">
+        <BunnyImage
+          src="https://nebiswera-cdn.b-cdn.net/images/author.jpg"
+          alt="Author - Reality Engineer"
+          width={672}
+          height={336}
+          className="w-full h-auto"
+          sizes="(max-width: 640px) 95vw, 672px"
+        />
+      </div>
     </div>
   )
 
@@ -143,8 +215,7 @@ export function BecomeTheEngineerSection() {
               viewport={defaultViewport}
               variants={fadeUpVariants}
             >
-              <HookContent />
-              <TitleContent />
+              <HeaderContent />
             </motion.div>
 
             <motion.div
@@ -201,15 +272,34 @@ export function BecomeTheEngineerSection() {
               viewport={defaultViewport}
               variants={fadeUpVariants}
             >
+              <IndependenceContent />
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
               <ConclusionBox />
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={scaleUpVariants}
+            >
+              <AuthorImage />
             </motion.div>
           </>
         ) : (
           <>
-            <HookContent />
-            <TitleContent />
+            <HeaderContent />
             <ComparisonCards />
+            <IndependenceContent />
             <ConclusionBox />
+            <AuthorImage />
           </>
         )}
       </div>

@@ -54,12 +54,12 @@ export function WhatIsNebisweraSection() {
 
   const HeaderContent = () => (
     <div className="text-center mb-12 md:mb-16">
-      <div className="inline-flex items-center gap-3 mb-6">
-        <HelpCircle className="w-12 h-12 md:w-16 md:h-16 text-primary-600" />
-        <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary">
-          {t.title}
-        </h2>
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu">
+        <HelpCircle className="w-8 h-8 md:w-10 md:h-10 text-white" />
       </div>
+      <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-text-primary mb-6">
+        {t.title}
+      </h2>
       <p className="text-lg md:text-xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
         {t.description}
       </p>
@@ -91,7 +91,7 @@ export function WhatIsNebisweraSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-primary-50/50 to-neu-base">
       <div className="max-w-5xl mx-auto">
         {isMounted ? (
           <>

@@ -3,7 +3,7 @@
 import React from 'react'
 import { useLocale } from 'next-intl'
 import { motion } from 'framer-motion'
-import { Heart } from 'lucide-react'
+import { Heart, Bird } from 'lucide-react'
 import type { Locale } from '@/i18n/config'
 import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
 
@@ -38,6 +38,9 @@ export function FreedomSection() {
 
   const ContentBlock = () => (
     <div className="text-center max-w-4xl mx-auto">
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu">
+        <Bird className="w-8 h-8 md:w-10 md:h-10 text-white" />
+      </div>
       {/* Equation-like layout */}
       <div className="mb-8 md:mb-12">
         <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 mb-6">
@@ -81,7 +84,7 @@ export function FreedomSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-base to-neu-light relative overflow-hidden">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-neu-base relative overflow-hidden">
       {/* Background pattern - celebration theme */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute inset-0" style={{

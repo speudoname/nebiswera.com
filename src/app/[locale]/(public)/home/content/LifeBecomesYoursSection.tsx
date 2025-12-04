@@ -59,7 +59,7 @@ export function LifeBecomesYoursSection() {
   )
 
   return (
-    <section className="py-20 md:py-28 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base">
+    <section className="py-20 md:py-28 px-4 sm:px-6 md:px-8 bg-neu-base">
       <div className="max-w-6xl mx-auto">
         {isMounted ? (
           <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">

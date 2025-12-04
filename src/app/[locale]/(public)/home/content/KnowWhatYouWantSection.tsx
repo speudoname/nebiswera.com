@@ -39,6 +39,9 @@ export function KnowWhatYouWantSection() {
 
   const HeaderContent = () => (
     <div className="text-center mb-12 md:mb-16">
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu">
+        <Target className="w-8 h-8 md:w-10 md:h-10 text-white" />
+      </div>
       <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-4 leading-tight">
         {t.mainTitle}
       </h2>
@@ -69,7 +72,7 @@ export function KnowWhatYouWantSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base relative overflow-hidden">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-neu-base relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute inset-0" style={{

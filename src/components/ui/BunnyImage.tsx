@@ -36,16 +36,17 @@ export function BunnyImage({
   width,
   height,
   sizes = '100vw',
-  quality = 75,
+  quality = 70,
   priority = false,
   className = '',
   ...props
 }: BunnyImageProps) {
-  // Generate responsive widths (common breakpoints)
-  const widths = [400, 640, 768, 1024, 1280, 1536, 1920]
+  // Generate responsive widths optimized for performance
+  // Smaller increments for mobile, larger for desktop
+  const widths = [320, 480, 640, 800, 1024, 1200]
 
   // Filter widths that are smaller than or equal to the max width
-  const responsiveWidths = widths.filter(w => w <= width * 2).concat(width)
+  const responsiveWidths = widths.filter(w => w <= width).concat(width)
   const uniqueWidths = Array.from(new Set(responsiveWidths)).sort((a, b) => a - b)
 
   // Generate srcSet with Bunny's width parameter
@@ -53,8 +54,9 @@ export function BunnyImage({
     .map(w => `${src}?width=${w}&quality=${quality} ${w}w`)
     .join(', ')
 
-  // Default src with original width
-  const defaultSrc = `${src}?width=${width}&quality=${quality}`
+  // Default src - use a reasonable default for most screens
+  const defaultWidth = Math.min(width, 800)
+  const defaultSrc = `${src}?width=${defaultWidth}&quality=${quality}`
 
   return (
     <img
@@ -66,6 +68,7 @@ export function BunnyImage({
       height={height}
       loading={priority ? 'eager' : 'lazy'}
       decoding={priority ? 'sync' : 'async'}
+      fetchPriority={priority ? 'high' : 'low'}
       className={className}
       {...props}
     />

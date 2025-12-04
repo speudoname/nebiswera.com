@@ -32,7 +32,7 @@ NC='\033[0m' # No Color
 # Default values
 DROPLET_IP=""
 SSH_USER="root"
-APP_DIR="/var/www/nebiswera.com"
+APP_DIR="/var/www/nebiswera"
 SKIP_NGINX=false
 DRY_RUN=false
 

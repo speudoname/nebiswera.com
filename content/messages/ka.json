@@ -24,8 +24,15 @@
     "register": "რეგისტრაცია",
     "logout": "გასვლა",
     "admin": "ადმინ პანელი",
-    "about": "ჩვენ შესახებ",
-    "contact": "კონტაქტი"
+    "about": "ავტორის შესახებ",
+    "contact": "კონტაქტი",
+    "programs": "პროგრამები",
+    "blog": "ბლოგი",
+    "videos": "ვიდეოები",
+    "boardGame": "სამაგიდო თამაში",
+    "onlineCourses": "ონლაინ კურსები",
+    "singleLectures": "ერთჯერადი ლექციები",
+    "fullSchedule": "სრული განრიგი"
   },
   "home": {
     "eyebrowStart": "მომავალი —",

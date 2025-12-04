@@ -3,7 +3,7 @@
 import React from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
-import { Heart, ArrowRight, Star } from 'lucide-react'
+import { Heart, ArrowRight, Star, Users } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui'
 import type { Locale } from '@/i18n/config'
@@ -57,13 +57,16 @@ export function SocialProofSection() {
 
   const HeaderContent = () => (
     <div className="text-center mb-12 md:mb-16">
-      <p className="eyebrow text-primary-600 mb-4">
+      <div className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu">
+        <Users className="w-8 h-8 md:w-10 md:h-10 text-white" />
+      </div>
+      <span className="inline-block text-primary-600 font-semibold text-lg md:text-xl mb-4 tracking-wide uppercase">
         {t.eyebrow}
-      </p>
-      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-text-primary mb-3">
+      </span>
+      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-2 leading-tight">
         {t.title}
       </h2>
-      <p className="text-lg md:text-xl text-text-secondary">
+      <p className="text-xl md:text-2xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
         {t.subtitle}
       </p>
     </div>
@@ -116,7 +119,7 @@ export function SocialProofSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-base to-neu-light">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-white">
       <div className="max-w-5xl mx-auto">
         {isMounted ? (
           <>

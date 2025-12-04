@@ -3,8 +3,21 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
-import { Menu, X, LayoutDashboard, LogIn, UserPlus, Info, Mail } from 'lucide-react'
-import { Button } from '@/components/ui'
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  LogIn,
+  UserPlus,
+  User,
+  BookOpen,
+  Video,
+  ChevronDown,
+  Gamepad2,
+  GraduationCap,
+  Presentation,
+  Calendar
+} from 'lucide-react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface MobileMenuProps {
@@ -18,11 +31,22 @@ interface MobileMenuProps {
 
 export function MobileMenu({ user }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [programsExpanded, setProgramsExpanded] = useState(false)
   const locale = useLocale()
   const nav = useTranslations('nav')
   const isLoggedIn = !!user
 
-  const closeMenu = () => setIsOpen(false)
+  const closeMenu = () => {
+    setIsOpen(false)
+    setProgramsExpanded(false)
+  }
+
+  const programSubmenu = [
+    { key: 'boardGame', hash: 'board-game', icon: Gamepad2 },
+    { key: 'onlineCourses', hash: 'online-courses', icon: GraduationCap },
+    { key: 'singleLectures', hash: 'single-lectures', icon: Presentation },
+    { key: 'fullSchedule', hash: 'schedule', icon: Calendar },
+  ]
 
   return (
     <>
@@ -72,7 +96,7 @@ export function MobileMenu({ user }: MobileMenuProps) {
         </div>
 
         {/* Menu Content */}
-        <nav className="p-4 flex flex-col gap-2">
+        <nav className="p-4 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-80px)]">
           {isLoggedIn ? (
             <>
               {/* Logged in user menu */}
@@ -116,22 +140,65 @@ export function MobileMenu({ user }: MobileMenuProps) {
           {/* Divider */}
           <hr className="my-2 border-neu-dark/20" />
 
-          {/* Common links */}
+          {/* Main Navigation Links */}
           <Link
-            href={`/${locale}/about`}
+            href={`/${locale}/author`}
             onClick={closeMenu}
             className="flex items-center gap-3 p-3 rounded-neu-sm hover:bg-neu-dark/20 transition-colors"
           >
-            <Info className="w-5 h-5 text-text-secondary" />
+            <User className="w-5 h-5 text-text-secondary" />
             <span className="text-text-primary">{nav('about')}</span>
           </Link>
+
+          {/* Programs with Submenu */}
+          <div>
+            <button
+              onClick={() => setProgramsExpanded(!programsExpanded)}
+              className="flex items-center justify-between w-full p-3 rounded-neu-sm hover:bg-neu-dark/20 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-5 h-5 text-text-secondary" />
+                <span className="text-text-primary">{nav('programs')}</span>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-text-secondary transition-transform ${programsExpanded ? 'rotate-180' : ''}`} />
+            </button>
+
+            {programsExpanded && (
+              <div className="ml-4 pl-4 border-l-2 border-primary-200 mt-1 space-y-1">
+                {programSubmenu.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.key}
+                      href={`/${locale}/programs#${item.hash}`}
+                      onClick={closeMenu}
+                      className="flex items-center gap-3 p-2 rounded-neu-sm hover:bg-neu-dark/20 transition-colors"
+                    >
+                      <Icon className="w-4 h-4 text-primary-500" />
+                      <span className="text-sm text-text-primary">{nav(item.key)}</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           <Link
-            href={`/${locale}/contact`}
+            href={`/${locale}/blog`}
             onClick={closeMenu}
             className="flex items-center gap-3 p-3 rounded-neu-sm hover:bg-neu-dark/20 transition-colors"
           >
-            <Mail className="w-5 h-5 text-text-secondary" />
-            <span className="text-text-primary">{nav('contact')}</span>
+            <BookOpen className="w-5 h-5 text-text-secondary" />
+            <span className="text-text-primary">{nav('blog')}</span>
+          </Link>
+
+          <Link
+            href={`/${locale}/videos`}
+            onClick={closeMenu}
+            className="flex items-center gap-3 p-3 rounded-neu-sm hover:bg-neu-dark/20 transition-colors"
+          >
+            <Video className="w-5 h-5 text-text-secondary" />
+            <span className="text-text-primary">{nav('videos')}</span>
           </Link>
 
           {/* Language Switcher */}

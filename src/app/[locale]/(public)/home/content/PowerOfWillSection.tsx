@@ -88,7 +88,7 @@ export function PowerOfWillSection() {
   )
 
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-neu-light to-neu-base relative overflow-hidden">
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-neu-base relative overflow-hidden">
       {/* Background artwork - subtle */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <img

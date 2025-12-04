@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
-import { isValidEmail, normalizeEmail } from '@/lib'
+import { isValidEmail, normalizeEmail, unauthorizedResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { UpdateStrategy } from '@prisma/client'
 
@@ -27,7 +27,7 @@ interface ImportOptions {
 
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -44,10 +44,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!contacts || !Array.isArray(contacts) || contacts.length === 0) {
-      return NextResponse.json(
-        { error: 'No contacts to import' },
-        { status: 400 }
-      )
+      return badRequestResponse('No contacts to import')
     }
 
     // Create any new tags first
@@ -263,7 +260,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       results: {
         total: contacts.length,
@@ -276,9 +273,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Import failed:', error)
-    return NextResponse.json(
-      { error: 'Import failed' },
-      { status: 500 }
-    )
+    return errorResponse('Import failed')
   }
 }

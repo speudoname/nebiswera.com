@@ -17,6 +17,7 @@ import { LifeBecomesYoursSection } from './home/content/LifeBecomesYoursSection'
 import { WhatIsNebisweraSection } from './home/content/WhatIsNebisweraSection'
 import { BecomeTheEngineerSection } from './home/content/BecomeTheEngineerSection'
 import { OperatingSystemSection } from './home/content/OperatingSystemSection'
+import { NoMoreUncertaintySection } from './home/content/NoMoreUncertaintySection'
 
 export async function generateMetadata({
   params,
@@ -59,6 +60,9 @@ export default async function HomePage({
 
         {/* Operating System for Reality - Nebiswera as the foundation */}
         <OperatingSystemSection />
+
+        {/* No More Uncertainty - Predictable future through principles */}
+        <NoMoreUncertaintySection />
 
         {/* Know What You Want - First step */}
         <KnowWhatYouWantSection />

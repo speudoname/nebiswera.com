@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { startChatBot, stopChatBot, getChatBotStatus } from '@/lib/webinar/chat-bot'
+import { notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { ChatBotScript } from '@/lib/webinar/chat-bot'
 
@@ -29,25 +30,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     if (action === 'start') {
       // Validate chat script
       if (!webinar.chatScript) {
-        return NextResponse.json(
-          { error: 'No chat script configured for this webinar' },
-          { status: 400 }
-        )
+        return badRequestResponse('No chat script configured for this webinar')
       }
 
       const script = webinar.chatScript as unknown as ChatBotScript
 
       if (!script.enabled) {
-        return NextResponse.json(
-          { error: 'Chat script is disabled' },
-          { status: 400 }
-        )
+        return badRequestResponse('Chat script is disabled')
       }
 
       // Start chat bot
@@ -55,13 +50,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       const result = startChatBot(webinar.id, script, startTime)
 
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error || 'Failed to start chat bot' },
-          { status: 400 }
-        )
+        return badRequestResponse(result.error || 'Failed to start chat bot')
       }
 
-      return NextResponse.json({
+      return successResponse({
         success: true,
         message: 'Chat bot started',
         status: getChatBotStatus(webinar.id),
@@ -70,19 +62,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       // Stop chat bot
       stopChatBot(webinar.id)
 
-      return NextResponse.json({
+      return successResponse({
         success: true,
         message: 'Chat bot stopped',
       })
     } else {
-      return NextResponse.json({ error: 'Invalid action. Use "start" or "stop"' }, { status: 400 })
+      return badRequestResponse('Invalid action. Use "start" or "stop"')
     }
   } catch (error) {
     console.error('Failed to manage chat bot:', error)
-    return NextResponse.json(
-      { error: 'Failed to manage chat bot' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to manage chat bot')
   }
 }
 
@@ -103,13 +92,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const status = getChatBotStatus(webinar.id)
     const script = webinar.chatScript as ChatBotScript | null
 
-    return NextResponse.json({
+    return successResponse({
       status,
       script: script
         ? {
@@ -120,9 +109,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to get chat bot status:', error)
-    return NextResponse.json(
-      { error: 'Failed to get chat bot status' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to get chat bot status')
   }
 }

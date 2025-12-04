@@ -4,6 +4,7 @@ import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import { publishChatMessage } from '@/lib/ably'
 import { checkRateLimitByToken } from '@/lib/rate-limit'
 import { CHAT } from '@/lib/webinar/constants'
+import { unauthorizedResponse, notFoundResponse, forbiddenResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -19,19 +20,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { token, message } = body
 
     if (!token) {
-      return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+      return unauthorizedResponse('Access token required')
     }
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
-      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
+      return badRequestResponse('Message is required')
     }
 
     // Validate message length
     if (message.length > CHAT.MESSAGE_MAX_LENGTH) {
-      return NextResponse.json(
-        { error: `Message too long (max ${CHAT.MESSAGE_MAX_LENGTH} characters)` },
-        { status: 400 }
-      )
+      return badRequestResponse(`Message too long (max ${CHAT.MESSAGE_MAX_LENGTH} characters)`)
     }
 
     // Find webinar
@@ -41,17 +39,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     if (!webinar.chatEnabled) {
-      return NextResponse.json({ error: 'Chat is disabled for this webinar' }, { status: 403 })
+      return forbiddenResponse('Chat is disabled for this webinar')
     }
 
     // Validate access
     const validation = await validateAccessToken(webinar.id, token)
     if (!validation.valid || !validation.registration) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse('Invalid access token')
     }
 
     const registration = validation.registration
@@ -99,7 +97,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       console.error('Failed to publish to Ably (message saved to DB):', ablyError)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: {
         id: chatMessage.id,
@@ -112,10 +110,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to send chat message:', error)
-    return NextResponse.json(
-      { error: 'Failed to send message' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to send message')
   }
 }
 
@@ -127,7 +122,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const since = searchParams.get('since') // ISO date string
 
   if (!token) {
-    return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+    return unauthorizedResponse('Access token required')
   }
 
   try {
@@ -138,13 +133,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Validate access
     const validation = await validateAccessToken(webinar.id, token)
     if (!validation.valid) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse('Invalid access token')
     }
 
     // Get messages
@@ -166,7 +161,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json({
+    return successResponse({
       messages: messages.map((m) => ({
         ...m,
         createdAt: m.createdAt.toISOString(),
@@ -174,9 +169,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to get chat messages:', error)
-    return NextResponse.json(
-      { error: 'Failed to get messages' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to get messages')
   }
 }

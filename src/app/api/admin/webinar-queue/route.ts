@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, successResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 import { NotificationQueueStatus, Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
     failed: counts.find((c) => c.status === 'FAILED')?._count.status || 0,
   }
 
-  return NextResponse.json({
+  return successResponse({
     items: items.map((item) => ({
       id: item.id,
       status: item.status,

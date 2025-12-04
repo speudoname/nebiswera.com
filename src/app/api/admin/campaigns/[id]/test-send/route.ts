@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { getSettings } from '@/lib/settings'
-import { isValidEmail } from '@/lib'
+import { isValidEmail, unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -12,7 +12,7 @@ interface RouteParams {
 // POST /api/admin/campaigns/[id]/test-send - Send test email
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -22,18 +22,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { email } = body
 
     if (!email || typeof email !== 'string') {
-      return NextResponse.json(
-        { error: 'Test email address is required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Test email address is required')
     }
 
     // Validate email format
     if (!isValidEmail(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email address format' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid email address format')
     }
 
     const campaign = await prisma.campaign.findUnique({
@@ -41,32 +35,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Validate campaign has required content
     if (!campaign.htmlContent || !campaign.textContent) {
-      return NextResponse.json(
-        { error: 'Campaign content is incomplete' },
-        { status: 400 }
-      )
+      return badRequestResponse('Campaign content is incomplete')
     }
 
     if (!campaign.subject) {
-      return NextResponse.json(
-        { error: 'Campaign subject is required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Campaign subject is required')
     }
 
     // Get settings for marketing server
     const settings = await getSettings()
 
     if (!settings.marketingServerToken) {
-      return NextResponse.json(
-        { error: 'Marketing email server not configured' },
-        { status: 500 }
-      )
+      return errorResponse('Marketing email server not configured')
     }
 
     // Replace personalization variables with test values
@@ -116,15 +101,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       console.error('Postmark test send error:', errorData)
-      return NextResponse.json(
-        { error: errorData.Message || 'Failed to send test email' },
-        { status: response.status }
-      )
+      return errorResponse(errorData.Message || 'Failed to send test email', response.status)
     }
 
     const result = await response.json()
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       messageId: result.MessageID,
       to: email,
@@ -132,9 +114,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Failed to send test email:', error)
-    return NextResponse.json(
-      { error: 'Failed to send test email' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to send test email')
   }
 }

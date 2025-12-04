@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
 import { createDefaultNotifications } from '@/app/api/webinars/lib/notifications'
 import type { NextRequest } from 'next/server'
 import type { WebinarStatus, Prisma } from '@prisma/client'
@@ -8,7 +9,7 @@ import type { WebinarStatus, Prisma } from '@prisma/client'
 // GET /api/admin/webinars - List webinars with filters
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       prisma.webinar.count({ where }),
     ])
 
-    return NextResponse.json({
+    return successResponse({
       webinars,
       pagination: {
         page,
@@ -80,10 +81,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Failed to fetch webinars:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch webinars' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch webinars')
   }
 }
 
@@ -110,7 +108,7 @@ async function generateUniqueSlug(baseSlug: string): Promise<string> {
 // POST /api/admin/webinars - Create new webinar
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -129,10 +127,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!title) {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Title is required')
     }
 
     // Generate slug from title if not provided
@@ -174,12 +169,9 @@ export async function POST(request: NextRequest) {
       console.error('Failed to create default notifications:', error)
     }
 
-    return NextResponse.json(webinar, { status: 201 })
+    return successResponse(webinar, 201)
   } catch (error) {
     console.error('Failed to create webinar:', error)
-    return NextResponse.json(
-      { error: 'Failed to create webinar' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to create webinar')
   }
 }

@@ -2,6 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
+import { DateRangeSelector, type DateRange } from '@/components/analytics/DateRangeSelector'
+import { SessionFilter } from '@/components/analytics/SessionFilter'
+import { FunnelChart } from '@/components/analytics/FunnelChart'
+import { VideoTimelineAnalytics } from '@/components/analytics/VideoTimelineAnalytics'
+import { CohortAnalytics } from '@/components/analytics/CohortAnalytics'
+import { ComparativeAnalytics } from '@/components/analytics/ComparativeAnalytics'
+import { WidgetResponseModal } from '@/components/analytics/WidgetResponseModal'
+import { UserProfileModal } from '@/components/analytics/UserProfileModal'
 import {
   Users,
   Eye,
@@ -16,6 +24,16 @@ import {
   Star,
 } from 'lucide-react'
 
+// Helper to get default date range (Last 30 days)
+function getDefaultDateRange(): DateRange {
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
+  const start = new Date()
+  start.setDate(start.getDate() - 29)
+  start.setHours(0, 0, 0, 0)
+  return { start, end, label: 'Last 30 days' }
+}
+
 interface AnalyticsData {
   webinar: {
     id: string
@@ -23,6 +41,8 @@ interface AnalyticsData {
     slug: string
     status: string
     videoDuration: number | null
+    hlsUrl: string | null
+    thumbnailUrl: string | null
     createdAt: string
   }
   overview: {
@@ -72,6 +92,81 @@ interface AnalyticsData {
     timestamp: string
     metadata: Record<string, unknown>
   }>
+  funnel?: {
+    registered: number
+    attended: number
+    engaged: number
+    completed: number
+    converted: number
+  }
+  chat?: {
+    totalMessages: number
+    uniqueChatters: number
+    messagesPerMinute: Array<{ minute: number; count: number }>
+    topChatters: Array<{ email: string; name: string; count: number }>
+    peakActivity: { minute: number; count: number }
+  }
+  timeBased?: {
+    segments: Array<{
+      startSecond: number
+      endSecond: number
+      viewerCount: number
+      dropoffCount: number
+      dropoffRate: number
+    }>
+    avgSessionDuration: number
+    peakViewers: { time: number; count: number }
+    criticalDropoffs: Array<{ time: number; dropoffRate: number }>
+  }
+  cohort?: {
+    sessions: Array<{
+      sessionId: string
+      sessionDate: string
+      sessionType: string
+      registrations: number
+      attendanceRate: number
+      completionRate: number
+      avgWatchTime: number
+      avgEngagementScore: number
+    }>
+    trends: {
+      attendanceRate: 'up' | 'down' | 'stable'
+      completionRate: 'up' | 'down' | 'stable'
+      engagement: 'up' | 'down' | 'stable'
+    }
+    bestSession: {
+      sessionId: string
+      sessionDate: string
+      sessionType: string
+      registrations: number
+      attendanceRate: number
+      completionRate: number
+      avgWatchTime: number
+      avgEngagementScore: number
+    } | null
+    worstSession: {
+      sessionId: string
+      sessionDate: string
+      sessionType: string
+      registrations: number
+      attendanceRate: number
+      completionRate: number
+      avgWatchTime: number
+      avgEngagementScore: number
+    } | null
+  }
+  comparative?: {
+    metrics: Array<{
+      label: string
+      current: number
+      average: number
+      best: number
+      unit: string
+      percentile: number
+    }>
+    overallScore: number
+    rank: string
+  }
 }
 
 interface AnalyticsDashboardProps {
@@ -82,11 +177,22 @@ export function AnalyticsDashboard({ webinarId }: AnalyticsDashboardProps) {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange())
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/admin/webinars/${webinarId}/analytics`)
+      const params = new URLSearchParams({
+        dateStart: dateRange.start.toISOString(),
+        dateEnd: dateRange.end.toISOString(),
+      })
+      if (sessionId) {
+        params.append('sessionId', sessionId)
+      }
+      const response = await fetch(`/api/admin/webinars/${webinarId}/analytics?${params}`)
       if (!response.ok) throw new Error('Failed to fetch analytics')
       const analyticsData = await response.json()
       setData(analyticsData)
@@ -100,7 +206,7 @@ export function AnalyticsDashboard({ webinarId }: AnalyticsDashboardProps) {
 
   useEffect(() => {
     fetchAnalytics()
-  }, [webinarId])
+  }, [webinarId, dateRange, sessionId])
 
   if (loading) {
     return (
@@ -126,20 +232,41 @@ export function AnalyticsDashboard({ webinarId }: AnalyticsDashboardProps) {
     )
   }
 
-  const { overview, registrations, engagement, attribution, recentActivity } = data
+  const { overview, registrations, engagement, attribution } = data
 
   return (
     <div className="space-y-6">
-      {/* Refresh button */}
-      <div className="flex justify-end">
-        <button
-          onClick={fetchAnalytics}
-          className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
-      </div>
+      {/* Filters */}
+      <Card variant="raised" padding="md">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-text-primary">Filters</h3>
+            <button
+              onClick={fetchAnalytics}
+              className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Date Range
+              </label>
+              <DateRangeSelector value={dateRange} onChange={setDateRange} />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Session
+              </label>
+              <SessionFilter webinarId={webinarId} value={sessionId} onChange={setSessionId} />
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -340,7 +467,11 @@ export function AnalyticsDashboard({ webinarId }: AnalyticsDashboardProps) {
               </thead>
               <tbody>
                 {engagement.interactions.map((interaction) => (
-                  <tr key={interaction.id} className="border-b border-neu-dark/50">
+                  <tr
+                    key={interaction.id}
+                    className="border-b border-neu-dark/50 cursor-pointer hover:bg-neu-light/50 transition-colors"
+                    onClick={() => setSelectedInteractionId(interaction.id)}
+                  >
                     <td className="py-2 text-text-primary">{interaction.title}</td>
                     <td className="py-2">
                       <span className="px-2 py-0.5 text-xs rounded bg-primary-100 text-primary-700">
@@ -412,25 +543,57 @@ export function AnalyticsDashboard({ webinarId }: AnalyticsDashboardProps) {
         </Card>
       )}
 
-      {/* Recent Activity */}
-      {recentActivity.length > 0 && (
-        <Card variant="raised" padding="md">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">Recent Activity</h3>
-          <div className="space-y-2 max-h-80 overflow-y-auto">
-            {recentActivity.slice(0, 20).map((event) => (
-              <div key={event.id} className="flex items-center justify-between py-2 border-b border-neu-dark/50 last:border-0">
-                <div>
-                  <span className="text-sm font-medium text-text-primary">
-                    {formatEventType(event.type)}
-                  </span>
-                </div>
-                <span className="text-xs text-text-secondary">
-                  {new Date(event.timestamp).toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
+      {/* Funnel Chart */}
+      {data.funnel && <FunnelChart data={data.funnel} />}
+
+      {/* Video Timeline Analytics (Combined view) */}
+      {data.timeBased && data.webinar.videoDuration && (
+        <VideoTimelineAnalytics
+          segments={data.timeBased.segments}
+          chatMessages={data.chat?.messagesPerMinute || []}
+          interactions={engagement.interactions.map((i) => ({
+            id: i.id,
+            type: i.type,
+            title: i.title,
+            triggerTime: i.triggerTime,
+            viewCount: i.viewCount,
+            actionCount: i.actionCount,
+            engagementRate: i.engagementRate,
+          }))}
+          videoDuration={data.webinar.videoDuration}
+          videoHlsUrl={data.webinar.hlsUrl || undefined}
+          videoThumbnailUrl={data.webinar.thumbnailUrl || undefined}
+          avgSessionDuration={data.timeBased.avgSessionDuration}
+          peakViewers={data.timeBased.peakViewers}
+          criticalDropoffs={data.timeBased.criticalDropoffs}
+        />
+      )}
+
+      {/* Cohort Analytics */}
+      {data.cohort && <CohortAnalytics data={data.cohort} />}
+
+      {/* Comparative Analytics */}
+      {data.comparative && <ComparativeAnalytics data={data.comparative} />}
+
+      {/* Modals */}
+      {selectedInteractionId && (
+        <WidgetResponseModal
+          webinarId={webinarId}
+          interactionId={selectedInteractionId}
+          onClose={() => setSelectedInteractionId(null)}
+          onUserClick={(userId) => {
+            setSelectedInteractionId(null)
+            setSelectedUserId(userId)
+          }}
+        />
+      )}
+
+      {selectedUserId && (
+        <UserProfileModal
+          webinarId={webinarId}
+          registrationId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+        />
       )}
     </div>
   )

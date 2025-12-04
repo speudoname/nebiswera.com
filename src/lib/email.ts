@@ -79,28 +79,61 @@ export async function sendPasswordResetEmail(email: string, token: string, local
 
 /**
  * Generic email send function for custom emails
+ * @param type - Optional EmailType for logging. If provided, the email will be logged to EmailLog.
+ * @param locale - Optional locale for logging. Defaults to 'en'.
+ * @param fromName - Optional sender name override (falls back to Settings)
+ * @param fromEmail - Optional sender email override (falls back to Settings)
+ * @param replyTo - Optional reply-to address
  */
 export async function sendEmail({
   to,
   subject,
   html,
   text,
+  type,
+  locale = 'en',
+  fromName: fromNameOverride,
+  fromEmail: fromEmailOverride,
+  replyTo,
 }: {
   to: string
   subject: string
   html: string
   text?: string
+  type?: EmailType
+  locale?: string
+  fromName?: string | null
+  fromEmail?: string | null
+  replyTo?: string | null
 }) {
   const { client, fromAddress, fromName, streamName } = await getEmailClient()
 
+  // Use notification-specific sender settings if provided, otherwise fall back to Settings
+  const finalFromName = fromNameOverride || fromName
+  const finalFromAddress = fromEmailOverride || fromAddress
+
   const result = await client.sendEmail({
-    From: `${fromName} <${fromAddress}>`,
+    From: `${finalFromName} <${finalFromAddress}>`,
     To: to,
     Subject: subject,
     MessageStream: streamName,
     HtmlBody: html,
     TextBody: text || html.replace(/<[^>]*>/g, ''),
+    ...(replyTo && { ReplyTo: replyTo }),
   })
 
-  return result
+  // Log the email if type is provided
+  if (type) {
+    await prisma.emailLog.create({
+      data: {
+        messageId: result.MessageID,
+        to,
+        subject,
+        type,
+        locale,
+      },
+    })
+  }
+
+  return { ...result, messageId: result.MessageID }
 }

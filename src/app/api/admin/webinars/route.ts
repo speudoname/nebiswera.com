@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { createDefaultNotifications } from '@/app/api/webinars/lib/notifications'
 import type { NextRequest } from 'next/server'
 import type { WebinarStatus, Prisma } from '@prisma/client'
 
@@ -164,6 +165,14 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    // Create default notification templates for the new webinar
+    try {
+      await createDefaultNotifications(webinar.id)
+    } catch (error) {
+      // Don't fail the webinar creation if notifications fail
+      console.error('Failed to create default notifications:', error)
+    }
 
     return NextResponse.json(webinar, { status: 201 })
   } catch (error) {

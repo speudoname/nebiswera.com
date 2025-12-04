@@ -30,6 +30,7 @@ export default async function EditWebinarPage({ params }: PageProps) {
     title: webinar.title,
     slug: webinar.slug,
     description: webinar.description || '',
+    language: webinar.language as 'ka' | 'en',
     presenterName: webinar.presenterName || '',
     presenterTitle: webinar.presenterTitle || '',
     presenterBio: webinar.presenterBio || '',

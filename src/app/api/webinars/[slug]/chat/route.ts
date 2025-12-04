@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
+import { publishChatMessage } from '@/lib/ably'
+import { checkRateLimitByToken } from '@/lib/rate-limit'
+import { CHAT } from '@/lib/webinar/constants'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -24,8 +27,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Validate message length
-    if (message.length > 500) {
-      return NextResponse.json({ error: 'Message too long (max 500 characters)' }, { status: 400 })
+    if (message.length > CHAT.MESSAGE_MAX_LENGTH) {
+      return NextResponse.json(
+        { error: `Message too long (max ${CHAT.MESSAGE_MAX_LENGTH} characters)` },
+        { status: 400 }
+      )
     }
 
     // Find webinar
@@ -50,6 +56,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const registration = validation.registration
 
+    // Rate limiting: 20 messages per minute per user
+    const rateLimitResponse = await checkRateLimitByToken(token, 'chat')
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     // Create chat message
     const chatMessage = await prisma.webinarChatMessage.create({
       data: {
@@ -72,8 +84,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // TODO: Publish to Redis for real-time distribution
-    // For now, clients will receive via polling or next SSE cycle
+    // Publish to Ably for real-time distribution
+    try {
+      await publishChatMessage(webinar.id, {
+        id: chatMessage.id,
+        senderName: chatMessage.senderName,
+        message: chatMessage.message,
+        isFromModerator: chatMessage.isFromModerator,
+        isSimulated: chatMessage.isSimulated,
+        createdAt: chatMessage.createdAt.toISOString(),
+      })
+    } catch (ablyError) {
+      // Log error but don't fail the request - message is saved to DB
+      console.error('Failed to publish to Ably (message saved to DB):', ablyError)
+    }
 
     return NextResponse.json({
       success: true,

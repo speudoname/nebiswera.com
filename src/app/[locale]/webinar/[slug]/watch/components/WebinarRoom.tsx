@@ -5,7 +5,9 @@ import { WebinarPlayer } from './WebinarPlayer'
 import { WaitingRoom } from './WaitingRoom'
 import { InteractionOverlay } from './InteractionOverlay'
 import { ChatPanel } from './ChatPanel'
-import { MessageCircle, X, Maximize2, Minimize2 } from 'lucide-react'
+import { EndScreen } from './EndScreen'
+import { Maximize2, Minimize2 } from 'lucide-react'
+import { TIMING, THRESHOLDS, minutesToMs } from '@/lib/webinar/constants'
 
 interface WebinarData {
   id: string
@@ -40,6 +42,16 @@ interface InteractionData {
   config: Record<string, unknown>
 }
 
+interface EndScreenConfig {
+  enabled: boolean
+  title?: string | null
+  message?: string | null
+  buttonText?: string | null
+  buttonUrl?: string | null
+  redirectUrl?: string | null
+  redirectDelay?: number | null
+}
+
 interface WebinarRoomProps {
   webinar: WebinarData
   access: AccessData
@@ -49,6 +61,7 @@ interface WebinarRoomProps {
   sessionStartsAt?: Date
   accessToken: string
   slug: string
+  endScreen?: EndScreenConfig
 }
 
 export function WebinarRoom({
@@ -60,6 +73,7 @@ export function WebinarRoom({
   sessionStartsAt,
   accessToken,
   slug,
+  endScreen,
 }: WebinarRoomProps) {
   const [currentTime, setCurrentTime] = useState(playback.startPosition)
   const [progress, setProgress] = useState(0)
@@ -67,32 +81,117 @@ export function WebinarRoom({
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showWaitingRoom, setShowWaitingRoom] = useState(false)
   const [activeInteractions, setActiveInteractions] = useState<InteractionData[]>([])
+  const [videoEnded, setVideoEnded] = useState(false)
+  const [showEndScreen, setShowEndScreen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const lastProgressUpdate = useRef(0)
+  const sessionJoinTime = useRef<Date>(new Date())
+  const waitingRoomEnterTime = useRef<Date | null>(null)
+  const hasTrackedJoin = useRef(false)
+  const hasTrackedExit = useRef(false)
 
   // Check if we should show waiting room
   useEffect(() => {
     if (sessionStartsAt && playback.mode === 'simulated_live') {
       const now = new Date()
-      // Show waiting room if session hasn't started yet (with 5 min early access)
-      const earlyAccess = new Date(sessionStartsAt.getTime() - 5 * 60 * 1000)
+      // Show waiting room if session hasn't started yet (with early access window)
+      const earlyAccess = new Date(sessionStartsAt.getTime() - minutesToMs(TIMING.EARLY_ACCESS_MINUTES))
       if (now < earlyAccess) {
         setShowWaitingRoom(true)
+        waitingRoomEnterTime.current = new Date()
       }
     }
   }, [sessionStartsAt, playback.mode])
+
+  // Track session join when video becomes visible
+  useEffect(() => {
+    if (!showWaitingRoom && !hasTrackedJoin.current) {
+      hasTrackedJoin.current = true
+
+      const now = new Date()
+      // Simplified SESSION_JOINED metadata - only essential info
+      const metadata: Record<string, unknown> = {
+        joinTime: now.toISOString(),
+        playbackMode: playback.mode,
+        sessionType: access.sessionType,
+      }
+
+      // Track session join
+      fetch(`/api/webinars/${slug}/analytics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: accessToken,
+          eventType: 'SESSION_JOINED',
+          metadata,
+        }),
+      }).catch((error) => {
+        console.error('Failed to track session join:', error)
+      })
+    }
+  }, [showWaitingRoom, slug, accessToken, playback.mode, access.sessionType, sessionStartsAt])
+
+  // Track exit patterns - beforeunload event
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (hasTrackedExit.current) return
+      hasTrackedExit.current = true
+
+      const now = new Date()
+      const sessionDurationSeconds = Math.floor((now.getTime() - sessionJoinTime.current.getTime()) / 1000)
+
+      // Simplified SESSION_EXITED metadata - no bounce/earlyExit calculations
+      const exitMetadata: Record<string, unknown> = {
+        exitTime: now.toISOString(),
+        sessionDurationSeconds,
+        currentVideoPosition: currentTime,
+        watchProgress: progress,
+        completed: videoEnded,
+      }
+
+      // Use sendBeacon for reliability on page unload
+      const data = {
+        token: accessToken,
+        eventType: 'SESSION_EXITED',
+        metadata: exitMetadata,
+      }
+
+      // Try sendBeacon first (more reliable for unload events)
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(`/api/webinars/${slug}/analytics`, blob)
+      } else {
+        // Fallback to sync fetch
+        fetch(`/api/webinars/${slug}/analytics`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+          keepalive: true,
+        }).catch(() => {})
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('pagehide', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handleBeforeUnload)
+    }
+  }, [slug, accessToken, currentTime, progress, videoEnded])
 
   // Handle time updates from player
   const handleTimeUpdate = useCallback((time: number, progressPercent: number) => {
     setCurrentTime(time)
     setProgress(progressPercent)
 
-    // Update watch progress on server every 30 seconds
-    if (Math.abs(time - lastProgressUpdate.current) >= 30) {
+    // Update watch progress on server at regular intervals (but not if video has ended)
+    // Note: WebinarPlayer already has jitter built-in, so updates are distributed across users
+    if (!videoEnded && Math.abs(time - lastProgressUpdate.current) >= TIMING.PROGRESS_UPDATE_INTERVAL_SECONDS) {
       lastProgressUpdate.current = time
       updateProgress(progressPercent, time)
     }
-  }, [])
+  }, [videoEnded])
 
   // Update progress on server
   const updateProgress = async (progressPercent: number, position: number) => {
@@ -114,8 +213,14 @@ export function WebinarRoom({
 
   // Handle video end
   const handleVideoEnd = useCallback(() => {
+    setVideoEnded(true)
     updateProgress(100, webinar.duration || 0)
-  }, [webinar.duration])
+
+    // Show end screen if configured
+    if (endScreen?.enabled) {
+      setShowEndScreen(true)
+    }
+  }, [webinar.duration, endScreen])
 
   // Check for interactions that should be shown
   useEffect(() => {
@@ -144,6 +249,8 @@ export function WebinarRoom({
     interactionId: string,
     response: unknown
   ) => {
+    // Note: FIRST_INTERACTION tracking removed - unnecessary metric
+
     try {
       await fetch(`/api/webinars/${slug}/interactions`, {
         method: 'POST',
@@ -199,12 +306,12 @@ export function WebinarRoom({
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col lg:flex-row gap-4 ${isFullscreen ? 'bg-black p-4' : ''}`}
+      className="flex h-full bg-black"
     >
-      {/* Main video area */}
-      <div className="flex-1 relative">
+      {/* Main video area - Left side */}
+      <div className="flex-1 relative flex flex-col">
         {/* Player */}
-        <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-neu-lg">
+        <div className="flex-1 bg-black overflow-hidden">
           <WebinarPlayer
             hlsUrl={webinar.hlsUrl}
             playbackMode={playback.mode}
@@ -212,12 +319,14 @@ export function WebinarRoom({
             startPosition={playback.startPosition}
             duration={webinar.duration}
             poster={webinar.thumbnailUrl}
+            slug={slug}
+            accessToken={accessToken}
             onTimeUpdate={handleTimeUpdate}
             onVideoEnd={handleVideoEnd}
           />
         </div>
 
-        {/* Interaction overlay */}
+        {/* Interaction overlay - shows on top of video when not in fullscreen, or always if in fullscreen */}
         {activeInteractions.length > 0 && (
           <InteractionOverlay
             interactions={activeInteractions}
@@ -227,87 +336,68 @@ export function WebinarRoom({
           />
         )}
 
-        {/* Controls bar */}
-        <div className="mt-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-text-primary">{webinar.title}</h1>
-            {webinar.presenterName && (
-              <p className="text-sm text-text-secondary">with {webinar.presenterName}</p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Chat toggle (mobile) */}
-            {chatEnabled && (
-              <button
-                onClick={() => setShowChat(!showChat)}
-                className="lg:hidden p-2 rounded-lg bg-neu-base shadow-neu hover:shadow-neu-hover transition-shadow"
-              >
-                <MessageCircle className="w-5 h-5 text-text-primary" />
-              </button>
-            )}
-
-            {/* Fullscreen toggle */}
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-lg bg-neu-base shadow-neu hover:shadow-neu-hover transition-shadow"
-            >
-              {isFullscreen ? (
-                <Minimize2 className="w-5 h-5 text-text-primary" />
-              ) : (
-                <Maximize2 className="w-5 h-5 text-text-primary" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Progress info */}
-        {playback.mode !== 'simulated_live' && (
-          <div className="mt-2 flex items-center gap-4 text-sm text-text-secondary">
-            <span>{Math.round(progress)}% watched</span>
-            {playback.lastPosition > 0 && playback.startPosition > 0 && (
-              <span className="text-primary-500">Resumed from where you left off</span>
-            )}
-          </div>
-        )}
+        {/* Fullscreen toggle button (bottom right corner of video) */}
+        <button
+          onClick={toggleFullscreen}
+          className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors z-10"
+        >
+          {isFullscreen ? (
+            <Minimize2 className="w-5 h-5 text-white" />
+          ) : (
+            <Maximize2 className="w-5 h-5 text-white" />
+          )}
+        </button>
       </div>
 
-      {/* Chat panel */}
-      {chatEnabled && (
-        <div
-          className={`
-            ${showChat ? 'block' : 'hidden'}
-            lg:block
-            w-full lg:w-80 xl:w-96
-            ${isFullscreen ? 'absolute right-4 top-4 bottom-4 w-80' : ''}
-          `}
-        >
-          <div className="bg-neu-base rounded-xl shadow-neu h-full max-h-[600px] lg:max-h-none">
-            <div className="flex items-center justify-between p-4 border-b border-neu-dark">
-              <h2 className="font-semibold text-text-primary flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                Chat
-              </h2>
-              {/* Close on mobile */}
-              <button
-                onClick={() => setShowChat(false)}
-                className="lg:hidden p-1 rounded hover:bg-neu-dark"
-              >
-                <X className="w-5 h-5 text-text-secondary" />
-              </button>
-            </div>
-
-            <ChatPanel
-              webinarId={webinar.id}
-              registrationId={access.registrationId}
-              userName={access.firstName || access.email.split('@')[0]}
-              accessToken={accessToken}
-              slug={slug}
-              currentVideoTime={currentTime}
-              playbackMode={playback.mode}
-            />
-          </div>
+      {/* Chat panel - Right side, always visible on desktop, full height */}
+      {chatEnabled && !isFullscreen && (
+        <div className="w-[400px] flex-shrink-0 bg-white h-full">
+          <ChatPanel
+            webinarId={webinar.id}
+            registrationId={access.registrationId}
+            userName={access.firstName || access.email.split('@')[0]}
+            accessToken={accessToken}
+            slug={slug}
+            currentVideoTime={currentTime}
+            playbackMode={playback.mode}
+            interactions={activeInteractions}
+            onInteractionDismiss={handleInteractionDismiss}
+            onInteractionRespond={handleInteractionResponse}
+          />
         </div>
+      )}
+
+      {/* In fullscreen, show chat overlay on right side of video */}
+      {chatEnabled && isFullscreen && (
+        <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white/95 backdrop-blur-sm">
+          <ChatPanel
+            webinarId={webinar.id}
+            registrationId={access.registrationId}
+            userName={access.firstName || access.email.split('@')[0]}
+            accessToken={accessToken}
+            slug={slug}
+            currentVideoTime={currentTime}
+            playbackMode={playback.mode}
+            interactions={activeInteractions}
+            onInteractionDismiss={handleInteractionDismiss}
+            onInteractionRespond={handleInteractionResponse}
+          />
+        </div>
+      )}
+
+      {/* End screen overlay */}
+      {showEndScreen && endScreen?.enabled && (
+        <EndScreen
+          title={endScreen.title}
+          message={endScreen.message}
+          buttonText={endScreen.buttonText}
+          buttonUrl={endScreen.buttonUrl}
+          redirectUrl={endScreen.redirectUrl}
+          redirectDelay={endScreen.redirectDelay}
+          slug={slug}
+          accessToken={accessToken}
+          onClose={() => setShowEndScreen(false)}
+        />
       )}
     </div>
   )

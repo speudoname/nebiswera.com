@@ -13,13 +13,13 @@ import {
   Calendar,
   MessageSquare,
   Bell,
-  BarChart3,
-  Users,
-  User,
+  CheckCircle2,
 } from 'lucide-react'
 import { VideoUploader } from './VideoUploader'
 import { ScheduleConfigForm } from './ScheduleConfigForm'
 import { RegistrationFieldsForm } from './RegistrationFieldsForm'
+import { EndScreenConfigForm } from './EndScreenConfigForm'
+import { NotificationsEditor } from './NotificationsEditor'
 import type { RegistrationFieldConfig } from '@/app/api/webinars/lib/registration-fields'
 
 interface WebinarEditorProps {
@@ -38,6 +38,7 @@ interface WebinarData {
   presenterAvatar: string
   customThankYouPageHtml: string
   timezone: string
+  language: 'ka' | 'en'
   completionPercent: number
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
   hlsUrl?: string
@@ -58,22 +59,21 @@ const defaultData: WebinarData = {
   presenterAvatar: '',
   customThankYouPageHtml: '',
   timezone: 'Asia/Tbilisi',
+  language: 'ka',
   completionPercent: 80,
   status: 'DRAFT',
 }
 
-type TabId = 'basic' | 'video' | 'schedule' | 'regFields' | 'interactions' | 'chat' | 'notifications' | 'registrations' | 'analytics'
+type TabId = 'basic' | 'video' | 'schedule' | 'endScreen' | 'interactions' | 'chat' | 'notifications'
 
 const tabs: { id: TabId; label: string; icon: React.ElementType; requiresId?: boolean }[] = [
   { id: 'basic', label: 'Basic Info', icon: Info },
-  { id: 'video', label: 'Video', icon: Video },
   { id: 'schedule', label: 'Schedule', icon: Calendar, requiresId: true },
-  { id: 'regFields', label: 'Registration Fields', icon: User, requiresId: true },
+  { id: 'video', label: 'Video', icon: Video },
   { id: 'interactions', label: 'Interactions', icon: MessageSquare, requiresId: true },
   { id: 'chat', label: 'Chat', icon: MessageSquare, requiresId: true },
+  { id: 'endScreen', label: 'End Screen', icon: CheckCircle2, requiresId: true },
   { id: 'notifications', label: 'Notifications', icon: Bell, requiresId: true },
-  { id: 'registrations', label: 'Registrations', icon: Users, requiresId: true },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3, requiresId: true },
 ]
 
 // Georgian to Latin transliteration map
@@ -405,7 +405,7 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
       {/* Tab content */}
       <div>
         {activeTab === 'basic' && (
-          <BasicInfoTab data={data} onChange={handleChange} />
+          <BasicInfoTab data={data} onChange={handleChange} webinarId={webinarId} />
         )}
         {activeTab === 'video' && (
           <VideoTab data={data} onChange={handleChange} webinarId={webinarId} onSave={handleSave} />
@@ -413,8 +413,8 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
         {activeTab === 'schedule' && webinarId && (
           <ScheduleTab webinarId={webinarId} webinarTimezone={data.timezone} />
         )}
-        {activeTab === 'regFields' && webinarId && (
-          <RegistrationFieldsTab webinarId={webinarId} />
+        {activeTab === 'endScreen' && webinarId && (
+          <EndScreenTab webinarId={webinarId} />
         )}
         {activeTab === 'interactions' && webinarId && (
           <div className="text-center py-12 text-text-muted">
@@ -433,27 +433,7 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
           </div>
         )}
         {activeTab === 'notifications' && webinarId && (
-          <div className="text-center py-12 text-text-muted">
-            <Link href={`/admin/webinars/${webinarId}/notifications`} className="text-primary-600 hover:underline">
-              Manage Notifications →
-            </Link>
-            <br />
-            <span className="text-sm mt-2 block">Set up confirmation, reminder, and follow-up emails.</span>
-          </div>
-        )}
-        {activeTab === 'registrations' && webinarId && (
-          <div className="text-center py-12 text-text-muted">
-            <Link href={`/admin/webinars/${webinarId}/registrations`} className="text-primary-600 hover:underline">
-              View Registrations →
-            </Link>
-          </div>
-        )}
-        {activeTab === 'analytics' && webinarId && (
-          <div className="text-center py-12 text-text-muted">
-            <Link href={`/admin/webinars/${webinarId}/analytics`} className="text-primary-600 hover:underline">
-              View Analytics →
-            </Link>
-          </div>
+          <NotificationsTab webinarId={webinarId} webinarTitle={data.title} webinarLanguage={data.language} />
         )}
       </div>
     </div>
@@ -464,10 +444,59 @@ export function WebinarEditor({ webinarId, initialData }: WebinarEditorProps) {
 function BasicInfoTab({
   data,
   onChange,
+  webinarId,
 }: {
   data: WebinarData
   onChange: (field: keyof WebinarData, value: string | number) => void
+  webinarId?: string
 }) {
+  const [regFieldsConfig, setRegFieldsConfig] = useState<RegistrationFieldConfig | null>(null)
+  const [regFieldsLoading, setRegFieldsLoading] = useState(false)
+  const [regFieldsError, setRegFieldsError] = useState<string | null>(null)
+
+  // Fetch registration fields config
+  useEffect(() => {
+    if (!webinarId) return
+
+    async function fetchConfig() {
+      setRegFieldsLoading(true)
+      try {
+        const res = await fetch(`/api/admin/webinars/${webinarId}/registration-fields`)
+        if (res.ok) {
+          const data = await res.json()
+          setRegFieldsConfig(data.config)
+        } else if (res.status === 404) {
+          setRegFieldsConfig(null)
+        } else {
+          throw new Error('Failed to fetch registration fields config')
+        }
+      } catch (err) {
+        setRegFieldsError(err instanceof Error ? err.message : 'Failed to load registration fields')
+      } finally {
+        setRegFieldsLoading(false)
+      }
+    }
+    fetchConfig()
+  }, [webinarId])
+
+  const handleRegFieldsSave = async (fieldConfig: RegistrationFieldConfig) => {
+    if (!webinarId) return
+
+    const res = await fetch(`/api/admin/webinars/${webinarId}/registration-fields`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fieldConfig),
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to save registration fields')
+    }
+
+    const responseData = await res.json()
+    setRegFieldsConfig(responseData.config)
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Left column - Main info */}
@@ -658,6 +687,28 @@ function BasicInfoTab({
           </div>
         </Card>
       </div>
+
+      {/* Registration Fields - Full width card below the two columns */}
+      {webinarId && (
+        <div className="lg:col-span-2">
+          <Card variant="raised" padding="lg">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Registration Fields</h3>
+            {regFieldsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 text-primary-600 animate-spin" />
+              </div>
+            ) : regFieldsError ? (
+              <div className="text-center py-8 text-red-600">{regFieldsError}</div>
+            ) : (
+              <RegistrationFieldsForm
+                webinarId={webinarId}
+                initialConfig={regFieldsConfig}
+                onSave={handleRegFieldsSave}
+              />
+            )}
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
@@ -883,49 +934,43 @@ function ScheduleTab({
   )
 }
 
-// Registration Fields Tab Component
-function RegistrationFieldsTab({ webinarId }: { webinarId: string }) {
+// End Screen Tab Component
+function EndScreenTab({ webinarId }: { webinarId: string }) {
+  return <EndScreenConfigForm webinarId={webinarId} />
+}
+
+// Notifications Tab Component
+function NotificationsTab({
+  webinarId,
+  webinarTitle,
+  webinarLanguage,
+}: {
+  webinarId: string
+  webinarTitle: string
+  webinarLanguage: 'ka' | 'en'
+}) {
   const [loading, setLoading] = useState(true)
-  const [config, setConfig] = useState<RegistrationFieldConfig | null>(null)
+  const [notifications, setNotifications] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchConfig() {
+    async function fetchNotifications() {
       try {
-        const res = await fetch(`/api/admin/webinars/${webinarId}/registration-fields`)
+        const res = await fetch(`/api/admin/webinars/${webinarId}/notifications`)
         if (res.ok) {
           const data = await res.json()
-          setConfig(data.config)
-        } else if (res.status === 404) {
-          // No config yet, use defaults
-          setConfig(null)
+          setNotifications(data.notifications || [])
         } else {
-          throw new Error('Failed to fetch registration fields config')
+          throw new Error('Failed to fetch notifications')
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load registration fields')
+        setError(err instanceof Error ? err.message : 'Failed to load notifications')
       } finally {
         setLoading(false)
       }
     }
-    fetchConfig()
+    fetchNotifications()
   }, [webinarId])
-
-  const handleSave = async (fieldConfig: RegistrationFieldConfig) => {
-    const res = await fetch(`/api/admin/webinars/${webinarId}/registration-fields`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fieldConfig),
-    })
-
-    if (!res.ok) {
-      const data = await res.json()
-      throw new Error(data.error || 'Failed to save registration fields')
-    }
-
-    const data = await res.json()
-    setConfig(data.config)
-  }
 
   if (loading) {
     return (
@@ -944,10 +989,11 @@ function RegistrationFieldsTab({ webinarId }: { webinarId: string }) {
   }
 
   return (
-    <RegistrationFieldsForm
+    <NotificationsEditor
       webinarId={webinarId}
-      initialConfig={config}
-      onSave={handleSave}
+      webinarTitle={webinarTitle}
+      webinarLanguage={webinarLanguage}
+      initialNotifications={notifications}
     />
   )
 }

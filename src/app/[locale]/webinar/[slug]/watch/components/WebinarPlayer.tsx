@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Hls from 'hls.js'
+import { TIMING } from '@/lib/webinar/constants'
 
 interface WebinarPlayerProps {
   hlsUrl: string
@@ -12,6 +13,8 @@ interface WebinarPlayerProps {
   poster?: string
   isPausedForInteraction?: boolean
   pauseMessage?: string
+  slug?: string
+  accessToken?: string
   onTimeUpdate?: (currentTime: number, progress: number) => void
   onVideoEnd?: () => void
   onVideoStart?: () => void
@@ -27,6 +30,8 @@ export function WebinarPlayer({
   poster,
   isPausedForInteraction = false,
   pauseMessage,
+  slug,
+  accessToken,
   onTimeUpdate,
   onVideoEnd,
   onVideoStart,
@@ -42,6 +47,13 @@ export function WebinarPlayer({
   const lastReportedTime = useRef(0)
   const lastValidTime = useRef(0)
   const wasPlayingBeforeInteraction = useRef(false)
+
+  // Jitter offset to distribute progress updates across users
+  // This prevents all users from hitting the server at the same time
+  const jitterOffset = useRef(Math.random() * TIMING.PROGRESS_JITTER_MAX_SECONDS)
+
+  // Note: We no longer track excessive video events (VIDEO_STARTED, VIDEO_PLAYED, etc.)
+  // Only essential events like VIDEO_COMPLETED are tracked at the room level
 
   // Video source
   const videoSource = hlsUrl
@@ -149,11 +161,18 @@ export function WebinarPlayer({
     const time = video.currentTime || 0
     setCurrentTime(time)
 
-    // Report progress every 5 seconds
-    if (Math.abs(time - lastReportedTime.current) >= 5) {
+    // Report progress at regular intervals with jitter distribution
+    // Jitter ensures users don't all hit the server at the same time
+    const timeSinceLastReport = time - lastReportedTime.current
+    const reportInterval = TIMING.PROGRESS_UPDATE_INTERVAL_SECONDS + jitterOffset.current
+
+    if (Math.abs(timeSinceLastReport) >= reportInterval) {
       lastReportedTime.current = time
       const progress = videoDuration > 0 ? (time / videoDuration) * 100 : 0
       onTimeUpdate?.(time, progress)
+
+      // Reset jitter for next interval (new random offset)
+      jitterOffset.current = Math.random() * TIMING.PROGRESS_JITTER_MAX_SECONDS
     }
 
     // For simulated live, update last valid time
@@ -177,18 +196,32 @@ export function WebinarPlayer({
     onVideoEnd?.()
   }, [onVideoEnd])
 
+  // Handle pause
+  const handlePause = useCallback(() => {
+    setIsPlaying(false)
+  }, [])
+
   // Handle error
   const handleError = useCallback(() => {
+    const errorDetails = videoRef.current?.error
+    // Log error to console for debugging
+    console.error('Video playback error:', {
+      code: errorDetails?.code,
+      message: errorDetails?.message || 'Unknown error',
+    })
     onError?.('Video playback error')
   }, [onError])
 
   // Prevent seeking backwards in simulated live mode
   const handleSeeking = useCallback(() => {
     const video = videoRef.current
-    if (!video || allowSeeking || playbackMode !== 'simulated_live') return
+    if (!video) return
 
-    if (video.currentTime < lastValidTime.current - 1) {
-      video.currentTime = lastValidTime.current
+    // Prevent backwards seeking in live mode
+    if (!allowSeeking && playbackMode === 'simulated_live') {
+      if (video.currentTime < lastValidTime.current - 1) {
+        video.currentTime = lastValidTime.current
+      }
     }
   }, [allowSeeking, playbackMode])
 
@@ -258,44 +291,25 @@ export function WebinarPlayer({
       {/* Video Element */}
       <video
         ref={videoRef}
-        className={`w-full h-full ${!allowSeeking ? 'pointer-events-none' : ''}`}
+        className="w-full h-full"
         poster={poster}
-        controls={allowSeeking}
+        controls={playbackMode === 'replay'}
+        controlsList={playbackMode === 'replay' ? undefined : 'nodownload nofullscreen noplaybackrate'}
+        disablePictureInPicture={playbackMode !== 'replay'}
         playsInline
         onLoadedData={handleLoadedData}
         onPlay={handlePlay}
-        onPause={() => setIsPlaying(false)}
+        onPause={handlePause}
         onTimeUpdate={handleTimeUpdate}
         onSeeking={handleSeeking}
         onEnded={handleEnded}
         onError={handleError}
       />
 
-      {/* Custom controls for simulated live (no seeking) */}
-      {!allowSeeking && !isLoading && (
+      {/* Custom minimal controls for non-replay (simulated_live, on_demand) */}
+      {playbackMode !== 'replay' && !isLoading && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
           <div className="flex items-center gap-4">
-            {/* Play/Pause button */}
-            <button
-              onClick={togglePlayPause}
-              disabled={isPausedForInteraction}
-              className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors ${
-                isPausedForInteraction
-                  ? 'bg-white/10 cursor-not-allowed opacity-50'
-                  : 'bg-white/20 hover:bg-white/30'
-              }`}
-            >
-              {isPlaying ? (
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
-
             {/* Progress bar (non-interactive) */}
             <div className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
               <div
@@ -309,11 +323,13 @@ export function WebinarPlayer({
               {formatTime(currentTime)} / {formatTime(videoDuration)}
             </span>
 
-            {/* Live indicator */}
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-white text-sm">LIVE</span>
-            </div>
+            {/* Live indicator for simulated_live only */}
+            {playbackMode === 'simulated_live' && (
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-white text-sm font-semibold">LIVE</span>
+              </div>
+            )}
           </div>
         </div>
       )}

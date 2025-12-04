@@ -219,6 +219,7 @@ export async function getOrCreateSessions(
 
 /**
  * Get available sessions for registration display
+ * UPDATED: Now uses pre-generated interval sessions instead of dynamic JIT calculation
  */
 export async function getAvailableSessionsForRegistration(
   webinarId: string
@@ -246,12 +247,30 @@ export async function getAvailableSessionsForRegistration(
   }
 
   const config = webinar.scheduleConfig
+  const now = new Date()
 
-  // Get or create upcoming sessions
-  const sessions = await getOrCreateSessions(webinarId, {
-    maxSessions: config.maxSessionsToShow,
-    includeJustInTime: config.justInTimeEnabled,
-  })
+  // For interval-based JIT: Get pre-generated sessions from database
+  // For other types: Use old logic
+  let sessions
+
+  if (config.justInTimeEnabled && config.intervalMinutes) {
+    // NEW: Get pre-generated interval sessions (future sessions only)
+    sessions = await prisma.webinarSession.findMany({
+      where: {
+        webinarId,
+        type: 'JUST_IN_TIME',
+        scheduledAt: { gte: now },
+      },
+      orderBy: { scheduledAt: 'asc' },
+      take: config.maxSessionsToShow,
+    })
+  } else {
+    // OLD: Use dynamic generation for other event types
+    sessions = await getOrCreateSessions(webinarId, {
+      maxSessions: config.maxSessionsToShow,
+      includeJustInTime: config.justInTimeEnabled && !config.intervalMinutes, // Only if old-style JIT
+    })
+  }
 
   return {
     sessions: sessions.map((s) => ({

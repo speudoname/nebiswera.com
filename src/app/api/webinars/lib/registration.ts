@@ -5,8 +5,8 @@ import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
 import type { WebinarSessionType } from '@prisma/client'
 import {
-  sendRegistrationConfirmation,
-  scheduleSessionReminder,
+  queueRegistrationNotifications,
+  queueSessionReminders,
 } from './notifications'
 import { syncWebinarRegistrationToContact, syncWebinarAttendance, syncWebinarCompletion } from '@/lib/contact-sync'
 
@@ -212,17 +212,18 @@ export async function registerForWebinar(
     },
   })
 
-  // Send confirmation email and schedule reminders
+  // Queue notification emails (registration confirmation + session reminders)
   try {
-    await sendRegistrationConfirmation(registration.id, finalSessionType)
+    // Queue AFTER_REGISTRATION notifications (e.g., confirmation email)
+    await queueRegistrationNotifications(registration.id)
 
-    // Schedule reminder for scheduled sessions
+    // Queue BEFORE_START notifications (reminders) for scheduled sessions
     if (finalSessionType === 'SCHEDULED' || finalSessionType === 'JUST_IN_TIME') {
-      await scheduleSessionReminder(registration.id)
+      await queueSessionReminders(registration.id)
     }
   } catch (error) {
-    // Don't fail registration if notification fails
-    console.error('Failed to send registration notification:', error)
+    // Don't fail registration if notification queuing fails
+    console.error('Failed to queue registration notifications:', error)
   }
 
   return {
@@ -253,7 +254,7 @@ export async function validateAccessToken(
     sessionId: string | null
     sessionType: WebinarSessionType
     webinarId: string
-    watchProgress: number
+    maxVideoPosition: number
     completedAt: Date | null
   }
 }> {
@@ -278,7 +279,7 @@ export async function validateAccessToken(
       sessionId: registration.sessionId,
       sessionType: registration.sessionType,
       webinarId: registration.webinarId,
-      watchProgress: registration.maxVideoPosition,
+      maxVideoPosition: registration.maxVideoPosition,
       completedAt: registration.completedAt,
     },
   }

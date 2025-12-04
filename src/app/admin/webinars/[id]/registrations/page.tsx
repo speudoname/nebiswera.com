@@ -38,10 +38,10 @@ export default async function WebinarRegistrationsPage({ params }: PageProps) {
           </p>
         </div>
         <a
-          href={`/admin/webinars/${id}`}
+          href="/admin/webinars"
           className="text-primary-500 hover:text-primary-600"
         >
-          &larr; Back to webinar
+          &larr; Back to webinars
         </a>
       </div>
 

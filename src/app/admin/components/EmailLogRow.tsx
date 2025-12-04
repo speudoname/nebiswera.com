@@ -5,7 +5,7 @@ interface EmailLog {
   messageId: string
   to: string
   subject: string
-  type: 'VERIFICATION' | 'PASSWORD_RESET' | 'WELCOME' | 'CAMPAIGN' | 'NEWSLETTER' | 'BROADCAST' | 'ANNOUNCEMENT'
+  type: 'VERIFICATION' | 'PASSWORD_RESET' | 'WELCOME' | 'CAMPAIGN' | 'NEWSLETTER' | 'BROADCAST' | 'ANNOUNCEMENT' | 'WEBINAR'
   category: 'TRANSACTIONAL' | 'MARKETING'
   status: 'SENT' | 'DELIVERED' | 'BOUNCED' | 'SPAM_COMPLAINT' | 'OPENED'
   locale: string
@@ -34,6 +34,7 @@ const typeVariants: Record<string, 'success' | 'warning' | 'error' | 'info' | 'd
   VERIFICATION: 'info',
   PASSWORD_RESET: 'warning',
   WELCOME: 'success',
+  WEBINAR: 'info',
   // Marketing
   CAMPAIGN: 'default',
   NEWSLETTER: 'default',

@@ -117,13 +117,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         // Copy notification templates
         notifications: {
           create: original.notifications.map((notification) => ({
-            type: notification.type,
-            trigger: notification.trigger,
+            triggerType: notification.triggerType,
             triggerMinutes: notification.triggerMinutes,
+            conditions: notification.conditions || undefined,
+            channel: notification.channel,
             subject: notification.subject,
             bodyHtml: notification.bodyHtml,
             bodyText: notification.bodyText,
-            enabled: notification.enabled,
+            isActive: notification.isActive,
+            isDefault: false, // Don't copy isDefault flag
+            sortOrder: notification.sortOrder,
           })),
         },
         // Copy simulated chat messages

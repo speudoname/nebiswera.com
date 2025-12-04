@@ -26,6 +26,9 @@ interface ScheduleConfig {
   onDemandUngated: boolean
   justInTimeEnabled: boolean
   justInTimeMinutes: number
+  intervalMinutes: number | null
+  intervalStartHour: number
+  intervalEndHour: number
   replayEnabled: boolean
   replayUngated: boolean
   replayExpiresAfterDays: number | null
@@ -52,6 +55,9 @@ const defaultConfig: ScheduleConfig = {
   onDemandUngated: false,
   justInTimeEnabled: true,
   justInTimeMinutes: 15,
+  intervalMinutes: 15, // Default: every 15 minutes
+  intervalStartHour: 9, // 9 AM
+  intervalEndHour: 17, // 5 PM
   replayEnabled: true,
   replayUngated: false,
   replayExpiresAfterDays: null,
@@ -419,18 +425,72 @@ export function ScheduleConfigForm({
           </div>
 
           {config.justInTimeEnabled && (
-            <div className="ml-6 flex items-center gap-2">
-              <span className="text-sm text-text-secondary">Starting in</span>
-              <select
-                value={config.justInTimeMinutes}
-                onChange={(e) => handleChange('justInTimeMinutes', parseInt(e.target.value))}
-                className="rounded-neu border-2 border-transparent bg-neu-base px-3 py-1.5 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
-              >
-                <option value={5}>5 minutes</option>
-                <option value={10}>10 minutes</option>
-                <option value={15}>15 minutes</option>
-                <option value={30}>30 minutes</option>
-              </select>
+            <div className="ml-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Session Interval
+                </label>
+                <select
+                  value={config.intervalMinutes || 15}
+                  onChange={(e) => handleChange('intervalMinutes', parseInt(e.target.value))}
+                  className="rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                >
+                  <option value={5}>Every 5 minutes</option>
+                  <option value={15}>Every 15 minutes</option>
+                  <option value={30}>Every 30 minutes</option>
+                  <option value={60}>Every 60 minutes</option>
+                </select>
+                <p className="mt-1 text-xs text-text-muted">
+                  {config.intervalMinutes === 5 && "Creates 96 sessions per day"}
+                  {config.intervalMinutes === 15 && "Creates 32 sessions per day"}
+                  {config.intervalMinutes === 30 && "Creates 16 sessions per day"}
+                  {config.intervalMinutes === 60 && "Creates 8 sessions per day"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
+                    Start Hour
+                  </label>
+                  <select
+                    value={config.intervalStartHour}
+                    onChange={(e) => handleChange('intervalStartHour', parseInt(e.target.value))}
+                    className="w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-2">
+                    End Hour
+                  </label>
+                  <select
+                    value={config.intervalEndHour}
+                    onChange={(e) => handleChange('intervalEndHour', parseInt(e.target.value))}
+                    className="w-full rounded-neu border-2 border-transparent bg-neu-base px-3 py-2 text-sm text-text-primary shadow-neu-inset focus:border-primary-400 focus:outline-none"
+                  >
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <option key={i} value={i}>
+                        {i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="text-xs text-text-muted bg-neu-dark/30 rounded-lg p-3">
+                <strong>Preview:</strong> Sessions will be available between{' '}
+                {config.intervalStartHour === 0 ? '12 AM' : config.intervalStartHour < 12 ? `${config.intervalStartHour} AM` : config.intervalStartHour === 12 ? '12 PM' : `${config.intervalStartHour - 12} PM`}
+                {' and '}
+                {config.intervalEndHour === 0 ? '12 AM' : config.intervalEndHour < 12 ? `${config.intervalEndHour} AM` : config.intervalEndHour === 12 ? '12 PM' : `${config.intervalEndHour - 12} PM`}
+                {' '}every day, at {config.intervalMinutes}-minute intervals.
+              </div>
             </div>
           )}
 

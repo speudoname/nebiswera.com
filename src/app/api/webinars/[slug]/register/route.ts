@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { registerForWebinar } from '@/app/api/webinars/lib/registration'
 import { getAvailableSessionsForRegistration } from '@/app/api/webinars/lib/session-generator'
+import { checkRateLimit } from '@/lib/rate-limit'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -83,6 +84,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // POST /api/webinars/[slug]/register - Register for a webinar
 export async function POST(request: NextRequest, { params }: RouteParams) {
   const { slug } = await params
+
+  // Rate limiting: 5 registrations per hour per IP
+  const rateLimitResponse = await checkRateLimit(request, 'registration')
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
 
   try {
     // Find webinar by slug

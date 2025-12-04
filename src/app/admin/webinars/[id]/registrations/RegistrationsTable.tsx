@@ -10,9 +10,13 @@ import {
   XCircle,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Filter,
 } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { DateRangeSelector, type DateRange } from '@/components/analytics/DateRangeSelector'
+import { SessionFilter } from '@/components/analytics/SessionFilter'
+import { UserProfileModal } from '@/components/analytics/UserProfileModal'
 
 interface Registration {
   id: string
@@ -27,6 +31,7 @@ interface Registration {
   completedAt: string | null
   engagementScore: number | null
   source: string | null
+  completionPercent: number
 }
 
 interface RegistrationsTableProps {
@@ -41,19 +46,33 @@ const STATUS_COLORS: Record<string, string> = {
   MISSED: 'bg-gray-100 text-gray-800',
 }
 
+const getDefaultDateRange = (): DateRange => {
+  const end = new Date()
+  end.setHours(23, 59, 59, 999)
+  const start = new Date()
+  start.setFullYear(start.getFullYear() - 2)
+  start.setHours(0, 0, 0, 0)
+  return { start, end, label: 'All time' }
+}
+
 export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange())
+  const [engagementLevel, setEngagementLevel] = useState<string>('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [showFilters, setShowFilters] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const limit = 20
 
   useEffect(() => {
     fetchRegistrations()
-  }, [webinarId, page, searchQuery, statusFilter])
+  }, [webinarId, page, searchQuery, statusFilter, sessionId, dateRange, engagementLevel])
 
   const fetchRegistrations = async () => {
     setLoading(true)
@@ -61,9 +80,13 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        dateStart: dateRange.start.toISOString(),
+        dateEnd: dateRange.end.toISOString(),
       })
       if (searchQuery) params.set('search', searchQuery)
       if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (sessionId) params.set('sessionId', sessionId)
+      if (engagementLevel !== 'all') params.set('engagementLevel', engagementLevel)
 
       const res = await fetch(`/api/admin/webinars/${webinarId}/registrations?${params}`)
       if (res.ok) {
@@ -121,46 +144,100 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
   return (
     <div className="space-y-4">
       {/* Filters and Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex gap-3 flex-1">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-            <input
-              type="text"
-              placeholder="Search by email or name..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                setPage(1)
-              }}
-              className="w-full pl-10 pr-4 py-2 border border-neu-dark rounded-neu bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          <div className="flex gap-3 flex-1">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+              <input
+                type="text"
+                placeholder="Search by email or name..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(1)
+                }}
+                className="w-full pl-10 pr-4 py-2 border border-neu-dark rounded-neu bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            {/* Toggle Filters Button */}
+            <Button
+              variant="secondary"
+              onClick={() => setShowFilters(!showFilters)}
+              className={showFilters ? 'bg-primary-100' : ''}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+            </Button>
           </div>
 
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value)
-              setPage(1)
-            }}
-            className="px-4 py-2 border border-neu-dark rounded-neu bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="all">All Status</option>
-            <option value="REGISTERED">Registered</option>
-            <option value="ATTENDING">Attending</option>
-            <option value="ATTENDED">Attended</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="MISSED">Missed</option>
-          </select>
+          {/* Export Button */}
+          <Button variant="secondary" onClick={exportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
         </div>
 
-        {/* Export Button */}
-        <Button variant="secondary" onClick={exportCSV}>
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className="bg-neu-light rounded-neu p-4 shadow-neu-sm space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Date Range */}
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">Date Range</label>
+                <DateRangeSelector value={dateRange} onChange={setDateRange} />
+              </div>
+
+              {/* Session Filter */}
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">Session</label>
+                <SessionFilter webinarId={webinarId} value={sessionId} onChange={setSessionId} />
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-full px-4 py-2 border border-neu-dark rounded-neu bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="REGISTERED">Registered</option>
+                  <option value="ATTENDING">Attending</option>
+                  <option value="ATTENDED">Attended</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="MISSED">Missed</option>
+                </select>
+              </div>
+
+              {/* Engagement Level Filter */}
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">Engagement</label>
+                <select
+                  value={engagementLevel}
+                  onChange={(e) => {
+                    setEngagementLevel(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-full px-4 py-2 border border-neu-dark rounded-neu bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="all">All Levels</option>
+                  <option value="highly_engaged">Highly Engaged (80-100)</option>
+                  <option value="engaged">Engaged (60-79)</option>
+                  <option value="moderate">Moderate (40-59)</option>
+                  <option value="low">Low (20-39)</option>
+                  <option value="minimal">Minimal (0-19)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Summary */}
@@ -208,6 +285,9 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
                   Watch Time
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-text-primary">
+                  Completion
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-text-primary">
                   Engagement
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-text-primary">
@@ -218,19 +298,23 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
             <tbody className="divide-y divide-neu-dark">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                  <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
                     Loading...
                   </td>
                 </tr>
               ) : registrations.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                  <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
                     No registrations found
                   </td>
                 </tr>
               ) : (
                 registrations.map((reg) => (
-                  <tr key={reg.id} className="hover:bg-neu-base/50 transition-colors">
+                  <tr
+                    key={reg.id}
+                    className="hover:bg-neu-base/50 transition-colors cursor-pointer"
+                    onClick={() => setSelectedUserId(reg.id)}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-medium text-sm">
@@ -267,6 +351,19 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-2 bg-neu-dark rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 rounded-full"
+                            style={{ width: `${Math.min(100, reg.completionPercent)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-text-muted">
+                          {reg.completionPercent}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       {reg.engagementScore !== null ? (
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-2 bg-neu-dark rounded-full overflow-hidden">
@@ -276,7 +373,7 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
                             />
                           </div>
                           <span className="text-sm text-text-muted">
-                            {Math.round(reg.engagementScore)}%
+                            {Math.round(reg.engagementScore)}
                           </span>
                         </div>
                       ) : (
@@ -323,6 +420,15 @@ export function RegistrationsTable({ webinarId }: RegistrationsTableProps) {
           </div>
         )}
       </div>
+
+      {/* User Profile Modal */}
+      {selectedUserId && (
+        <UserProfileModal
+          webinarId={webinarId}
+          registrationId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+        />
+      )}
     </div>
   )
 }

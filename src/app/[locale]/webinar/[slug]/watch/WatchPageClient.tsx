@@ -45,12 +45,21 @@ interface WebinarAccessData {
   chat: {
     enabled: boolean
   }
+  endScreen?: {
+    enabled: boolean
+    title?: string | null
+    message?: string | null
+    buttonText?: string | null
+    buttonUrl?: string | null
+    redirectUrl?: string | null
+    redirectDelay?: number | null
+  }
 }
 
 export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
   const [data, setData] = useState<WebinarAccessData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [errorType, setErrorType] = useState<'generic' | 'expired' | 'disabled' | null>(null)
+  const [errorType, setErrorType] = useState<'generic' | 'expired' | 'disabled' | 'sessionEnded' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [waitingRoom, setWaitingRoom] = useState<{ startsAt: string } | null>(null)
 
@@ -67,6 +76,10 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
             return
           }
           // Handle specific error types
+          if (result.sessionEnded) {
+            setErrorType('sessionEnded')
+            throw new Error(result.error || 'Session has ended')
+          }
           if (result.replayExpired) {
             setErrorType('expired')
             throw new Error(result.error || 'Replay has expired')
@@ -138,6 +151,17 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
   // Error state
   if (error || !data) {
     const getErrorContent = () => {
+      if (errorType === 'sessionEnded') {
+        return {
+          icon: Clock,
+          iconColor: 'text-blue-500',
+          title: locale === 'ka' ? 'სესია დასრულდა' : 'Session Has Ended',
+          description: locale === 'ka'
+            ? 'ეს პირდაპირი სესია დასრულდა. ჩანაწერი მალე იქნება ხელმისაწვდომი.'
+            : 'This live session has ended. A replay will be available soon.',
+          showRetry: true,
+        }
+      }
       if (errorType === 'expired') {
         return {
           icon: Clock,
@@ -197,67 +221,33 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
     )
   }
 
-  // Main webinar room
+  // Main webinar room - fullscreen without header
   return (
-    <div className="min-h-screen bg-neu-base">
-      {/* Header */}
-      <header className="bg-white shadow-neu-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-semibold text-text-primary">
-                {data.webinar.title}
-              </h1>
-              {data.access.firstName && (
-                <p className="text-sm text-text-secondary">
-                  {locale === 'ka' ? 'მოგესალმებით' : 'Welcome'}, {data.access.firstName}!
-                </p>
-              )}
-            </div>
-            <div className="text-sm text-text-muted">
-              {data.playback.mode === 'simulated_live' && (
-                <span className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  {locale === 'ka' ? 'პირდაპირი ეთერი' : 'LIVE'}
-                </span>
-              )}
-              {data.playback.mode === 'on_demand' && (
-                <span>{locale === 'ka' ? 'მოთხოვნით' : 'On Demand'}</span>
-              )}
-              {data.playback.mode === 'replay' && (
-                <span>{locale === 'ka' ? 'ჩანაწერი' : 'Replay'}</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto p-4 lg:p-8">
-        <WebinarRoom
-          webinar={{
-            id: data.webinar.id,
-            title: data.webinar.title,
-            description: data.webinar.description || undefined,
-            hlsUrl: data.webinar.hlsUrl,
-            duration: data.webinar.duration || undefined,
-            thumbnailUrl: data.webinar.thumbnailUrl || undefined,
-            presenterName: data.webinar.presenterName,
-          }}
-          access={{
-            registrationId: data.access.registrationId,
-            firstName: data.access.firstName || undefined,
-            lastName: data.access.lastName || undefined,
-            email: data.access.email,
-            sessionType: data.access.sessionType,
-          }}
-          playback={data.playback}
-          interactions={data.interactions}
-          chatEnabled={data.chat.enabled}
-          accessToken={token}
-          slug={slug}
-        />
-      </main>
+    <div className="h-screen bg-black overflow-hidden">
+      <WebinarRoom
+        webinar={{
+          id: data.webinar.id,
+          title: data.webinar.title,
+          description: data.webinar.description || undefined,
+          hlsUrl: data.webinar.hlsUrl,
+          duration: data.webinar.duration || undefined,
+          thumbnailUrl: data.webinar.thumbnailUrl || undefined,
+          presenterName: data.webinar.presenterName,
+        }}
+        access={{
+          registrationId: data.access.registrationId,
+          firstName: data.access.firstName || undefined,
+          lastName: data.access.lastName || undefined,
+          email: data.access.email,
+          sessionType: data.access.sessionType,
+        }}
+        playback={data.playback}
+        interactions={data.interactions}
+        chatEnabled={data.chat.enabled}
+        accessToken={token}
+        slug={slug}
+        endScreen={data.endScreen}
+      />
     </div>
   )
 }

@@ -29,6 +29,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const limit = parseInt(searchParams.get('limit') || '20')
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status')
+  const sessionId = searchParams.get('sessionId')
+  const dateStart = searchParams.get('dateStart') ? new Date(searchParams.get('dateStart')!) : undefined
+  const dateEnd = searchParams.get('dateEnd') ? new Date(searchParams.get('dateEnd')!) : undefined
+  const engagementLevel = searchParams.get('engagementLevel')
 
   const skip = (page - 1) * limit
 
@@ -40,6 +44,38 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (status && status !== 'all' && VALID_STATUSES.includes(status as WebinarRegistrationStatus)) {
       where.status = status as WebinarRegistrationStatus
+    }
+
+    if (sessionId && sessionId !== 'all') {
+      where.sessionId = sessionId
+    }
+
+    if (dateStart && dateEnd) {
+      where.registeredAt = {
+        gte: dateStart,
+        lte: dateEnd,
+      }
+    }
+
+    if (engagementLevel && engagementLevel !== 'all') {
+      // Filter by engagement score ranges
+      switch (engagementLevel) {
+        case 'highly_engaged':
+          where.engagementScore = { gte: 80 }
+          break
+        case 'engaged':
+          where.engagementScore = { gte: 60, lt: 80 }
+          break
+        case 'moderate':
+          where.engagementScore = { gte: 40, lt: 60 }
+          break
+        case 'low':
+          where.engagementScore = { gte: 20, lt: 40 }
+          break
+        case 'minimal':
+          where.engagementScore = { lt: 20 }
+          break
+      }
     }
 
     if (search) {
@@ -67,6 +103,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           completedAt: true,
           engagementScore: true,
           source: true,
+          maxVideoPosition: true,
+          webinar: {
+            select: {
+              videoDuration: true,
+            },
+          },
         },
         orderBy: { registeredAt: 'desc' },
         skip,
@@ -75,8 +117,32 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       prisma.webinarRegistration.count({ where }),
     ])
 
+    // Calculate completion percentage for each registration
+    const registrationsWithCompletion = registrations.map((reg) => {
+      const videoDuration = reg.webinar.videoDuration || 0
+      const completionPercent = videoDuration > 0
+        ? Math.round((reg.maxVideoPosition / videoDuration) * 100)
+        : 0
+
+      return {
+        id: reg.id,
+        email: reg.email,
+        firstName: reg.firstName,
+        lastName: reg.lastName,
+        status: reg.status,
+        sessionType: reg.sessionType,
+        registeredAt: reg.registeredAt,
+        joinedAt: reg.joinedAt,
+        watchTimeSeconds: reg.watchTimeSeconds,
+        completedAt: reg.completedAt,
+        engagementScore: reg.engagementScore,
+        source: reg.source,
+        completionPercent,
+      }
+    })
+
     return NextResponse.json({
-      registrations,
+      registrations: registrationsWithCompletion,
       total,
       page,
       limit,

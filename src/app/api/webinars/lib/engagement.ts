@@ -205,15 +205,32 @@ export async function updateWebinarEngagementScores(webinarId: string): Promise<
 /**
  * Get engagement breakdown for analytics
  */
-export async function getEngagementBreakdown(webinarId: string): Promise<{
+export async function getEngagementBreakdown(
+  webinarId: string,
+  sessionId?: string,
+  dateStart?: Date,
+  dateEnd?: Date
+): Promise<{
   distribution: Array<{ label: string; count: number; percentage: number }>
   averageScore: number
   topEngaged: Array<{ email: string; score: number }>
 }> {
+  // Build filter conditions
+  const dateFilter = dateStart && dateEnd ? {
+    registeredAt: {
+      gte: dateStart,
+      lte: dateEnd,
+    },
+  } : {}
+
+  const sessionFilter = sessionId ? { sessionId } : {}
+
   const registrations = await prisma.webinarRegistration.findMany({
     where: {
       webinarId,
       engagementScore: { not: null },
+      ...dateFilter,
+      ...sessionFilter,
     },
     select: {
       email: true,

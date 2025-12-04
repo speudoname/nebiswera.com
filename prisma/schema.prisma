@@ -117,6 +117,8 @@ enum EmailType {
   NEWSLETTER
   BROADCAST
   ANNOUNCEMENT
+  // Webinar types (transactional nature, sent via transactional server)
+  WEBINAR
 
   @@schema("public")
 }
@@ -624,6 +626,7 @@ model Webinar {
 
   // Settings
   status            WebinarStatus @default(DRAFT)
+  language          String        @default("ka") // 'ka' (Georgian), 'en' (English)
   timezone          String        @default("Asia/Tbilisi")
 
   // Presenter info (shown on landing/room)
@@ -638,8 +641,18 @@ model Webinar {
   // Completion settings
   completionPercent Int           @default(80) // % watched to count as "completed"
 
+  // End screen configuration
+  endScreenEnabled  Boolean       @default(true)
+  endScreenTitle    String?       @db.Text // Main heading on end screen
+  endScreenMessage  String?       @db.Text // Body text on end screen
+  endScreenButtonText String?     // CTA button text (optional)
+  endScreenButtonUrl  String?     // CTA button URL (optional)
+  endScreenRedirectUrl String?    // Auto-redirect URL (optional)
+  endScreenRedirectDelay Int?     // Minutes before redirect (optional)
+
   // Chat settings
   chatEnabled       Boolean       @default(true)
+  chatScript        Json?         // Simulated chat bot script: { enabled: boolean, messages: [{time, sender, message}] }
 
   // Timestamps
   createdAt         DateTime      @default(now())
@@ -697,9 +710,12 @@ model WebinarScheduleConfig {
   onDemandEnabled       Boolean   @default(false)
   onDemandUngated       Boolean   @default(false) // No registration required
 
-  // Just-in-time settings
+  // Just-in-time settings (simplified to fixed intervals)
   justInTimeEnabled     Boolean   @default(false)
-  justInTimeMinutes     Int       @default(15) // "Starting in X minutes"
+  justInTimeMinutes     Int       @default(15) // DEPRECATED: Use intervalMinutes instead
+  intervalMinutes       Int?      // Fixed interval: 5, 15, 30, or 60 minutes
+  intervalStartHour     Int       @default(9)  // Start hour (e.g., 9 = 9 AM)
+  intervalEndHour       Int       @default(17) // End hour (e.g., 17 = 5 PM)
 
   // Replay settings
   replayEnabled         Boolean   @default(true)
@@ -856,6 +872,8 @@ model WebinarRegistration {
   chatMessages    WebinarChatMessage[]
   pollResponses   WebinarPollResponse[]
   interactionEvents WebinarInteractionEvent[]
+  notificationQueue WebinarNotificationQueue[]
+  notificationLogs  WebinarNotificationLog[]
 
   @@unique([webinarId, email, sessionId])
   @@index([accessToken])
@@ -1041,89 +1059,171 @@ model WebinarChatMessage {
 }
 
 // ===========================================
-// Webinar Notifications
+// Webinar Notifications (Automations)
 // ===========================================
 
+// Notification template/rule definition
 model WebinarNotification {
   id              String              @id @default(cuid())
   webinarId       String
   webinar         Webinar             @relation(fields: [webinarId], references: [id], onDelete: Cascade)
 
-  type            WebinarNotificationType
-  trigger         WebinarNotificationTrigger
+  // Trigger configuration
+  triggerType     NotificationTriggerType
+  triggerMinutes  Int                 // Relative timing: +30 = 30min after, -15 = 15min before
 
-  // Timing (for reminders/follow-ups)
-  triggerMinutes  Int?                // Minutes before/after event
+  // Template reference (for default notifications)
+  // Points to template files in content/email-templates/webinar/
+  // null = custom notification with inline content
+  templateKey     String?             // e.g., "registration-confirmation", "reminder-24h"
 
-  // Email content
-  subject         String
-  bodyHtml        String              @db.Text
-  bodyText        String?             @db.Text
+  // Conditions (JSON for AFTER_END triggers)
+  // Examples:
+  // { "attended": false }
+  // { "watchedPercent": { "lt": 30 } }
+  // { "AND": [{ "watchedPercent": { "gte": 50 } }, { "ctaClicked": true }] }
+  conditions      Json?
+
+  // Channel
+  channel         NotificationChannel @default(EMAIL)
+
+  // Email content (in the webinar's language)
+  // If created from a template, these are pre-filled and editable
+  subject         String?             // Required for EMAIL
+  previewText     String?             // Email preview text (appears in inbox)
+  bodyHtml        String?             @db.Text // Rich HTML content with template variables
+  bodyText        String?             @db.Text // Plain text version / SMS content
+  bodyDesign      String?             @db.Text // Maily.to JSON design for editor
+
+  // Email deliverability settings (optional overrides)
+  // If null, defaults from Settings.emailFromName/emailFromAddress are used
+  fromName        String?             // Custom "From" name (e.g., "Nebiswera Team")
+  fromEmail       String?             // Custom "From" email address
+  replyTo         String?             // Custom reply-to email
+
+  // Actions/Rules (executed when notification is sent)
+  // JSON array of actions: [{ "type": "TAG_CONTACT", "tagId": "..." }, ...]
+  actions         Json?
 
   // Settings
-  enabled         Boolean             @default(true)
+  isActive        Boolean             @default(true)
+  isDefault       Boolean             @default(false) // System default vs user-created
+
+  // Display order in UI timeline
+  sortOrder       Int                 @default(0)
 
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
 
-  // Track sent notifications
-  sentNotifications WebinarNotificationSent[]
+  // Relations
+  queueItems      WebinarNotificationQueue[]
+  logs            WebinarNotificationLog[]
 
-  @@index([webinarId, trigger])
+  @@index([webinarId, triggerType])
+  @@index([webinarId, isActive])
   @@schema("webinar")
   @@map("webinar_notifications")
 }
 
-enum WebinarNotificationType {
-  CONFIRMATION    // Right after registration
-  REMINDER        // Before webinar
-  FOLLOW_UP       // After webinar
+enum NotificationTriggerType {
+  AFTER_REGISTRATION   // X minutes after they register (0 = immediate)
+  BEFORE_START         // Y minutes before webinar starts (per session)
+  AFTER_END            // Z minutes after webinar ends (per session, with conditions)
 
   @@schema("webinar")
 }
 
-enum WebinarNotificationTrigger {
-  // Confirmations
-  REGISTERED_SCHEDULED    // Registered for scheduled session
-  REGISTERED_REPLAY       // Registered for replay
-  REGISTERED_ON_DEMAND    // Registered for on-demand
-
-  // Reminders (triggerMinutes before scheduledAt)
-  REMINDER_BEFORE         // X minutes before start
-
-  // Follow-ups (triggerMinutes after session ended)
-  FOLLOW_UP_ATTENDED      // Attended the webinar
-  FOLLOW_UP_COMPLETED     // Watched past completion threshold
-  FOLLOW_UP_MISSED        // Didn't show up
-  FOLLOW_UP_LEFT_EARLY    // Left before completion
+enum NotificationChannel {
+  EMAIL
+  SMS
 
   @@schema("webinar")
 }
 
-// Track sent notification instances
-model WebinarNotificationSent {
+// Queue for scheduled notifications (processed by cron)
+model WebinarNotificationQueue {
   id              String              @id @default(cuid())
   notificationId  String
   notification    WebinarNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
 
   registrationId  String
-  email           String
-  scheduledFor    DateTime
-  sentAt          DateTime?
-  status          WebinarNotificationSentStatus @default(PENDING)
-  error           String?
+  registration    WebinarRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
-  @@unique([notificationId, registrationId])
-  @@index([scheduledFor, status])
+  // Scheduling
+  scheduledAt     DateTime            // When to send
+  processedAt     DateTime?           // When actually processed
+
+  // Status
+  status          NotificationQueueStatus @default(PENDING)
+
+  // Retry tracking
+  attempts        Int                 @default(0)
+  lastError       String?             @db.Text
+
+  createdAt       DateTime            @default(now())
+
+  @@index([status, scheduledAt])
+  @@index([registrationId])
+  @@index([notificationId])
   @@schema("webinar")
-  @@map("webinar_notifications_sent")
+  @@map("webinar_notification_queue")
 }
 
-enum WebinarNotificationSentStatus {
-  PENDING
-  SENT
-  FAILED
-  CANCELLED
+enum NotificationQueueStatus {
+  PENDING         // Waiting to be processed
+  PROCESSING      // Currently being processed
+  SENT            // Successfully sent
+  FAILED          // Failed after retries
+  SKIPPED         // Condition not met at send time
+  CANCELLED       // Manually cancelled
+
+  @@schema("webinar")
+}
+
+// Log of all sent notifications
+model WebinarNotificationLog {
+  id              String              @id @default(cuid())
+  notificationId  String
+  notification    WebinarNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  registrationId  String
+  registration    WebinarRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  // Channel used
+  channel         NotificationChannel
+
+  // Email specific
+  emailLogId      String?             // Reference to EmailLog.id
+  subject         String?             // Actual subject sent (after variable substitution)
+
+  // SMS specific
+  smsProvider     String?             // Provider used
+  smsMessageId    String?             // Provider's message ID
+
+  // Status
+  status          NotificationLogStatus @default(SENT)
+  errorMessage    String?             @db.Text
+
+  // Metadata
+  metadata        Json?               // Provider response, rendered content hash, etc.
+
+  sentAt          DateTime            @default(now())
+
+  @@index([notificationId])
+  @@index([registrationId])
+  @@index([sentAt])
+  @@index([emailLogId])
+  @@schema("webinar")
+  @@map("webinar_notification_logs")
+}
+
+enum NotificationLogStatus {
+  SENT            // Delivered to provider
+  DELIVERED       // Confirmed delivery
+  FAILED          // Failed to send
+  BOUNCED         // Email bounced
+  OPENED          // Email opened (from webhook)
+  CLICKED         // Link clicked (from webhook)
 
   @@schema("webinar")
 }

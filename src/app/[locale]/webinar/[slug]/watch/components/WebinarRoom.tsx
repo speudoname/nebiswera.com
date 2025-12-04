@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { WebinarPlayer } from './WebinarPlayer'
 import { WaitingRoom } from './WaitingRoom'
 import { InteractionOverlay } from './InteractionOverlay'
 import { ChatPanel } from './ChatPanel'
 import { EndScreen } from './EndScreen'
 import { Maximize2, Minimize2 } from 'lucide-react'
-import { TIMING, THRESHOLDS, minutesToMs } from '@/lib/webinar/constants'
+import { useWaitingRoom } from '../hooks/useWaitingRoom'
+import { useWebinarAnalytics } from '../hooks/useWebinarAnalytics'
+import { useProgressTracking } from '../hooks/useProgressTracking'
+import { useInteractionTiming } from '../hooks/useInteractionTiming'
 
 interface WebinarData {
   id: string
@@ -75,141 +78,42 @@ export function WebinarRoom({
   slug,
   endScreen,
 }: WebinarRoomProps) {
-  const [currentTime, setCurrentTime] = useState(playback.startPosition)
-  const [progress, setProgress] = useState(0)
-  const [showChat, setShowChat] = useState(chatEnabled)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showWaitingRoom, setShowWaitingRoom] = useState(false)
-  const [activeInteractions, setActiveInteractions] = useState<InteractionData[]>([])
   const [videoEnded, setVideoEnded] = useState(false)
   const [showEndScreen, setShowEndScreen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const lastProgressUpdate = useRef(0)
-  const sessionJoinTime = useRef<Date>(new Date())
-  const waitingRoomEnterTime = useRef<Date | null>(null)
-  const hasTrackedJoin = useRef(false)
-  const hasTrackedExit = useRef(false)
 
-  // Check if we should show waiting room
-  useEffect(() => {
-    if (sessionStartsAt && playback.mode === 'simulated_live') {
-      const now = new Date()
-      // Show waiting room if session hasn't started yet (with early access window)
-      const earlyAccess = new Date(sessionStartsAt.getTime() - minutesToMs(TIMING.EARLY_ACCESS_MINUTES))
-      if (now < earlyAccess) {
-        setShowWaitingRoom(true)
-        waitingRoomEnterTime.current = new Date()
-      }
-    }
-  }, [sessionStartsAt, playback.mode])
+  // Waiting room management
+  const { showWaitingRoom, handleStart } = useWaitingRoom({
+    sessionStartsAt,
+    playbackMode: playback.mode,
+  })
 
-  // Track session join when video becomes visible
-  useEffect(() => {
-    if (!showWaitingRoom && !hasTrackedJoin.current) {
-      hasTrackedJoin.current = true
+  // Progress tracking
+  const { currentTime, progress, handleTimeUpdate, updateProgress } = useProgressTracking({
+    slug,
+    accessToken,
+    videoEnded,
+  })
 
-      const now = new Date()
-      // Simplified SESSION_JOINED metadata - only essential info
-      const metadata: Record<string, unknown> = {
-        joinTime: now.toISOString(),
-        playbackMode: playback.mode,
-        sessionType: access.sessionType,
-      }
+  // Analytics tracking
+  useWebinarAnalytics({
+    slug,
+    accessToken,
+    showWaitingRoom,
+    playbackMode: playback.mode,
+    sessionType: access.sessionType,
+    currentTime,
+    progress,
+    videoEnded,
+    sessionStartsAt,
+  })
 
-      // Track session join
-      fetch(`/api/webinars/${slug}/analytics`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: accessToken,
-          eventType: 'SESSION_JOINED',
-          metadata,
-        }),
-      }).catch((error) => {
-        console.error('Failed to track session join:', error)
-      })
-    }
-  }, [showWaitingRoom, slug, accessToken, playback.mode, access.sessionType, sessionStartsAt])
-
-  // Track exit patterns - beforeunload event
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (hasTrackedExit.current) return
-      hasTrackedExit.current = true
-
-      const now = new Date()
-      const sessionDurationSeconds = Math.floor((now.getTime() - sessionJoinTime.current.getTime()) / 1000)
-
-      // Simplified SESSION_EXITED metadata - no bounce/earlyExit calculations
-      const exitMetadata: Record<string, unknown> = {
-        exitTime: now.toISOString(),
-        sessionDurationSeconds,
-        currentVideoPosition: currentTime,
-        watchProgress: progress,
-        completed: videoEnded,
-      }
-
-      // Use sendBeacon for reliability on page unload
-      const data = {
-        token: accessToken,
-        eventType: 'SESSION_EXITED',
-        metadata: exitMetadata,
-      }
-
-      // Try sendBeacon first (more reliable for unload events)
-      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(`/api/webinars/${slug}/analytics`, blob)
-      } else {
-        // Fallback to sync fetch
-        fetch(`/api/webinars/${slug}/analytics`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-          keepalive: true,
-        }).catch(() => {})
-      }
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    window.addEventListener('pagehide', handleBeforeUnload)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.removeEventListener('pagehide', handleBeforeUnload)
-    }
-  }, [slug, accessToken, currentTime, progress, videoEnded])
-
-  // Handle time updates from player
-  const handleTimeUpdate = useCallback((time: number, progressPercent: number) => {
-    setCurrentTime(time)
-    setProgress(progressPercent)
-
-    // Update watch progress on server at regular intervals (but not if video has ended)
-    // Note: WebinarPlayer already has jitter built-in, so updates are distributed across users
-    if (!videoEnded && Math.abs(time - lastProgressUpdate.current) >= TIMING.PROGRESS_UPDATE_INTERVAL_SECONDS) {
-      lastProgressUpdate.current = time
-      updateProgress(progressPercent, time)
-    }
-  }, [videoEnded])
-
-  // Update progress on server
-  const updateProgress = async (progressPercent: number, position: number) => {
-    try {
-      await fetch(`/api/webinars/${slug}/access`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: accessToken,
-          progress: progressPercent,
-          position,
-          eventType: 'VIDEO_HEARTBEAT',
-        }),
-      })
-    } catch (error) {
-      console.error('Failed to update progress:', error)
-    }
-  }
+  // Interaction timing
+  const { activeInteractions, dismissInteraction } = useInteractionTiming({
+    currentTime,
+    interactions,
+  })
 
   // Handle video end
   const handleVideoEnd = useCallback(() => {
@@ -220,37 +124,13 @@ export function WebinarRoom({
     if (endScreen?.enabled) {
       setShowEndScreen(true)
     }
-  }, [webinar.duration, endScreen])
-
-  // Check for interactions that should be shown
-  useEffect(() => {
-    const currentSecond = Math.floor(currentTime)
-
-    const newActiveInteractions = interactions.filter((interaction) => {
-      const triggerTime = interaction.triggerTime
-      // Show interaction for 30 seconds or until dismissed
-      return currentSecond >= triggerTime && currentSecond < triggerTime + 30
-    })
-
-    // Only update if changed
-    if (JSON.stringify(newActiveInteractions.map(i => i.id)) !==
-        JSON.stringify(activeInteractions.map(i => i.id))) {
-      setActiveInteractions(newActiveInteractions)
-    }
-  }, [currentTime, interactions, activeInteractions])
-
-  // Handle interaction dismiss
-  const handleInteractionDismiss = (interactionId: string) => {
-    setActiveInteractions((prev) => prev.filter((i) => i.id !== interactionId))
-  }
+  }, [webinar.duration, endScreen, updateProgress])
 
   // Handle interaction response
   const handleInteractionResponse = async (
     interactionId: string,
     response: unknown
   ) => {
-    // Note: FIRST_INTERACTION tracking removed - unnecessary metric
-
     try {
       await fetch(`/api/webinars/${slug}/interactions`, {
         method: 'POST',
@@ -261,7 +141,7 @@ export function WebinarRoom({
           response,
         }),
       })
-      handleInteractionDismiss(interactionId)
+      dismissInteraction(interactionId)
     } catch (error) {
       console.error('Failed to submit interaction response:', error)
     }
@@ -298,7 +178,7 @@ export function WebinarRoom({
         thumbnailUrl={webinar.thumbnailUrl}
         presenterName={webinar.presenterName}
         startsAt={sessionStartsAt}
-        onStart={() => setShowWaitingRoom(false)}
+        onStart={handleStart}
       />
     )
   }
@@ -330,7 +210,7 @@ export function WebinarRoom({
         {activeInteractions.length > 0 && (
           <InteractionOverlay
             interactions={activeInteractions}
-            onDismiss={handleInteractionDismiss}
+            onDismiss={dismissInteraction}
             onRespond={handleInteractionResponse}
             registrationId={access.registrationId}
           />
@@ -361,7 +241,7 @@ export function WebinarRoom({
             currentVideoTime={currentTime}
             playbackMode={playback.mode}
             interactions={activeInteractions}
-            onInteractionDismiss={handleInteractionDismiss}
+            onInteractionDismiss={dismissInteraction}
             onInteractionRespond={handleInteractionResponse}
           />
         </div>
@@ -379,7 +259,7 @@ export function WebinarRoom({
             currentVideoTime={currentTime}
             playbackMode={playback.mode}
             interactions={activeInteractions}
-            onInteractionDismiss={handleInteractionDismiss}
+            onInteractionDismiss={dismissInteraction}
             onInteractionRespond={handleInteractionResponse}
           />
         </div>

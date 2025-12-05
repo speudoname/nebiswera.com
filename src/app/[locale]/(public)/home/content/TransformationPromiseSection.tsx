@@ -36,7 +36,7 @@ const content: Record<Locale, {
     ctaRegular: 'რომელიც შეცვლის შენს მომავალს? ->',
     ctaAccent: 'ისწავლე',
     ctaAccentBold: 'ნებისწერის საოცარი თეორემა!',
-    scrollButton: 'დააჭირე თუ მზად ხარ',
+    scrollButton: 'გაიგე მეტი ნებისწერაზე',
   },
   en: {
     eyebrow: 'It\'s Your Choice',

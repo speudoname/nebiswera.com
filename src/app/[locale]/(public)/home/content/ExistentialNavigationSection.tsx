@@ -11,23 +11,26 @@ import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animatio
 const content: Record<Locale, {
   eyebrow: string
   title: string
-  titleAccent: string
+  titleAccentBold: string
+  titleAccentNormal: string
   subtitle: string
   quote: string
   quoteAuthor: string
 }> = {
   ka: {
     eyebrow: 'პირადი ტრანსფორმაციის მიღმა',
-    title: 'ეგზისტენციალური',
-    titleAccent: 'ნავიგაციის სისტემა',
+    title: 'ნავიგაციის ინსტრუმენტი',
+    titleAccentBold: 'რომ ცხოვრება წარმართო',
+    titleAccentNormal: 'როგორც შენ გინდა',
     subtitle: 'ნებისწერა არ არის მხოლოდ საკუთარი თავის გაუმჯობესების ინსტრუმენტი — ეს არის გზამკვლევი არსებობის გასაგებად',
     quote: 'ნებისწერა არის რუკა იმ ტერიტორიისა, სადაც უკვე ცხოვრობ — მაგრამ არასდროს გინახავს.',
     quoteAuthor: '',
   },
   en: {
     eyebrow: 'Beyond Personal Transformation',
-    title: 'An Existential',
-    titleAccent: 'Navigation System',
+    title: 'A Navigation Tool',
+    titleAccentBold: 'to Direct Your Life',
+    titleAccentNormal: 'the Way You Want',
     subtitle: 'Nebiswera is not just a self-improvement tool — it\'s a guide to understanding existence itself',
     quote: 'Nebiswera is a map of the territory you already live in — but have never seen.',
     quoteAuthor: '',
@@ -51,20 +54,22 @@ export function ExistentialNavigationSection() {
       <span className="inline-block text-primary-600 font-semibold text-lg md:text-xl mb-4 tracking-wide uppercase">
         {t.eyebrow}
       </span>
-      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-2 leading-tight">
+      <h2 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-bold text-text-primary leading-none">
         {t.title}
       </h2>
-      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-600 mb-6 leading-tight">
-        {t.titleAccent}
+      <h2 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl text-primary-600 leading-none">
+        <span className="font-bold">{t.titleAccentBold}</span>
+        {' '}
+        <span className="font-normal">{t.titleAccentNormal}</span>
       </h2>
-      <p className="text-xl md:text-2xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
+      <p className="text-xl md:text-2xl text-text-secondary max-w-3xl mx-auto leading-relaxed mt-6">
         {t.subtitle}
       </p>
     </div>
   )
 
   const MapImage = () => (
-    <div className="flex justify-center mb-12 md:mb-16">
+    <div className="flex justify-center mt-12 md:mt-16">
       <div className="w-full max-w-2xl rounded-neu-lg overflow-hidden shadow-neu-md">
         <BunnyImage
           src="https://nebiswera-cdn.b-cdn.net/images/map.jpg"
@@ -121,16 +126,6 @@ export function ExistentialNavigationSection() {
               <HeaderContent />
             </motion.div>
 
-            {/* Map Image */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={defaultViewport}
-              variants={scaleUpVariants}
-            >
-              <MapImage />
-            </motion.div>
-
             {/* Quote */}
             <motion.div
               initial="hidden"
@@ -140,12 +135,22 @@ export function ExistentialNavigationSection() {
             >
               <QuoteBlock />
             </motion.div>
+
+            {/* Map Image */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={scaleUpVariants}
+            >
+              <MapImage />
+            </motion.div>
           </>
         ) : (
           <>
             <HeaderContent />
-            <MapImage />
             <QuoteBlock />
+            <MapImage />
           </>
         )}
       </div>

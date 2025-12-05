@@ -1,6 +1,5 @@
 import { getTranslations } from 'next-intl/server'
 import { HeroEmailCapture } from './HeroEmailCapture'
-import { BunnyImage } from '@/components/ui/BunnyImage'
 
 interface HeroSectionProps {
   locale: string
@@ -42,8 +41,7 @@ export async function HeroSection({ locale }: HeroSectionProps) {
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
             <p style={{ fontSize: '1.5rem', lineHeight: '1.4', marginBottom: '0.75rem' }}>
               <span style={{ fontWeight: 'bold', color: '#2D1B4E' }}>{t('ctaBold')}</span>{' '}
-              <span style={{ fontWeight: 'normal', color: '#2D1B4E' }}>{t('ctaRegular')}</span>{' '}
-              <span style={{ fontWeight: 'bold', color: '#8B5CF6' }}>{t('ctaAccentBold')}</span>
+              <span style={{ fontWeight: 'normal', color: '#2D1B4E' }}>{t('ctaRegular')}</span>
             </p>
 
             {/* Star Rating */}
@@ -65,21 +63,6 @@ export async function HeroSection({ locale }: HeroSectionProps) {
             </div>
           </div>
 
-          {/* Board Image */}
-          <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ width: '100%', maxWidth: '24rem', borderRadius: '1rem', overflow: 'hidden', boxShadow: '6px 6px 12px #B8B4BD, -6px -6px 12px #FFFFFF' }}>
-              <BunnyImage
-                src="https://nebiswera-cdn.b-cdn.net/images/board.jpg"
-                alt="Nebiswera Board"
-                width={600}
-                height={400}
-                className="w-full h-auto"
-                priority={false}
-                quality={75}
-                sizes="(max-width: 768px) 100vw, 384px"
-              />
-            </div>
-          </div>
         </div>
       </div>
     </section>

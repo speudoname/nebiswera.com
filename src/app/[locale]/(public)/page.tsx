@@ -2,11 +2,11 @@ import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
 import { HeroSection } from './home/content/HeroSection'
 import { PhilosophySection } from './home/content/PhilosophySection'
-import { SecretRevealSection } from './home/content/SecretRevealSection'
 import { TransformationPromiseSection } from './home/content/TransformationPromiseSection'
 import { PowerOfWillSection } from './home/content/PowerOfWillSection'
 import { SocialProofSection } from './home/content/SocialProofSection'
 import { CTASection } from './home/content/CTASection'
+import { MiniCTASection } from './home/content/MiniCTASection'
 import { TestimonialShowcase } from './home/content/TestimonialShowcase'
 import { WhatItIsNotSection } from './home/content/WhatItIsNotSection'
 import { KnowWhatYouWantSection } from './home/content/KnowWhatYouWantSection'
@@ -18,7 +18,6 @@ import { WhatIsNebisweraSection } from './home/content/WhatIsNebisweraSection'
 import { BecomeTheEngineerSection } from './home/content/BecomeTheEngineerSection'
 import { ExistentialNavigationSection } from './home/content/ExistentialNavigationSection'
 import { PersonalRealityOSSection } from './home/content/PersonalRealityOSSection'
-import { ClaritySection } from './home/content/ClaritySection'
 import { InnerFreedomSection } from './home/content/InnerFreedomSection'
 import { NoMoreUncertaintySection } from './home/content/NoMoreUncertaintySection'
 
@@ -46,11 +45,23 @@ export default async function HomePage({
       {/* Old Hero Section */}
       <HeroSection locale={locale} />
 
+        {/* Inner Freedom - What you will gain */}
+        <InnerFreedomSection />
+
         {/* Testimonials #1 */}
         <TestimonialShowcase count={3} darkBackground={true} />
 
         {/* No More Uncertainty - Predictable future through principles */}
         <NoMoreUncertaintySection />
+
+        {/* Freedom - Your will = your freedom */}
+        <FreedomSection />
+
+        {/* Philosophy (3 Steps) */}
+        <PhilosophySection />
+
+        {/* Mini CTA - Discover Yourself */}
+        <MiniCTASection variant="discover" />
 
         {/* Power of Will Section */}
         <PowerOfWillSection />
@@ -64,6 +75,9 @@ export default async function HomePage({
         {/* Achieve Your Goals - What areas Nebiswera helps with */}
         <AchieveYourGoalsSection />
 
+        {/* Mini CTA #1 - Discover Yourself */}
+        <MiniCTASection variant="discover" />
+
         {/* Existential Navigation - Beyond personal transformation */}
         <ExistentialNavigationSection />
 
@@ -73,17 +87,11 @@ export default async function HomePage({
         {/* Personal Reality OS - Technology of thinking for reality creation */}
         <PersonalRealityOSSection />
 
-        {/* Clarity - Order the chaos, from noise to signal */}
-        <ClaritySection />
-
-        {/* Inner Freedom - What you will gain */}
-        <InnerFreedomSection />
-
-        {/* Know What You Want - First step */}
+        {/* Know What You Want - First step (combined with Clarity) */}
         <KnowWhatYouWantSection />
 
-        {/* Secret Reveal */}
-        <SecretRevealSection />
+        {/* Mini CTA #2 - Take a Test */}
+        <MiniCTASection variant="test" />
 
         {/* Thy Will Be Done - Feel safe with control */}
         <ThyWillBeDoneSection />
@@ -91,14 +99,8 @@ export default async function HomePage({
         {/* Testimonials #2 */}
         <TestimonialShowcase count={2} darkBackground={true} />
 
-        {/* Freedom - Your will = your freedom */}
-        <FreedomSection />
-
         {/* Social Proof (Stats + Link to all testimonials) */}
         <SocialProofSection />
-
-        {/* Philosophy (3 Steps) */}
-        <PhilosophySection />
 
         {/* Testimonials #3 - Videos preferred */}
         <TestimonialShowcase count={3} type="VIDEO" />

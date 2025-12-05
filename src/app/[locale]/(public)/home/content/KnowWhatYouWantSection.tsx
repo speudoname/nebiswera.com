@@ -11,20 +11,26 @@ import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animatio
 const content: Record<Locale, {
   mainTitle: string
   subtitle: string
+  subtitleExtra: string
   keyPoint: string
   description: string
+  closing: string
 }> = {
   ka: {
     mainTitle: 'თუ გინდა რომ იყო, აკეთო და გქონდეს რაც გინდა',
     subtitle: 'უნდა იცოდე რა გინდა!',
+    subtitleExtra: 'შენ იცი რომ რაღაც უნდა შეიცვალოს. მაგრამ გაუგებრობა იმდენია, რომ შინაარსს ვერ არჩევ. ნებისწერა გაძლევს სიცხადეს.',
     keyPoint: 'ყველაფერი იწყება ერთით - უნდა იცოდე რა გინდა',
     description: 'ეს არის პირველი ნაბიჯი ნებისწერისკენ. ვერ მიაღწევ იმას, რაც არ იცი რა არის. ვერ შექმნი რეალობას, რომელიც არ გაქვს ნათლად წარმოდგენილი. ნებისწერა გეხმარება გაიგო რა გინდა სინამდვილეში - არა ის რაც სხვებს სურთ შენთვის, არამედ ის რაც შენ გინდა საკუთარი თავისთვის.',
+    closing: 'გაუგებრობიდან — შინაარსამდე. ქაოსიდან — სიცხადემდე.',
   },
   en: {
     mainTitle: 'If You Want to Be, Do, and Have What You Want',
     subtitle: 'You Need to Know What You Want!',
+    subtitleExtra: 'You know something needs to change. But there\'s so much confusion you can\'t find the meaning. Nebiswera gives you clarity.',
     keyPoint: 'Everything starts with one thing - knowing what you want',
     description: 'This is the first step toward Nebiswera. You cannot achieve what you don\'t know. You cannot create a reality you haven\'t clearly envisioned. Nebiswera helps you understand what you truly want - not what others want for you, but what you want for yourself.',
+    closing: 'From confusion — to meaning. From chaos — to clarity.',
   },
 }
 
@@ -45,17 +51,20 @@ export function KnowWhatYouWantSection() {
       <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-4 leading-tight">
         {t.mainTitle}
       </h2>
-      <div className="inline-block bg-gradient-to-r from-primary-500 to-secondary-500 rounded-neu px-8 py-4 shadow-neu-md">
+      <div className="inline-block bg-gradient-to-r from-primary-500 to-secondary-500 rounded-neu px-8 py-4 shadow-neu-md mb-6">
         <p className="text-2xl md:text-3xl font-bold text-white">
           {t.subtitle}
         </p>
       </div>
+      <p className="text-xl md:text-2xl text-text-secondary max-w-3xl mx-auto leading-relaxed">
+        {t.subtitleExtra}
+      </p>
     </div>
   )
 
   const MainContent = () => (
-    <div className="bg-neu-base rounded-neu-lg p-8 md:p-10 shadow-neu">
-      <div className="flex items-start gap-6 mb-8">
+    <div className="bg-neu-base rounded-neu-lg p-8 md:p-10 shadow-neu mb-12 md:mb-16">
+      <div className="flex items-start gap-6">
         <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-neu-md">
           <Target className="w-8 h-8 md:w-10 md:h-10 text-white" />
         </div>
@@ -67,6 +76,31 @@ export function KnowWhatYouWantSection() {
             {t.description}
           </p>
         </div>
+      </div>
+    </div>
+  )
+
+  const ClosingStatement = () => (
+    <div className="text-center mb-12 md:mb-16">
+      <div className="inline-block bg-neu-dark rounded-neu-lg px-8 py-6 shadow-neu">
+        <p className="text-xl md:text-2xl font-bold text-primary-300">
+          {t.closing}
+        </p>
+      </div>
+    </div>
+  )
+
+  const ClarityImage = () => (
+    <div className="flex justify-center">
+      <div className="w-full max-w-2xl rounded-neu-lg overflow-hidden shadow-neu-md">
+        <BunnyImage
+          src="https://nebiswera-cdn.b-cdn.net/images/clarity.jpg"
+          alt="From confusion to clarity"
+          width={672}
+          height={336}
+          className="w-full h-auto"
+          sizes="(max-width: 640px) 95vw, 672px"
+        />
       </div>
     </div>
   )
@@ -103,11 +137,33 @@ export function KnowWhatYouWantSection() {
             >
               <MainContent />
             </motion.div>
+
+            {/* Closing Statement */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={fadeUpVariants}
+            >
+              <ClosingStatement />
+            </motion.div>
+
+            {/* Clarity Image */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={defaultViewport}
+              variants={scaleUpVariants}
+            >
+              <ClarityImage />
+            </motion.div>
           </>
         ) : (
           <>
             <HeaderContent />
             <MainContent />
+            <ClosingStatement />
+            <ClarityImage />
           </>
         )}
       </div>

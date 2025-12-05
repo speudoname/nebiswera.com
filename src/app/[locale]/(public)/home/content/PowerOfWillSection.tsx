@@ -4,6 +4,7 @@ import React from 'react'
 import { useLocale } from 'next-intl'
 import { motion } from 'framer-motion'
 import { BunnyImage } from '@/components/ui/BunnyImage'
+import { EmailCaptureForm } from '@/components/ui'
 import type { Locale } from '@/i18n/config'
 import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
 
@@ -83,6 +84,11 @@ export function PowerOfWillSection() {
         <p className="text-xl md:text-2xl lg:text-3xl text-text-secondary font-normal leading-tight">
           {t.subtitle2}
         </p>
+      </div>
+      <div className="mt-10 md:mt-12 flex justify-center">
+        <div className="w-full max-w-lg">
+          <EmailCaptureForm variant="hero" />
+        </div>
       </div>
     </div>
   )

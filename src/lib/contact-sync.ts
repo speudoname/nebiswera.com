@@ -12,6 +12,7 @@
 
 import { prisma } from '@/lib/db'
 import { ActivityType, type Contact, type WebinarRegistration } from '@prisma/client'
+import { logger } from '@/lib'
 
 interface WebinarRegistrationData {
   webinarId: string
@@ -474,7 +475,7 @@ async function applyAutomationRules(
         })
       } catch (error) {
         // Ignore duplicate tag errors
-        console.error(`Failed to assign tag ${tagId} to contact ${contactId}:`, error)
+        logger.error(`Failed to assign tag ${tagId} to contact ${contactId}:`, error)
       }
     }
   }

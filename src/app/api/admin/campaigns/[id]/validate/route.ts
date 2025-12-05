@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { getSettings } from '@/lib/settings'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Failed to validate campaign:', error)
+    logger.error('Failed to validate campaign:', error)
     return NextResponse.json(
       { error: 'Failed to validate campaign' },
       { status: 500 }

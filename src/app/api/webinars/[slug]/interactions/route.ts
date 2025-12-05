@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to submit interaction response:', error)
+    logger.error('Failed to submit interaction response:', error)
     return NextResponse.json(
       { error: 'Failed to submit response' },
       { status: 500 }
@@ -276,7 +277,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ interactions })
   } catch (error) {
-    console.error('Failed to get interactions:', error)
+    logger.error('Failed to get interactions:', error)
     return NextResponse.json(
       { error: 'Failed to get interactions' },
       { status: 500 }

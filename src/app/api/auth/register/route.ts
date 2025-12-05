@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
 import { registerSchema, formatZodError } from '@/lib/validations'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib'
 
 export async function POST(request: Request) {
   // Rate limit: 5 requests per minute for auth endpoints
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Registration error:', error)
+    logger.error('Registration error:', error)
     return NextResponse.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 }

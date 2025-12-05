@@ -75,6 +75,14 @@
     "schedule": {
       "title": "3-Day Workshop — Schedule & Details | Nebiswera",
       "description": "29 hours that will change your life. Learn the workshop schedule, program, and what to expect during 3 intensive days of transformation."
+    },
+    "nebisweraquiz": {
+      "title": "Nebiswera Quiz — Discover Your Willpower Type | Nebiswera",
+      "description": "In 3 minutes, discover how much your destiny is in your hands. Answer 9 questions and get a personalized assessment of your willpower level."
+    },
+    "blog": {
+      "title": "Blog — Articles and Insights | Nebiswera",
+      "description": "Read articles about personal development, conscious choice, and life transformation. The Nebiswera blog."
     }
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { WebinarEventType } from '@prisma/client'
 
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         onDemandEnabled: config.onDemandEnabled,
         onDemandUngated: config.onDemandUngated,
         justInTimeEnabled: config.justInTimeEnabled,
-        justInTimeMinutes: config.justInTimeMinutes,
+        intervalMinutes: config.intervalMinutes,
         replayEnabled: config.replayEnabled,
         replayUngated: config.replayUngated,
         replayExpiresAfterDays: config.replayExpiresAfterDays,
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch schedule config:', error)
+    logger.error('Failed to fetch schedule config:', error)
     return NextResponse.json(
       { error: 'Failed to fetch schedule configuration' },
       { status: 500 }
@@ -86,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       onDemandEnabled,
       onDemandUngated,
       justInTimeEnabled,
-      justInTimeMinutes,
+      intervalMinutes,
       replayEnabled,
       replayUngated,
       replayExpiresAfterDays,
@@ -129,7 +130,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       onDemandEnabled: onDemandEnabled || false,
       onDemandUngated: onDemandUngated || false,
       justInTimeEnabled: justInTimeEnabled || false,
-      justInTimeMinutes: justInTimeMinutes || 15,
+      intervalMinutes: intervalMinutes || 15,
       replayEnabled: replayEnabled !== false, // default true
       replayUngated: replayUngated || false,
       replayExpiresAfterDays: replayExpiresAfterDays || null,
@@ -160,7 +161,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         onDemandEnabled: config.onDemandEnabled,
         onDemandUngated: config.onDemandUngated,
         justInTimeEnabled: config.justInTimeEnabled,
-        justInTimeMinutes: config.justInTimeMinutes,
+        intervalMinutes: config.intervalMinutes,
         replayEnabled: config.replayEnabled,
         replayUngated: config.replayUngated,
         replayExpiresAfterDays: config.replayExpiresAfterDays,
@@ -170,7 +171,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to save schedule config:', error)
+    logger.error('Failed to save schedule config:', error)
     return NextResponse.json(
       { error: 'Failed to save schedule configuration' },
       { status: 500 }

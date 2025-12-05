@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { EmailStatus } from '@prisma/client'
+import { logger } from '@/lib'
 
 // Postmark webhook events
 interface PostmarkDeliveryEvent {
@@ -130,7 +131,7 @@ async function updateContactStatus(
 export async function POST(request: Request) {
   try {
     if (!verifyBasicAuth(request)) {
-      console.warn('Invalid marketing webhook authentication')
+      logger.warn('Invalid marketing webhook authentication')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -327,7 +328,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true, processed: true })
   } catch (error) {
-    console.error('Marketing webhook error:', error)
+    logger.error('Marketing webhook error:', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
@@ -397,6 +398,6 @@ async function trackLinkClick(
     }
   } catch (error) {
     // Don't fail the webhook for link tracking errors
-    console.error('Link tracking error:', error)
+    logger.error('Link tracking error:', error)
   }
 }

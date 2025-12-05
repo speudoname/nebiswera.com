@@ -2,6 +2,7 @@
 // Score ranges from 0-100 based on various engagement factors
 
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 
 interface EngagementFactors {
   watchPercentage: number      // 0-100 (% of video watched)
@@ -193,7 +194,7 @@ export async function updateWebinarEngagementScores(webinarId: string): Promise<
       totalScore += score
       updated++
     } catch (error) {
-      console.error(`Failed to update engagement for ${reg.id}:`, error)
+      logger.error(`Failed to update engagement for ${reg.id}:`, error)
     }
   }
 

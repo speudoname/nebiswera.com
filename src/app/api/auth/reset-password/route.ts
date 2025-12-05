@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { resetPasswordSchema, formatZodError } from '@/lib/validations'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib'
 
 export async function POST(request: Request) {
   // Rate limit: 5 requests per minute for auth endpoints
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
       message: 'Password reset successfully',
     })
   } catch (error) {
-    console.error('Reset password error:', error)
+    logger.error('Reset password error:', error)
     return NextResponse.json(
       { error: 'Something went wrong' },
       { status: 500 }

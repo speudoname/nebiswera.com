@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
+import { logger } from '@/lib'
 
 interface PostmarkSuppression {
   EmailAddress: string
@@ -230,7 +231,7 @@ export async function deleteSuppressionFromPostmark(email: string): Promise<bool
 
     return response.ok
   } catch (error) {
-    console.error('Failed to delete suppression from Postmark:', error)
+    logger.error('Failed to delete suppression from Postmark:', error)
     return false
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { EmailStatus } from '@prisma/client'
+import { logger } from '@/lib'
 
 // Postmark webhook events
 interface PostmarkDeliveryEvent {
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
   try {
     // Verify Basic HTTP Authentication
     if (!verifyBasicAuth(request)) {
-      console.warn('Invalid webhook authentication')
+      logger.warn('Invalid webhook authentication')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true, processed: true })
   } catch (error) {
-    console.error('Postmark webhook error:', error)
+    logger.error('Postmark webhook error:', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

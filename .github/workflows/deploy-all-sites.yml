@@ -1,0 +1,146 @@
+name: Deploy to All Sites
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build Next.js (standalone)
+        run: |
+          npm run build
+          # Verify standalone output exists
+          if [ ! -d ".next/standalone" ]; then
+            echo "Build failed: .next/standalone not found"
+            exit 1
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: |
+            .next/standalone
+            .next/static
+            public
+            package.json
+            ecosystem.config.js
+          retention-days: 1
+
+  # Deploy to each site in parallel
+  deploy-nebiswera:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: nebiswera
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          # Deploy standalone build
+          rsync -avz --delete .next/standalone/ root@${{ secrets.DROPLET_IP }}:/var/www/nebiswera/
+
+          # Deploy static files
+          rsync -avz .next/static/ root@${{ secrets.DROPLET_IP }}:/var/www/nebiswera/.next/static/
+
+          # Deploy public files
+          rsync -avz public/ root@${{ secrets.DROPLET_IP }}:/var/www/nebiswera/public/
+
+          # Deploy config files
+          scp package.json ecosystem.config.js root@${{ secrets.DROPLET_IP }}:/var/www/nebiswera/
+
+      - name: Restart application
+        run: |
+          ssh root@${{ secrets.DROPLET_IP }} << 'EOF'
+            cd /var/www/nebiswera
+            pm2 restart nebiswera || pm2 start ecosystem.config.js
+            pm2 save
+          EOF
+
+      - name: Health check
+        run: |
+          for i in {1..30}; do
+            HTTP_CODE=$(ssh root@${{ secrets.DROPLET_IP }} "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000")
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "307" ]; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE, retrying..."
+            sleep 2
+          done
+          echo "Health check failed!"
+          exit 1
+
+  # Template for additional sites - duplicate this block for each client
+  deploy-client2:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: client2
+    if: ${{ vars.ENABLED == 'true' }}  # Enable/disable per-site deployment
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          rsync -avz --delete .next/standalone/ root@${{ secrets.DROPLET_IP }}:/var/www/${{ vars.APP_NAME }}/
+          rsync -avz .next/static/ root@${{ secrets.DROPLET_IP }}:/var/www/${{ vars.APP_NAME }}/.next/static/
+          rsync -avz public/ root@${{ secrets.DROPLET_IP }}:/var/www/${{ vars.APP_NAME }}/public/
+          scp package.json ecosystem.config.js root@${{ secrets.DROPLET_IP }}:/var/www/${{ vars.APP_NAME }}/
+
+      - name: Restart application
+        run: |
+          ssh root@${{ secrets.DROPLET_IP }} << EOF
+            cd /var/www/${{ vars.APP_NAME }}
+            pm2 restart ${{ vars.APP_NAME }} || pm2 start ecosystem.config.js --name ${{ vars.APP_NAME }}
+            pm2 save
+          EOF
+
+      - name: Health check
+        run: |
+          for i in {1..30}; do
+            HTTP_CODE=$(ssh root@${{ secrets.DROPLET_IP }} "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000")
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "307" ]; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1

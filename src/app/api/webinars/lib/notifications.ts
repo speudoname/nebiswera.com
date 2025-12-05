@@ -4,6 +4,7 @@
 
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/email'
+import { logger } from '@/lib'
 import type { Prisma } from '@prisma/client'
 import type {
   NotificationTriggerType,
@@ -323,7 +324,7 @@ export async function sendNotification(
 
   // Check if notification exists and is active
   if (!notification) {
-    console.log('Notification not found (deleted), skipping:', queueItem.notificationId)
+    logger.log('Notification not found (deleted), skipping:', queueItem.notificationId)
     await prisma.webinarNotificationQueue.update({
       where: { id: queueItem.id },
       data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'Notification deleted' },
@@ -332,7 +333,7 @@ export async function sendNotification(
   }
 
   if (!notification.isActive) {
-    console.log('Notification is disabled, skipping:', queueItem.notificationId)
+    logger.log('Notification is disabled, skipping:', queueItem.notificationId)
     await prisma.webinarNotificationQueue.update({
       where: { id: queueItem.id },
       data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'Notification disabled' },
@@ -346,7 +347,7 @@ export async function sendNotification(
   })
 
   if (!registration) {
-    console.error('Registration not found:', queueItem.registrationId)
+    logger.error('Registration not found:', queueItem.registrationId)
     return false
   }
 
@@ -389,7 +390,7 @@ export async function sendNotification(
       bodyHtml = template.html
       bodyText = template.text
     } catch (error) {
-      console.error('Failed to get template:', notification.templateKey, error)
+      logger.error('Failed to get template:', notification.templateKey, error)
       // Fall back to inline content if template fails
       subject = notification.subject || ''
       bodyHtml = notification.bodyHtml || ''
@@ -444,7 +445,7 @@ export async function sendNotification(
 
       return true
     } else if (notification.channel === 'SMS') {
-      console.log('[SMS STUB] Would send SMS to:', registration.phone, 'Content:', bodyText)
+      logger.log('[SMS STUB] Would send SMS to:', registration.phone, 'Content:', bodyText)
 
       await prisma.webinarNotificationLog.create({
         data: {
@@ -466,7 +467,7 @@ export async function sendNotification(
 
     return false
   } catch (error) {
-    console.error('Failed to send notification:', error)
+    logger.error('Failed to send notification:', error)
 
     await prisma.webinarNotificationQueue.update({
       where: { id: queueItem.id },

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { getSettings } from '@/lib/settings'
-import { isValidEmail, unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { isValidEmail, unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      console.error('Postmark test send error:', errorData)
+      logger.error('Postmark test send error:', errorData)
       return errorResponse(errorData.Message || 'Failed to send test email', response.status)
     }
 
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: `Test email sent to ${email}`,
     })
   } catch (error) {
-    console.error('Failed to send test email:', error)
+    logger.error('Failed to send test email:', error)
     return errorResponse('Failed to send test email')
   }
 }

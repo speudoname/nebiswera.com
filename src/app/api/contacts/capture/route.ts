@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 
 export async function POST(request: NextRequest) {
   try {
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (error) {
-    console.error('Error capturing contact:', error)
+    logger.error('Error capturing contact:', error)
     return NextResponse.json(
       { error: 'Failed to capture contact' },
       { status: 500 }

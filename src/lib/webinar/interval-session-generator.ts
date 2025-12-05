@@ -2,6 +2,7 @@
 // Replaces complex dynamic JIT calculation with pre-generated sessions
 
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 
 interface IntervalSessionConfig {
   intervalMinutes: number // 5, 15, 30, or 60
@@ -129,7 +130,7 @@ export async function generateAllIntervalSessions(): Promise<{
       status: 'PUBLISHED',
       scheduleConfig: {
         justInTimeEnabled: true,
-        intervalMinutes: { not: null },
+        intervalMinutes: { gt: 0 },
       },
     },
     select: { id: true, title: true },
@@ -144,7 +145,7 @@ export async function generateAllIntervalSessions(): Promise<{
       processed++
     } catch (error) {
       const errorMsg = `Failed to generate sessions for "${webinar.title}": ${error}`
-      console.error(errorMsg)
+      logger.error(errorMsg)
       errors.push(errorMsg)
     }
   }

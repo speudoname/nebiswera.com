@@ -7,6 +7,7 @@
  */
 
 import Ably from 'ably'
+import { logger } from '@/lib'
 
 /**
  * Server-side Ably client (uses API key)
@@ -54,7 +55,7 @@ export async function publishChatMessage(
 
     return { success: true }
   } catch (error) {
-    console.error('Failed to publish message to Ably:', error)
+    logger.error('Failed to publish message to Ably:', error)
     throw error
   }
 }

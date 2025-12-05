@@ -68,14 +68,40 @@ export async function deleteFromBunnyStorage(path: string): Promise<void> {
 function getContentType(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase()
   const types: Record<string, string> = {
+    // Images
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
     png: 'image/png',
     gif: 'image/gif',
     webp: 'image/webp',
+    svg: 'image/svg+xml',
+    // Audio
     mp3: 'audio/mpeg',
     wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    // Video
     mp4: 'video/mp4',
+    webm: 'video/webm',
+    mov: 'video/quicktime',
+    // Documents
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    // Archives
+    zip: 'application/zip',
+    rar: 'application/vnd.rar',
+    // Text
+    txt: 'text/plain',
+    html: 'text/html',
+    css: 'text/css',
+    js: 'text/javascript',
+    json: 'application/json',
   }
   return types[ext || ''] || 'application/octet-stream'
 }
@@ -108,6 +134,64 @@ export function generateWebinarMediaKey(filename: string, type: 'images' | 'vide
   const random = Math.random().toString(36).substring(2, 8)
   const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
   return `webinar-media/${type}/${timestamp}-${random}-${sanitized}`
+}
+
+/**
+ * Generate unique filename for user profile images
+ */
+export function generateUserProfileKey(userId: string, filename: string): string {
+  const timestamp = Date.now()
+  const ext = filename.split('.').pop()?.toLowerCase() || 'jpg'
+  return `user-profiles/${userId}-${timestamp}.${ext}`
+}
+
+/**
+ * Generate unique filename for blog post images
+ */
+export function generateBlogImageKey(filename: string): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8)
+  const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+  return `blog-images/${timestamp}-${random}-${sanitized}`
+}
+
+// ===========================================
+// LMS Storage Keys
+// ===========================================
+
+export type LmsMediaType = 'videos' | 'images' | 'audio' | 'files' | 'thumbnails'
+
+/**
+ * Generate unique filename for LMS course content
+ * @param courseId - The course ID
+ * @param mediaType - Type of media (videos, images, audio, files, thumbnails)
+ * @param filename - Original filename
+ */
+export function generateLmsContentKey(
+  courseId: string,
+  mediaType: LmsMediaType,
+  filename: string
+): string {
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 8)
+  const sanitized = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+  return `lms/courses/${courseId}/${mediaType}/${timestamp}-${random}-${sanitized}`
+}
+
+/**
+ * Generate unique filename for LMS course thumbnail
+ */
+export function generateLmsCourseThumbnailKey(courseId: string, filename: string): string {
+  const timestamp = Date.now()
+  const ext = filename.split('.').pop()?.toLowerCase() || 'jpg'
+  return `lms/courses/${courseId}/thumbnail-${timestamp}.${ext}`
+}
+
+/**
+ * Generate unique filename for LMS certificate PDF
+ */
+export function generateLmsCertificateKey(certificateId: string): string {
+  return `lms/certificates/${certificateId}.pdf`
 }
 
 /**

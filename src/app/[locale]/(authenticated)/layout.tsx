@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { signOutAction } from '@/lib/auth/actions'
 import { AppHeader } from '@/components/layout'
+import { ProgressMigrationWrapper } from '@/components/lms/ProgressMigrationWrapper'
 
 export default async function AuthenticatedLayout({
   children,
@@ -37,6 +38,7 @@ export default async function AuthenticatedLayout({
       <main>
         {children}
       </main>
+      <ProgressMigrationWrapper />
     </div>
   )
 }

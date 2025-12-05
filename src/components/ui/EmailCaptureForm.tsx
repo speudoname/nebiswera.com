@@ -111,8 +111,8 @@ export function EmailCaptureForm({ variant = 'inline', className = '' }: EmailCa
         throw new Error('Failed to save contact')
       }
 
-      // Redirect to test page with email as URL parameter
-      router.push(`/${locale}/test?email=${encodeURIComponent(email)}`)
+      // Redirect to quiz page with email as URL parameter
+      router.push(`/${locale}/nebisweraquiz?email=${encodeURIComponent(email)}`)
     } catch (error) {
       console.error('Error saving contact:', error)
       setError(t.validationError)

@@ -43,13 +43,14 @@ function getLocaleFromPathname(pathname: string): Locale | null {
  *
  * Flow:
  * 1. Admin routes (/admin/*) - handled separately with their own auth
- * 2. Root redirect (/) - redirect to preferred locale
- * 3. Locale detection - ensure URL has locale prefix
- * 4. Auth token retrieval - for route protection
- * 5. Route protection - redirect unauthenticated users from protected routes
- * 6. Email verification - enforce verification after grace period
- * 7. Locale preference - redirect to user's preferred locale if different
- * 8. i18n middleware - handle remaining locale logic
+ * 2. Blog post routes (/blog/*) - no locale prefix, slug determines language
+ * 3. Root redirect (/) - redirect to preferred locale
+ * 4. Locale detection - ensure URL has locale prefix
+ * 5. Auth token retrieval - for route protection
+ * 6. Route protection - redirect unauthenticated users from protected routes
+ * 7. Email verification - enforce verification after grace period
+ * 8. Locale preference - redirect to user's preferred locale if different
+ * 9. i18n middleware - handle remaining locale logic
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -60,11 +61,16 @@ export async function middleware(request: NextRequest) {
     return adminResponse ?? NextResponse.next()
   }
 
-  // 2. Handle root redirect to preferred locale
+  // 2. Handle blog post routes (no locale prefix - slug determines language)
+  if (pathname.startsWith('/blog/')) {
+    return NextResponse.next()
+  }
+
+  // 3. Handle root redirect to preferred locale
   const rootRedirect = handleLocaleRedirect(request)
   if (rootRedirect) return rootRedirect
 
-  // 3. Get locale from pathname
+  // 4. Get locale from pathname
   const locale = getLocaleFromPathname(pathname)
 
   // If no locale in pathname, let intl middleware handle the redirect
@@ -72,7 +78,7 @@ export async function middleware(request: NextRequest) {
     return intlMiddleware(request)
   }
 
-  // 4. Get auth token (with error handling)
+  // 5. Get auth token (with error handling)
   let token = null
   try {
     token = await getToken({
@@ -95,7 +101,7 @@ export async function middleware(request: NextRequest) {
     : undefined
   const effectivePreferredLocale = userPreferredLocale || storedLocale
 
-  // 5. Route Protection
+  // 6. Route Protection
   const protectionRedirect = handleRouteProtection({
     request,
     token,
@@ -104,7 +110,7 @@ export async function middleware(request: NextRequest) {
   })
   if (protectionRedirect) return protectionRedirect
 
-  // 6. Email Verification
+  // 7. Email Verification
   const verificationRedirect = handleEmailVerification({
     request,
     token,
@@ -113,7 +119,7 @@ export async function middleware(request: NextRequest) {
   })
   if (verificationRedirect) return verificationRedirect
 
-  // 7. Preferred Locale Redirect
+  // 8. Preferred Locale Redirect
   // Redirect users to their preferred locale if different from current URL
   if (
     effectivePreferredLocale &&
@@ -125,7 +131,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(newUrl)
   }
 
-  // 8. Final: i18n Middleware
+  // 9. Final: i18n Middleware
   return intlMiddleware(request)
 }
 

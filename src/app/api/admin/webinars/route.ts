@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import { createDefaultNotifications } from '@/app/api/webinars/lib/notifications'
 import type { NextRequest } from 'next/server'
 import type { WebinarStatus, Prisma } from '@prisma/client'
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch webinars:', error)
+    logger.error('Failed to fetch webinars:', error)
     return errorResponse('Failed to fetch webinars')
   }
 }
@@ -166,12 +166,12 @@ export async function POST(request: NextRequest) {
       await createDefaultNotifications(webinar.id)
     } catch (error) {
       // Don't fail the webinar creation if notifications fail
-      console.error('Failed to create default notifications:', error)
+      logger.error('Failed to create default notifications:', error)
     }
 
     return successResponse(webinar, 201)
   } catch (error) {
-    console.error('Failed to create webinar:', error)
+    logger.error('Failed to create webinar:', error)
     return errorResponse('Failed to create webinar')
   }
 }

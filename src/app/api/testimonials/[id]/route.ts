@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 
 // GET /api/testimonials/[id] - Get single testimonial
 export async function GET(
@@ -26,8 +27,8 @@ export async function GET(
     }
 
     return NextResponse.json({ testimonial })
-  } catch (error: any) {
-    console.error('Error fetching testimonial:', error)
+  } catch (error: unknown) {
+    logger.error('Error fetching testimonial:', error)
     return NextResponse.json({ error: 'Failed to fetch testimonial' }, { status: 500 })
   }
 }
@@ -62,8 +63,8 @@ export async function PUT(
     })
 
     return NextResponse.json({ success: true, testimonial })
-  } catch (error: any) {
-    console.error('Error updating testimonial:', error)
+  } catch (error: unknown) {
+    logger.error('Error updating testimonial:', error)
     return NextResponse.json({ error: 'Failed to update testimonial' }, { status: 500 })
   }
 }
@@ -99,8 +100,8 @@ export async function PATCH(
     })
 
     return NextResponse.json({ success: true, testimonial })
-  } catch (error: any) {
-    console.error('Error updating testimonial:', error)
+  } catch (error: unknown) {
+    logger.error('Error updating testimonial:', error)
     return NextResponse.json({ error: 'Failed to update testimonial' }, { status: 500 })
   }
 }
@@ -124,8 +125,8 @@ export async function DELETE(
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error deleting testimonial:', error)
+  } catch (error: unknown) {
+    logger.error('Error deleting testimonial:', error)
     return NextResponse.json({ error: 'Failed to delete testimonial' }, { status: 500 })
   }
 }

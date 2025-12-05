@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       customThankYouHtml: registration.webinar.customThankYouPageHtml,
     })
   } catch (error) {
-    console.error('Failed to fetch thank you page data:', error)
+    logger.error('Failed to fetch thank you page data:', error)
     return NextResponse.json(
       { error: 'Failed to load registration details' },
       { status: 500 }

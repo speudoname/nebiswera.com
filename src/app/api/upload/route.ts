@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadToBunnyStorage, generateUniqueFilename } from '@/lib/bunny-storage'
 import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -92,8 +93,8 @@ export async function POST(request: NextRequest) {
       url,
       key: path,
     })
-  } catch (error: any) {
-    console.error('Error uploading file:', error)
+  } catch (error: unknown) {
+    logger.error('Error uploading file:', error)
     return NextResponse.json(
       { error: 'Failed to upload file' },
       { status: 500 }

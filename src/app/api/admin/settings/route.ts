@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSettings, updateSettings } from '@/lib/settings'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
       hasMarketingToken: !!settings.marketingServerToken,
     })
   } catch (error) {
-    console.error('Failed to get settings:', error)
+    logger.error('Failed to get settings:', error)
     return NextResponse.json(
       { error: 'Failed to get settings' },
       { status: 500 }
@@ -91,7 +92,7 @@ export async function PATCH(request: NextRequest) {
       hasMarketingToken: !!settings.marketingServerToken,
     })
   } catch (error) {
-    console.error('Failed to update settings:', error)
+    logger.error('Failed to update settings:', error)
     return NextResponse.json(
       { error: 'Failed to update settings' },
       { status: 500 }

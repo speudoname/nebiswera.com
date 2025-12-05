@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadToBunnyStorage, generateWebinarMediaKey } from '@/lib/bunny-storage'
 import { uploadVideo } from '@/lib/storage/bunny'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (error: any) {
-    console.error('Error uploading webinar media:', error)
+    logger.error('Error uploading webinar media:', error)
     return NextResponse.json(
       { error: 'Failed to upload media' },
       { status: 500 }

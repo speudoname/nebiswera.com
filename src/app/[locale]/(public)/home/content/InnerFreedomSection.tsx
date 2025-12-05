@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Bird, KeyRound, Unlock } from 'lucide-react'
 import { BunnyImage } from '@/components/ui/BunnyImage'
 import type { Locale } from '@/i18n/config'
-import { fadeUpVariants, scaleUpVariants, defaultViewport } from '@/lib/animations'
+import { fadeUpVariants, defaultViewport } from '@/lib/animations'
 
 const content: Record<Locale, {
   eyebrow: string
@@ -90,33 +90,28 @@ export function InnerFreedomSection() {
   )
 
   const ClosingStatement = () => (
-    <div className="text-center mb-12 md:mb-16">
+    <div className="text-center">
       <p className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
         {t.closing}
       </p>
     </div>
   )
 
-  const KeyImage = () => (
-    <div className="flex justify-center">
-      <div className="max-w-sm rounded-neu-lg overflow-hidden shadow-neu-md">
-        <BunnyImage
-          src="https://nebiswera-cdn.b-cdn.net/images/key.jpg"
-          alt="The Key to Inner Freedom"
-          width={400}
-          height={400}
-          className="w-full h-auto"
-          sizes="(max-width: 640px) 280px, 384px"
-        />
-      </div>
-    </div>
-  )
-
   return (
-    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-white relative overflow-hidden">
-      {/* Subtle radial glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-r from-primary-500/5 to-secondary-500/5 blur-3xl" />
+    <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 relative overflow-hidden min-h-[70vh] flex items-center">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <BunnyImage
+          src="https://nebiswera-cdn.b-cdn.net/images/potential.jpg"
+          alt=""
+          width={1024}
+          height={572}
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          sizes="100vw"
+          priority
+        />
+        {/* White overlay 80% */}
+        <div className="absolute inset-0 bg-white/80" />
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
@@ -151,23 +146,12 @@ export function InnerFreedomSection() {
             >
               <ClosingStatement />
             </motion.div>
-
-            {/* Key Image */}
-            <motion.div
-              initial="hidden"
-              whileInView="visible"
-              viewport={defaultViewport}
-              variants={scaleUpVariants}
-            >
-              <KeyImage />
-            </motion.div>
           </>
         ) : (
           <>
             <HeaderContent />
             <KeyInsightBlock />
             <ClosingStatement />
-            <KeyImage />
           </>
         )}
       </div>

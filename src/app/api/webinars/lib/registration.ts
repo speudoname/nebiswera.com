@@ -3,7 +3,7 @@
 
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
-import { isValidEmail as validateEmail } from '@/lib'
+import { isValidEmail as validateEmail, logger } from '@/lib'
 import type { WebinarSessionType } from '@prisma/client'
 import {
   queueRegistrationNotifications,
@@ -145,8 +145,8 @@ export async function registerForWebinar(
       break
 
     case 'JUST_IN_TIME':
-      // Calculate NOW + justInTimeMinutes
-      const jitMinutes = (webinar as any).justInTimeMinutes || 15
+      // Calculate NOW + intervalMinutes
+      const jitMinutes = (webinar as any).intervalMinutes || 15
       sessionStartTime = new Date(Date.now() + jitMinutes * 60 * 1000)
       break
 
@@ -224,7 +224,7 @@ export async function registerForWebinar(
     }
   } catch (error) {
     // Don't fail registration if notification queuing fails
-    console.error('Failed to queue registration notifications:', error)
+    logger.error('Failed to queue registration notifications:', error)
   }
 
   return {

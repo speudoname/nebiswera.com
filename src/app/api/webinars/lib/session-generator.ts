@@ -49,7 +49,7 @@ export async function generateUpcomingSessions(
   if (includeJustInTime && config.justInTimeEnabled) {
     const justInTimeDate = new Date(fromDate)
     justInTimeDate.setMinutes(
-      justInTimeDate.getMinutes() + config.justInTimeMinutes
+      justInTimeDate.getMinutes() + config.intervalMinutes
     )
     // Round to nearest 5 minutes
     justInTimeDate.setMinutes(Math.ceil(justInTimeDate.getMinutes() / 5) * 5)

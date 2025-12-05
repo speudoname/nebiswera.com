@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, message: 'Email verified successfully' })
   } catch (error) {
-    console.error('Email verification error:', error)
+    logger.error('Email verification error:', error)
     return NextResponse.json(
       { error: 'Something went wrong' },
       { status: 500 }

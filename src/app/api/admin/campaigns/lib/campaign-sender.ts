@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
+import { logger } from '@/lib'
 
 const BATCH_SIZE = 500 // Postmark limit
 const BATCH_DELAY_MS = 1000 // 1 second between batches to avoid rate limits
@@ -217,7 +218,7 @@ async function sendBatch(
     if (!response.ok) {
       // Entire batch failed
       const errorData = await response.json().catch(() => ({}))
-      console.error('Postmark batch error:', errorData)
+      logger.error('Postmark batch error:', errorData)
 
       // Mark all recipients as failed
       await prisma.campaignRecipient.updateMany({
@@ -314,7 +315,7 @@ async function sendBatch(
 
     return { success: true, sent, failed, errors }
   } catch (error) {
-    console.error('Postmark batch request failed:', error)
+    logger.error('Postmark batch request failed:', error)
 
     // Mark all as failed
     await prisma.campaignRecipient.updateMany({

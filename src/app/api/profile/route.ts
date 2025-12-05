@@ -17,9 +17,13 @@ export async function GET(request: NextRequest) {
     select: {
       id: true,
       name: true,
+      nameKa: true,
+      nameEn: true,
       email: true,
+      image: true,
       emailVerified: true,
       preferredLocale: true,
+      role: true,
       createdAt: true,
     },
   })
@@ -49,7 +53,7 @@ export async function PATCH(request: NextRequest) {
     )
   }
 
-  const { name, preferredLocale, currentPassword, newPassword } = result.data
+  const { name, nameKa, nameEn, preferredLocale, currentPassword, newPassword } = result.data
 
   const user = await prisma.user.findUnique({
     where: { email: token.email },
@@ -61,6 +65,8 @@ export async function PATCH(request: NextRequest) {
 
   const updateData: {
     name?: string
+    nameKa?: string
+    nameEn?: string
     preferredLocale?: string
     password?: string
   } = {}
@@ -68,6 +74,16 @@ export async function PATCH(request: NextRequest) {
   // Update name if provided
   if (name !== undefined) {
     updateData.name = name
+  }
+
+  // Update nameKa if provided
+  if (nameKa !== undefined) {
+    updateData.nameKa = nameKa
+  }
+
+  // Update nameEn if provided
+  if (nameEn !== undefined) {
+    updateData.nameEn = nameEn
   }
 
   // Update preferred locale if provided
@@ -102,9 +118,13 @@ export async function PATCH(request: NextRequest) {
     select: {
       id: true,
       name: true,
+      nameKa: true,
+      nameEn: true,
       email: true,
+      image: true,
       emailVerified: true,
       preferredLocale: true,
+      role: true,
       createdAt: true,
     },
   })

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { defaultLocale } from '@/i18n/config'
 import { AUTH_COOKIE_NAME } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 
 /**
  * Handles admin route protection:
@@ -42,7 +43,7 @@ export async function handleAdminRoutes(
     return NextResponse.next()
   } catch (error) {
     // Log error for debugging but don't expose details to client
-    console.error('[Middleware] Admin auth error:', error)
+    logger.error('[Middleware] Admin auth error:', error)
     // On auth error, redirect to login as a safe fallback
     const loginUrl = new URL(`/${defaultLocale}/auth/login`, request.url)
     return NextResponse.redirect(loginUrl)

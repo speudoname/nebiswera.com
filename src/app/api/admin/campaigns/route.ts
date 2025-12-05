@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { CampaignStatus, TargetType, Prisma } from '@prisma/client'
 
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch campaigns:', error)
+    logger.error('Failed to fetch campaigns:', error)
     return NextResponse.json(
       { error: 'Failed to fetch campaigns' },
       { status: 500 }
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(campaign, { status: 201 })
   } catch (error) {
-    console.error('Failed to create campaign:', error)
+    logger.error('Failed to create campaign:', error)
     return NextResponse.json(
       { error: 'Failed to create campaign' },
       { status: 500 }

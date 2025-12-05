@@ -127,7 +127,7 @@ export function WhatItIsNotSection() {
   return (
     <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-primary-50/50 to-neu-base relative overflow-hidden">
       {/* Background artwork - more visible */}
-      <div className="absolute inset-0 opacity-15 pointer-events-none">
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
         <BunnyImage
           src="https://nebiswera-cdn.b-cdn.net/images/nebiswera5.jpg"
           alt=""

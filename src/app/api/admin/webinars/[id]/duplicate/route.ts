@@ -86,7 +86,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
               onDemandEnabled: original.scheduleConfig.onDemandEnabled,
               onDemandUngated: original.scheduleConfig.onDemandUngated,
               justInTimeEnabled: original.scheduleConfig.justInTimeEnabled,
-              justInTimeMinutes: original.scheduleConfig.justInTimeMinutes,
+              intervalMinutes: original.scheduleConfig.intervalMinutes,
               replayEnabled: original.scheduleConfig.replayEnabled,
               replayUngated: original.scheduleConfig.replayUngated,
               replayExpiresAfterDays: original.scheduleConfig.replayExpiresAfterDays,

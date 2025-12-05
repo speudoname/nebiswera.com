@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { forgotPasswordSchema, formatZodError } from '@/lib/validations'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib'
 
 export async function POST(request: Request) {
   // Rate limit: 3 requests per 5 minutes for email endpoints
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
       message: 'If an account exists, a password reset email has been sent.',
     })
   } catch (error) {
-    console.error('Forgot password error:', error)
+    logger.error('Forgot password error:', error)
     return NextResponse.json(
       { error: 'Something went wrong' },
       { status: 500 }

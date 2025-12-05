@@ -108,10 +108,14 @@ export function IconBadge({
   const sizeConfig = sizeClasses[size]
   const variantConfig = variantClasses[variant]
 
+  // Use AlertTriangle as fallback for unknown icons
+  const FallbackIcon = AlertTriangle
   if (!Icon) {
-    console.warn(`IconBadge: Unknown icon "${icon}"`)
-    return null
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`IconBadge: Unknown icon "${icon}", using fallback`)
+    }
   }
+  const IconComponent = Icon || FallbackIcon
 
   return (
     <div
@@ -123,7 +127,7 @@ export function IconBadge({
         ${className}
       `.trim()}
     >
-      <Icon className={`${sizeConfig.icon} ${variantConfig.icon} ${iconClassName}`.trim()} />
+      <IconComponent className={`${sizeConfig.icon} ${variantConfig.icon} ${iconClassName}`.trim()} />
     </div>
   )
 }

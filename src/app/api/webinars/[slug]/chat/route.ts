@@ -4,7 +4,7 @@ import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import { publishChatMessage } from '@/lib/ably'
 import { checkRateLimitByToken } from '@/lib/rate-limit'
 import { CHAT } from '@/lib/webinar/constants'
-import { unauthorizedResponse, notFoundResponse, forbiddenResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, forbiddenResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       })
     } catch (ablyError) {
       // Log error but don't fail the request - message is saved to DB
-      console.error('Failed to publish to Ably (message saved to DB):', ablyError)
+      logger.error('Failed to publish to Ably (message saved to DB):', ablyError)
     }
 
     return successResponse({
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to send chat message:', error)
+    logger.error('Failed to send chat message:', error)
     return errorResponse('Failed to send message')
   }
 }
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })),
     })
   } catch (error) {
-    console.error('Failed to get chat messages:', error)
+    logger.error('Failed to get chat messages:', error)
     return errorResponse('Failed to get messages')
   }
 }

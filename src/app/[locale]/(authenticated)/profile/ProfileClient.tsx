@@ -1,18 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Button, Input, Select, Modal, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
+import { Camera, Trash2, User } from 'lucide-react'
+import Image from 'next/image'
+import { MyCourses } from './MyCourses'
+import { MyCertificates } from './MyCertificates'
 
 interface UserProfile {
   id: string
   name: string | null
+  nameKa: string | null
+  nameEn: string | null
   email: string
+  image: string | null
   emailVerified: string | null
   preferredLocale: string
+  role: string
   createdAt: string
 }
 
@@ -27,11 +35,15 @@ export function ProfileClient() {
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [formData, setFormData] = useState({
     name: '',
+    nameKa: '',
+    nameEn: '',
     preferredLocale: 'ka',
   })
 
@@ -52,6 +64,8 @@ export function ProfileClient() {
           setUser(data)
           setFormData({
             name: data.name || '',
+            nameKa: data.nameKa || '',
+            nameEn: data.nameEn || '',
             preferredLocale: data.preferredLocale || 'ka',
           })
         }
@@ -149,6 +163,75 @@ export function ProfileClient() {
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setMessage({ type: 'error', text: t('invalidImageType') })
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: 'error', text: t('imageTooLarge') })
+      return
+    }
+
+    setUploadingImage(true)
+    setMessage(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/profile/image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+        setMessage({ type: 'success', text: t('imageUploadSuccess') })
+      } else {
+        const data = await res.json()
+        setMessage({ type: 'error', text: data.error || t('imageUploadFailed') })
+      }
+    } catch {
+      setMessage({ type: 'error', text: errors('somethingWrong') })
+    } finally {
+      setUploadingImage(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveImage = async () => {
+    setUploadingImage(true)
+    setMessage(null)
+
+    try {
+      const res = await fetch('/api/profile/image', { method: 'DELETE' })
+
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+        setMessage({ type: 'success', text: t('imageRemoveSuccess') })
+      } else {
+        const data = await res.json()
+        setMessage({ type: 'error', text: data.error || t('imageRemoveFailed') })
+      }
+    } catch {
+      setMessage({ type: 'error', text: errors('somethingWrong') })
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -175,6 +258,83 @@ export function ProfileClient() {
           {message.text}
         </div>
       )}
+
+      {/* My Courses */}
+      <MyCourses />
+
+      {/* My Certificates */}
+      <MyCertificates />
+
+      {/* Profile Picture */}
+      <Card className="mb-4 md:mb-6">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-neu-dark/20">
+          <h3 className="no-margin">{t('profilePicture')}</h3>
+        </div>
+        <div className="px-4 md:px-6 py-4 md:py-6">
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            {/* Avatar Display */}
+            <div className="relative">
+              <div className="w-24 h-24 rounded-full bg-neu-base shadow-neu overflow-hidden flex items-center justify-center">
+                {user?.image ? (
+                  <Image
+                    src={user.image}
+                    alt={user.name || 'Profile'}
+                    width={96}
+                    height={96}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-text-secondary" />
+                )}
+              </div>
+              {uploadingImage && (
+                <div className="absolute inset-0 bg-neu-base/80 rounded-full flex items-center justify-center">
+                  <IconBadge icon="Loader2" size="sm" variant="primary" iconClassName="animate-spin" />
+                </div>
+              )}
+            </div>
+
+            {/* Upload Controls */}
+            <div className="flex flex-col gap-3">
+              <p className="text-body-sm text-secondary text-center sm:text-left">
+                {t('profilePictureHint')}
+              </p>
+              <div className="flex gap-2 justify-center sm:justify-start">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="profile-image-input"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  {user?.image ? t('changeImage') : t('uploadImage')}
+                </Button>
+                {user?.image && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                    disabled={uploadingImage}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('removeImage')}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Personal Information */}
       <Card className="mb-4 md:mb-6">
@@ -204,6 +364,39 @@ export function ProfileClient() {
           </div>
         </form>
       </Card>
+
+      {/* Bilingual Author Names - Only for Admin/Staff */}
+      {user?.role === 'ADMIN' && (
+        <Card className="mb-4 md:mb-6">
+          <div className="px-4 md:px-6 py-3 md:py-4 border-b border-neu-dark/20">
+            <h3 className="no-margin">{t('authorNames')}</h3>
+            <p className="text-body-sm text-secondary mt-1 no-margin">{t('authorNamesDescription')}</p>
+          </div>
+          <form onSubmit={handleUpdateProfile} className="px-4 md:px-6 py-3 md:py-4 space-y-4">
+            <Input
+              id="nameKa"
+              name="nameKa"
+              label={t('nameGeorgian')}
+              value={formData.nameKa}
+              onChange={(e) => setFormData({ ...formData, nameKa: e.target.value })}
+              placeholder="მაგ: გიორგი ბერიძე"
+            />
+            <Input
+              id="nameEn"
+              name="nameEn"
+              label={t('nameEnglish')}
+              value={formData.nameEn}
+              onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+              placeholder="e.g. Giorgi Beridze"
+            />
+            <div className="flex justify-end">
+              <Button type="submit" loading={saving} loadingText={common('loading')}>
+                {common('save')}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
 
       {/* Language Preferences */}
       <Card className="mb-4 md:mb-6">

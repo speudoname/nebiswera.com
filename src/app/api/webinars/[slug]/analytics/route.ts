@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import { checkRateLimitByToken } from '@/lib/rate-limit'
-import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return successResponse({ success: true })
   } catch (error) {
-    console.error('Failed to track analytics event:', error)
+    logger.error('Failed to track analytics event:', error)
     return errorResponse(error)
   }
 }

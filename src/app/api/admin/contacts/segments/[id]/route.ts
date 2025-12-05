@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { ContactStatus, Prisma } from '@prisma/client'
 
@@ -90,7 +91,7 @@ export async function GET(
       contactCount,
     })
   } catch (error) {
-    console.error('Failed to fetch segment:', error)
+    logger.error('Failed to fetch segment:', error)
     return NextResponse.json(
       { error: 'Failed to fetch segment' },
       { status: 500 }
@@ -155,7 +156,7 @@ export async function PATCH(
 
     return NextResponse.json(segment)
   } catch (error) {
-    console.error('Failed to update segment:', error)
+    logger.error('Failed to update segment:', error)
     return NextResponse.json(
       { error: 'Failed to update segment' },
       { status: 500 }
@@ -181,7 +182,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete segment:', error)
+    logger.error('Failed to delete segment:', error)
     return NextResponse.json(
       { error: 'Failed to delete segment' },
       { status: 500 }

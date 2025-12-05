@@ -10,7 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["public", "crm", "webinar"]
+  schemas  = ["public", "crm", "webinar", "lms"]
 }
 
 // ===========================================
@@ -20,7 +20,9 @@ datasource db {
 model User {
   id                      String    @id @default(cuid())
   email                   String    @unique
-  name                    String?
+  name                    String?   // Default/fallback name
+  nameKa                  String?   // Georgian name (for blog authors)
+  nameEn                  String?   // English name (for blog authors)
   password                String?   // Hashed password, null for social login
   emailVerified           DateTime? // null = not verified
   emailVerificationSentAt DateTime? // When verification email was sent
@@ -34,6 +36,10 @@ model User {
   accounts                Account[]
   sessions                Session[]
   contact                 Contact?  // Link to CRM contact if exists
+
+  // LMS Relations
+  enrollments             Enrollment[]
+  quizAttempts            LmsQuizAttempt[]
 
   @@index([createdAt])
   @@schema("public")
@@ -119,6 +125,8 @@ enum EmailType {
   ANNOUNCEMENT
   // Webinar types (transactional nature, sent via transactional server)
   WEBINAR
+  // Course/LMS types (transactional nature)
+  COURSE
 
   @@schema("public")
 }
@@ -248,6 +256,81 @@ enum TestimonialType {
   VIDEO
 
   @@schema("public")
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("public")
+}
+
+// ===========================================
+// Blog Posts
+// ===========================================
+
+model BlogPost {
+  id              String          @id @default(cuid())
+
+  // Slugs (for both languages - URLs)
+  slugKa          String          @unique // Georgian URL slug
+  slugEn          String          @unique // English URL slug
+
+  // Content - Georgian
+  titleKa         String
+  excerptKa       String?         @db.Text // Short description for cards/previews
+  contentKa       String          @db.Text // Rich HTML content
+
+  // Content - English
+  titleEn         String
+  excerptEn       String?         @db.Text
+  contentEn       String          @db.Text
+
+  // Featured image
+  featuredImage   String?         // CDN URL
+  featuredImageAlt String?        // Alt text for accessibility
+
+  // SEO - Georgian (auto-generated but editable)
+  seoTitleKa      String?         // Falls back to titleKa if empty
+  seoDescriptionKa String?        // Falls back to excerptKa if empty
+  ogImageKa       String?         // Falls back to featuredImage if empty
+
+  // SEO - English
+  seoTitleEn      String?
+  seoDescriptionEn String?
+  ogImageEn       String?
+
+  // Categorization
+  category        String?         // Main category
+  tags            String[]        @default([]) // Array of tag strings
+
+  // Publishing
+  status          BlogPostStatus  @default(DRAFT)
+  publishedAt     DateTime?       // When it was/will be published
+  publishedKa     Boolean         @default(false) // Is Georgian version ready/visible
+  publishedEn     Boolean         @default(false) // Is English version ready/visible
+
+  // Author
+  authorId        String?         // User ID if we want to track author
+  authorName      String?         // Display name (can be overridden)
+  authorAvatar    String?         // Avatar URL
+
+  // Reading metrics
+  readingTimeMinutes Int?         // Estimated reading time
+
+  // Engagement (can be updated via analytics)
+  viewCount       Int             @default(0)
+
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([category])
+  @@index([createdAt])
+  @@schema("public")
+  @@map("blog_posts")
 }
 
 // ===========================================
@@ -709,8 +792,7 @@ model WebinarScheduleConfig {
 
   // Just-in-time settings (simplified to fixed intervals)
   justInTimeEnabled     Boolean   @default(false)
-  justInTimeMinutes     Int       @default(15) // DEPRECATED: Use intervalMinutes instead
-  intervalMinutes       Int?      // Fixed interval: 5, 15, 30, or 60 minutes
+  intervalMinutes       Int       @default(15) // Fixed interval: 5, 15, 30, or 60 minutes
   intervalStartHour     Int       @default(9)  // Start hour (e.g., 9 = 9 AM)
   intervalEndHour       Int       @default(17) // End hour (e.g., 17 = 5 PM)
 
@@ -1505,4 +1587,705 @@ enum VideoProcessingStatus {
   FAILED
 
   @@schema("webinar")
+}
+
+// ===========================================
+// LMS Schema - Learning Management System
+// ===========================================
+
+// ----------------
+// CORE ENTITIES
+// ----------------
+
+model Course {
+  id          String   @id @default(cuid())
+
+  // Basic Info
+  slug        String   @unique
+  title       String
+  description String?  @db.Text
+  thumbnail   String?  // Bunny CDN URL
+  locale      String   @default("ka") // "ka" or "en"
+
+  // Access Control
+  accessType  CourseAccessType @default(FREE)
+  price       Decimal?  @db.Decimal(10, 2) // For future payment system
+  currency    String?   @default("GEL")
+
+  // Settings (JSON)
+  // {
+  //   videoCompletionThreshold: number (0-100, default 90)
+  //   sequentialLock: boolean (must complete previous)
+  //   dripContent: boolean (unlock over time)
+  //   dripIntervalDays: number (days between unlocks)
+  //   expirationDays: number | null (access expires after enrollment)
+  //   certificateEnabled: boolean
+  //   certificateTemplate: string | null
+  // }
+  settings    Json      @default("{}")
+
+  // Publishing
+  status      CourseStatus @default(DRAFT)
+  version     Int       @default(1)
+  publishedAt DateTime?
+
+  // Metadata
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  modules     LmsModule[]
+  lessons     LmsLesson[]  // Direct lessons (no module)
+  enrollments Enrollment[]
+  prerequisites CoursePrerequisite[] @relation("course")
+  prerequisiteFor CoursePrerequisite[] @relation("prerequisite")
+  notifications CourseNotificationConfig[]
+  analyticsEvents CourseAnalyticsEvent[]
+  quizzes     LmsQuiz[]
+
+  @@index([status])
+  @@index([slug])
+  @@index([locale])
+  @@index([createdAt])
+  @@schema("lms")
+  @@map("courses")
+}
+
+enum CourseAccessType {
+  OPEN  // No login, localStorage tracking
+  FREE  // Login required, free access
+  PAID  // Login + enrollment required
+
+  @@schema("lms")
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("lms")
+}
+
+model CoursePrerequisite {
+  id             String   @id @default(cuid())
+  courseId       String
+  prerequisiteId String
+
+  course       Course @relation("course", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite Course @relation("prerequisite", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, prerequisiteId])
+  @@schema("lms")
+  @@map("course_prerequisites")
+}
+
+model LmsModule {
+  id          String   @id @default(cuid())
+  courseId    String
+
+  // Basic Info
+  title       String
+  description String?  @db.Text
+
+  // Ordering
+  order       Int      @default(0)
+
+  // Drip Content
+  availableAfterDays Int? // Days after enrollment to unlock
+
+  // Content Blocks (JSON array)
+  // ContentBlock[]: { id, type, order, ...type-specific data }
+  contentBlocks Json    @default("[]")
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     LmsLesson[]
+
+  @@index([courseId, order])
+  @@schema("lms")
+  @@map("modules")
+}
+
+model LmsLesson {
+  id          String   @id @default(cuid())
+  courseId    String
+  moduleId    String?  // Nullable - lesson can be directly under course
+
+  // Basic Info
+  title       String
+  description String?  @db.Text
+
+  // Ordering
+  order       Int      @default(0)
+
+  // Drip Content
+  availableAfterDays Int? // Days after enrollment to unlock
+
+  // Content Blocks (JSON array)
+  contentBlocks Json    @default("[]")
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  module      LmsModule? @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  parts       LmsPart[]
+
+  @@index([courseId, order])
+  @@index([moduleId, order])
+  @@schema("lms")
+  @@map("lessons")
+}
+
+model LmsPart {
+  id          String   @id @default(cuid())
+  lessonId    String
+
+  // Basic Info
+  title       String
+  description String?  @db.Text
+
+  // Ordering
+  order       Int      @default(0)
+
+  // Content Blocks (JSON array)
+  contentBlocks Json    @default("[]")
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  lesson      LmsLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  progress    PartProgress[]
+
+  @@index([lessonId, order])
+  @@schema("lms")
+  @@map("parts")
+}
+
+// ----------------
+// QUIZ SYSTEM
+// ----------------
+
+model LmsQuiz {
+  id          String   @id @default(cuid())
+  courseId    String   // Quiz belongs to a course
+
+  // Basic Info
+  title       String
+  description String?  @db.Text
+
+  // Settings
+  passingScore    Int      @default(70) // Percentage to pass
+  maxAttempts     Int?     // Null = unlimited
+  cooldownMinutes Int?     // Time between retry attempts
+  shuffleQuestions Boolean @default(false)
+  shuffleOptions  Boolean  @default(false)
+  showCorrectAnswers Boolean @default(true) // Show after submission
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions   LmsQuizQuestion[]
+  attempts    LmsQuizAttempt[]
+
+  @@index([courseId])
+  @@schema("lms")
+  @@map("quizzes")
+}
+
+model LmsQuizQuestion {
+  id          String   @id @default(cuid())
+  quizId      String
+
+  // Question
+  type        LmsQuestionType
+  question    String   @db.Text
+  explanation String?  @db.Text // Shown after answer
+  points      Int      @default(1)
+  order       Int      @default(0)
+
+  // Options (for multiple choice) - JSON array
+  // QuizOption[]: { id: string, text: string, isCorrect: boolean }
+  options     Json     @default("[]")
+
+  // For text/essay questions
+  correctAnswer String? @db.Text // For short answer validation
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  quiz        LmsQuiz  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers     LmsQuizAnswer[]
+
+  @@index([quizId, order])
+  @@schema("lms")
+  @@map("quiz_questions")
+}
+
+enum LmsQuestionType {
+  MULTIPLE_CHOICE_SINGLE   // Radio buttons
+  MULTIPLE_CHOICE_MULTIPLE // Checkboxes
+  TRUE_FALSE
+  SHORT_ANSWER             // Text input, auto-graded
+  ESSAY                    // Long text, manual grading
+
+  @@schema("lms")
+}
+
+model LmsQuizAttempt {
+  id          String   @id @default(cuid())
+  quizId      String
+  userId      String?  // Null for open courses
+  anonymousId String?  // For open courses (localStorage ID)
+
+  // Results
+  score       Int?     // Percentage (null if not graded yet)
+  passed      Boolean?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+
+  // Relations
+  quiz        LmsQuiz  @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers     LmsQuizAnswer[]
+
+  @@index([quizId])
+  @@index([userId])
+  @@index([anonymousId])
+  @@schema("lms")
+  @@map("quiz_attempts")
+}
+
+model LmsQuizAnswer {
+  id          String   @id @default(cuid())
+  attemptId   String
+  questionId  String
+
+  // Answer
+  selectedOptions Json?   // Array of option IDs for multiple choice
+  textAnswer      String? @db.Text // For text/essay
+
+  // Grading
+  isCorrect   Boolean?
+  pointsAwarded Int?
+  feedback    String?  @db.Text // Manual feedback for essays
+
+  // Relations
+  attempt     LmsQuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    LmsQuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@index([questionId])
+  @@schema("lms")
+  @@map("quiz_answers")
+}
+
+// ----------------
+// ENROLLMENT & PROGRESS
+// ----------------
+
+model Enrollment {
+  id          String   @id @default(cuid())
+  courseId    String
+  userId      String
+
+  // Status
+  status      EnrollmentStatus @default(ACTIVE)
+
+  // Access
+  enrolledAt  DateTime @default(now())
+  expiresAt   DateTime? // Based on course settings
+
+  // Progress Summary (cached for performance)
+  progressPercent Int    @default(0)
+  completedAt     DateTime?
+
+  // Certificate
+  certificateId   String? @unique
+  certificateUrl  String?
+  certificateIssuedAt DateTime?
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  partProgress     PartProgress[]
+  notificationLogs CourseNotificationLog[]
+  notificationQueue CourseNotificationQueue[]
+
+  @@unique([courseId, userId])
+  @@index([userId])
+  @@index([status])
+  @@schema("lms")
+  @@map("enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  SUSPENDED // Admin suspended access
+
+  @@schema("lms")
+}
+
+model PartProgress {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  partId       String
+
+  // Progress
+  status       LmsProgressStatus @default(NOT_STARTED)
+
+  // Video/Audio tracking
+  watchTime    Int      @default(0) // Seconds watched
+  duration     Int?     // Total duration (cached from content)
+  watchPercent Int      @default(0) // Percentage watched
+
+  // Completion
+  completedAt  DateTime?
+  completedBy  LmsCompletionType? // How it was completed
+
+  // Metadata
+  lastAccessedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  enrollment  Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  part        LmsPart    @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, partId])
+  @@index([enrollmentId])
+  @@index([partId])
+  @@schema("lms")
+  @@map("part_progress")
+}
+
+enum LmsProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+
+  @@schema("lms")
+}
+
+enum LmsCompletionType {
+  AUTO_VIDEO      // Video watched past threshold
+  AUTO_QUIZ       // Quiz passed
+  MANUAL          // User marked complete
+  ADMIN           // Admin marked complete
+
+  @@schema("lms")
+}
+
+// ----------------
+// NOTIFICATIONS
+// ----------------
+
+model CourseNotificationConfig {
+  id          String   @id @default(cuid())
+  courseId    String
+
+  // Trigger configuration
+  trigger         CourseNotificationTrigger
+  triggerMinutes  Int     @default(0)  // Relative timing: 0 = immediate, 1440 = 24h after
+  // For BEFORE_EXPIRATION: days before expiration (stored as negative minutes internally)
+  // For ON_INACTIVITY: days of inactivity (stored as positive minutes: 7 days = 10080)
+
+  // Template reference (for default notifications)
+  // Points to template files in content/email-templates/courses/
+  // null = custom notification with inline content
+  templateKey     String?   // e.g., "enrollment-welcome", "course-completed"
+
+  // Conditions (JSON for conditional sending)
+  // Examples:
+  // { "progressPercent": { "eq": 0 } } - Not started
+  // { "progressPercent": { "gte": 50 } } - At least 50%
+  // { "AND": [{ "progressPercent": { "gte": 50 } }, { "quizzesPassed": { "gte": 1 } }] }
+  conditions      Json?
+
+  // Channel
+  channel         LmsNotificationChannel @default(EMAIL)
+
+  // Email content (in the course's language)
+  // If created from a template, these are pre-filled and editable
+  subject         String?             // Required for EMAIL
+  previewText     String?             // Email preview text (appears in inbox)
+  bodyHtml        String?   @db.Text  // Rich HTML content with template variables
+  bodyText        String?   @db.Text  // Plain text version
+  bodyDesign      String?   @db.Text  // Maily.to JSON design for editor
+
+  // Email deliverability settings (optional overrides)
+  // If null, defaults from Settings.emailFromName/emailFromAddress are used
+  fromName        String?             // Custom "From" name
+  fromEmail       String?             // Custom "From" email address
+  replyTo         String?             // Custom reply-to email
+
+  // Actions/Rules (executed when notification is sent)
+  // JSON array of actions: [{ "type": "TAG_CONTACT", "tagId": "..." }, ...]
+  actions         Json?
+
+  // Settings
+  isActive        Boolean  @default(true)
+  isDefault       Boolean  @default(false) // System default vs user-created
+
+  // Display order in UI
+  sortOrder       Int      @default(0)
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  logs        CourseNotificationLog[]
+  queue       CourseNotificationQueue[]
+
+  @@index([courseId, trigger])
+  @@index([courseId, isActive])
+  @@schema("lms")
+  @@map("course_notification_configs")
+}
+
+enum CourseNotificationTrigger {
+  AFTER_ENROLLMENT        // X minutes after enrollment (0 = immediate)
+  ON_COURSE_START         // When user accesses first lesson
+  ON_LESSON_COMPLETE      // When user completes any lesson
+  ON_MODULE_COMPLETE      // When user completes any module
+  ON_COURSE_COMPLETE      // When course reaches 100%
+  ON_QUIZ_PASS            // When quiz passed
+  ON_QUIZ_FAIL            // When quiz failed
+  ON_INACTIVITY           // After X days without activity (cron-based)
+  BEFORE_EXPIRATION       // X days before enrollment expires (cron-based)
+  ON_CERTIFICATE_ISSUED   // When certificate generated
+
+  @@schema("lms")
+}
+
+enum LmsNotificationChannel {
+  EMAIL
+  // SMS - future support
+
+  @@schema("lms")
+}
+
+// Queue for scheduled notifications (processed by cron)
+model CourseNotificationQueue {
+  id              String   @id @default(cuid())
+  configId        String
+  enrollmentId    String
+
+  // Scheduling
+  scheduledAt     DateTime            // When to send
+  processedAt     DateTime?           // When actually processed
+
+  // Status
+  status          LmsNotificationQueueStatus @default(PENDING)
+
+  // Retry tracking
+  attempts        Int      @default(0)
+  lastError       String?  @db.Text
+
+  // Metadata (snapshot for condition evaluation at send time)
+  // Stores: lessonId, moduleId, quizId, etc. depending on trigger
+  metadata        Json?
+
+  createdAt       DateTime @default(now())
+
+  // Relations
+  config          CourseNotificationConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  enrollment      Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+  @@index([configId])
+  @@index([enrollmentId])
+  @@schema("lms")
+  @@map("course_notification_queue")
+}
+
+enum LmsNotificationQueueStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  SKIPPED
+  CANCELLED
+
+  @@schema("lms")
+}
+
+// Log of all sent notifications
+model CourseNotificationLog {
+  id              String   @id @default(cuid())
+  configId        String
+  enrollmentId    String
+
+  // Channel used
+  channel         LmsNotificationChannel @default(EMAIL)
+
+  // Email specific
+  emailLogId      String?             // Reference to EmailLog.id for unified tracking
+  subject         String?             // Actual subject sent (after variable substitution)
+
+  // Status
+  status          LmsNotificationLogStatus @default(SENT)
+  errorMessage    String?  @db.Text
+
+  // Metadata
+  metadata        Json?               // Provider response, rendered content hash, etc.
+
+  sentAt          DateTime @default(now())
+
+  // Relations
+  config          CourseNotificationConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  enrollment      Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@index([enrollmentId])
+  @@index([sentAt])
+  @@index([emailLogId])
+  @@schema("lms")
+  @@map("course_notification_logs")
+}
+
+enum LmsNotificationLogStatus {
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+  OPENED
+  CLICKED
+
+  @@schema("lms")
+}
+
+// ----------------
+// ANALYTICS
+// ----------------
+
+model CourseAnalyticsEvent {
+  id          String   @id @default(cuid())
+  courseId    String
+  userId      String?
+  anonymousId String?  // For open courses
+  enrollmentId String?
+
+  // Event
+  eventType   CourseEventType
+  eventData   Json     @default("{}")
+
+  // Context
+  partId      String?
+  lessonId    String?
+  moduleId    String?
+  quizId      String?
+
+  // Client Info
+  userAgent   String?
+  ipAddress   String?
+
+  // Timestamp
+  createdAt   DateTime @default(now())
+
+  // Relations
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([courseId, eventType])
+  @@index([courseId, createdAt])
+  @@index([userId])
+  @@index([anonymousId])
+  @@index([enrollmentId])
+  @@schema("lms")
+  @@map("course_analytics_events")
+}
+
+enum CourseEventType {
+  // Enrollment
+  ENROLLED
+  ENROLLMENT_EXPIRED
+
+  // Navigation
+  COURSE_VIEWED
+  MODULE_VIEWED
+  LESSON_VIEWED
+  PART_VIEWED
+
+  // Content
+  VIDEO_STARTED
+  VIDEO_PROGRESS     // Every 10% milestone
+  VIDEO_COMPLETED
+  VIDEO_SEEKED
+  AUDIO_STARTED
+  AUDIO_COMPLETED
+  FILE_DOWNLOADED
+  EMBED_VIEWED
+
+  // Progress
+  PART_COMPLETED
+  LESSON_COMPLETED
+  MODULE_COMPLETED
+  COURSE_COMPLETED
+
+  // Quiz
+  QUIZ_STARTED
+  QUIZ_SUBMITTED
+  QUIZ_PASSED
+  QUIZ_FAILED
+  QUIZ_RETRIED
+
+  // Certificate
+  CERTIFICATE_GENERATED
+  CERTIFICATE_DOWNLOADED
+
+  // Engagement
+  RESUMED_AFTER_INACTIVITY
+
+  @@schema("lms")
+}
+
+// ----------------
+// CERTIFICATES
+// ----------------
+
+model LmsCertificate {
+  id               String   @id @default(cuid())
+
+  // Verification
+  verificationCode String   @unique // Public verification ID
+
+  // Content (for PDF generation)
+  studentName      String
+  courseName       String
+  completedAt      DateTime
+
+  // Template used
+  templateData     Json     @default("{}")
+
+  // Generated PDF
+  pdfUrl           String?  // Bunny CDN URL
+
+  // Metadata
+  createdAt        DateTime @default(now())
+
+  @@index([verificationCode])
+  @@schema("lms")
+  @@map("certificates")
 }

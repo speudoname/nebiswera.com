@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadToBunnyStorage, generateEmailImageKey } from '@/lib/bunny-storage'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -61,8 +62,8 @@ export async function POST(request: NextRequest) {
       url,
       key,
     })
-  } catch (error: any) {
-    console.error('Error uploading email image:', error)
+  } catch (error: unknown) {
+    logger.error('Error uploading email image:', error)
     return NextResponse.json(
       { error: 'Failed to upload image' },
       { status: 500 }

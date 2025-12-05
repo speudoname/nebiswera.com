@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { registerForWebinar } from '@/app/api/webinars/lib/registration'
 import { getAvailableSessionsForRegistration } from '@/app/api/webinars/lib/session-generator'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { notFoundResponse, forbiddenResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { notFoundResponse, forbiddenResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             onDemandEnabled: true,
             replayEnabled: true,
             justInTimeEnabled: true,
-            justInTimeMinutes: true,
+            intervalMinutes: true,
             useAttendeeTimezone: true,
           },
         },
@@ -66,12 +66,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         onDemandAvailable: availability.onDemandAvailable,
         replayAvailable: availability.replayAvailable,
         justInTimeEnabled: webinar.scheduleConfig?.justInTimeEnabled || false,
-        justInTimeMinutes: webinar.scheduleConfig?.justInTimeMinutes || 15,
+        intervalMinutes: webinar.scheduleConfig?.intervalMinutes || 15,
         useAttendeeTimezone: webinar.scheduleConfig?.useAttendeeTimezone || false,
       },
     })
   } catch (error) {
-    console.error('Failed to fetch registration options:', error)
+    logger.error('Failed to fetch registration options:', error)
     return NextResponse.json(
       { error: 'Failed to fetch registration options' },
       { status: 500 }
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Registration failed:', error)
+    logger.error('Registration failed:', error)
     return errorResponse(error)
   }
 }

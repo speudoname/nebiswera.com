@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listFromBunnyStorage } from '@/lib/bunny-storage'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -17,12 +18,15 @@ export async function GET(request: NextRequest) {
     const media = await listFromBunnyStorage(`webinar-media/${type}`)
 
     return NextResponse.json({ media })
-  } catch (error: any) {
-    // If folder doesn't exist yet, return empty array
-    if (error.message?.includes('Failed to list')) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    // If folder doesn't exist yet (404 from Bunny), return empty array
+    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
       return NextResponse.json({ media: [] })
     }
-    console.error('Error listing webinar media:', error)
+
+    logger.error('Error listing webinar media:', error)
     return NextResponse.json(
       { error: 'Failed to list media' },
       { status: 500 }

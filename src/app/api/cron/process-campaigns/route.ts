@@ -4,6 +4,7 @@ import {
   getCampaignsToProcess,
   processCampaignBatch,
 } from '@/app/api/admin/campaigns/lib/campaign-sender'
+import { logger } from '@/lib'
 
 // Security: Verify cron secret
 const CRON_SECRET = process.env.CRON_SECRET
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
   const cronSecret = authHeader?.replace('Bearer ', '')
 
   if (CRON_SECRET && cronSecret !== CRON_SECRET) {
-    console.warn('Unauthorized cron request')
+    logger.warn('Unauthorized cron request')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Campaign processing error:', error)
+    logger.error('Campaign processing error:', error)
     return NextResponse.json(
       {
         error: 'Campaign processing failed',
@@ -121,7 +122,7 @@ export async function GET(request: NextRequest) {
       })),
     })
   } catch (error) {
-    console.error('Failed to get campaign status:', error)
+    logger.error('Failed to get campaign status:', error)
     return NextResponse.json(
       { error: 'Failed to get campaign status' },
       { status: 500 }

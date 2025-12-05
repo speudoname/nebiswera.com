@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { startChatBot, stopChatBot, getChatBotStatus } from '@/lib/webinar/chat-bot'
-import { notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { notFoundResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { ChatBotScript } from '@/lib/webinar/chat-bot'
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return badRequestResponse('Invalid action. Use "start" or "stop"')
     }
   } catch (error) {
-    console.error('Failed to manage chat bot:', error)
+    logger.error('Failed to manage chat bot:', error)
     return errorResponse('Failed to manage chat bot')
   }
 }
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         : null,
     })
   } catch (error) {
-    console.error('Failed to get chat bot status:', error)
+    logger.error('Failed to get chat bot status:', error)
     return errorResponse('Failed to get chat bot status')
   }
 }

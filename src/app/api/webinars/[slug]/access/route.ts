@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { validateAccessToken, markAsAttended } from '@/app/api/webinars/lib/registration'
 import { determineAccessState } from '@/lib/webinar/access-state'
-import { unauthorizedResponse, notFoundResponse, forbiddenResponse, errorResponse, successResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, forbiddenResponse, errorResponse, successResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -235,7 +235,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         )
     }
   } catch (error) {
-    console.error('Access check failed:', error)
+    logger.error('Access check failed:', error)
     return errorResponse(error)
   }
 }
@@ -282,7 +282,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return successResponse({ success: true })
   } catch (error) {
-    console.error('Failed to update progress:', error)
+    logger.error('Failed to update progress:', error)
     return errorResponse(error)
   }
 }

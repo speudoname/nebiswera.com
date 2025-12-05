@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib'
 
 export async function POST(request: Request) {
   // Rate limit: 3 requests per 5 minutes for email endpoints
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       message: 'Verification email sent',
     })
   } catch (error) {
-    console.error('Resend verification error:', error)
+    logger.error('Resend verification error:', error)
     return NextResponse.json(
       { error: 'Something went wrong' },
       { status: 500 }

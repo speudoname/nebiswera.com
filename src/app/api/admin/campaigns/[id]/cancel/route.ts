@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: `Campaign cancelled. ${campaign.sentCount} emails were already sent.`,
     })
   } catch (error) {
-    console.error('Failed to cancel campaign:', error)
+    logger.error('Failed to cancel campaign:', error)
     return NextResponse.json(
       { error: 'Failed to cancel campaign' },
       { status: 500 }

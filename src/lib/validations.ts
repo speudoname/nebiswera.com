@@ -40,6 +40,8 @@ export const resetPasswordSchema = z.object({
 // Profile update schema
 export const profileUpdateSchema = z.object({
   name: z.string().max(100, 'Name is too long').optional(),
+  nameKa: z.string().max(100, 'Georgian name is too long').optional(),
+  nameEn: z.string().max(100, 'English name is too long').optional(),
   preferredLocale: localeSchema.optional(),
   currentPassword: z.string().optional(),
   newPassword: passwordSchema.optional(),

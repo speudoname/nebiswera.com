@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadVideo } from '@/lib/storage/bunny'
 import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -62,10 +63,10 @@ export async function POST(request: NextRequest) {
       thumbnailUrl: result.thumbnailUrl,
       embedUrl: result.embedUrl,
     })
-  } catch (error: any) {
-    console.error('Error uploading video to Bunny:', error)
+  } catch (error: unknown) {
+    logger.error('Error uploading video to Bunny:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to upload video' },
+      { error: error instanceof Error ? error.message : 'Failed to upload video' },
       { status: 500 }
     )
   }

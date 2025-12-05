@@ -61,13 +61,7 @@ export default async function LocaleLayout({
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
-        {/* Preload hero poster for LCP - this is the largest contentful paint element */}
-        <link
-          rel="preload"
-          as="image"
-          href="https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail_8f42b11e.jpg"
-          fetchPriority="high"
-        />
+        {/* Note: Hero poster preload moved to homepage component to avoid warnings on other pages */}
 
         {/* Preload critical fonts - Latin (primary) */}
         <link

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { unauthorizedResponse, notFoundResponse, forbiddenResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, forbiddenResponse, errorResponse, logger } from '@/lib'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
 import { getAblyServerClient } from '@/lib/ably'
 import type { NextRequest } from 'next/server'
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(tokenRequest)
   } catch (error) {
-    console.error('Failed to create Ably token:', error)
+    logger.error('Failed to create Ably token:', error)
     return errorResponse('Failed to authenticate')
   }
 }

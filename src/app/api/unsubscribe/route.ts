@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
 import { verifyUnsubscribeToken } from '@/app/api/lib/unsubscribe-token'
+import { logger } from '@/lib'
 
 /**
  * POST /api/unsubscribe - Process unsubscribe request
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
       message: 'Successfully unsubscribed',
     })
   } catch (error) {
-    console.error('Unsubscribe error:', error)
+    logger.error('Unsubscribe error:', error)
     return NextResponse.json(
       { error: 'Failed to process unsubscribe request' },
       { status: 500 }
@@ -129,7 +130,7 @@ async function addToPostmarkSuppressionList(email: string) {
       }),
     })
   } catch (error) {
-    console.error('Failed to add to Postmark suppression list:', error)
+    logger.error('Failed to add to Postmark suppression list:', error)
     // Don't fail the unsubscribe - we'll sync later
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { processNotificationQueue } from '@/app/api/webinars/lib/notifications'
-import { unauthorizedResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 // GET /api/cron/webinar-notifications - Process notification queue
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('Cron job failed:', error)
+    logger.error('Cron job failed:', error)
     return errorResponse('Failed to process notification queue')
   }
 }

@@ -48,6 +48,8 @@ export const seoConfig = {
     { path: '/contact', key: 'contact', priority: 0.7, changefreq: 'monthly' },
     { path: '/privacy', key: 'privacy', priority: 0.3, changefreq: 'yearly' },
     { path: '/terms', key: 'terms', priority: 0.3, changefreq: 'yearly' },
+    { path: '/nebisweraquiz', key: 'nebisweraquiz', priority: 0.9, changefreq: 'monthly' },
+    { path: '/blog', key: 'blog', priority: 0.8, changefreq: 'daily' },
   ] as const,
 
   /**

@@ -26,8 +26,7 @@ interface ScheduleConfig {
   onDemandEnabled: boolean
   onDemandUngated: boolean
   justInTimeEnabled: boolean
-  justInTimeMinutes: number
-  intervalMinutes: number | null
+  intervalMinutes: number
   intervalStartHour: number
   intervalEndHour: number
   replayEnabled: boolean
@@ -55,7 +54,6 @@ const defaultConfig: ScheduleConfig = {
   onDemandEnabled: false,
   onDemandUngated: false,
   justInTimeEnabled: true,
-  justInTimeMinutes: 15,
   intervalMinutes: 15, // Default: every 15 minutes
   intervalStartHour: 9, // 9 AM
   intervalEndHour: 17, // 5 PM

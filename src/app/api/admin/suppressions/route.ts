@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { syncSuppressions, getSuppressionDump } from '@/app/api/admin/lib/suppression-sync'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const dump = await getSuppressionDump()
     return NextResponse.json(dump)
   } catch (error) {
-    console.error('Failed to get suppression stats:', error)
+    logger.error('Failed to get suppression stats:', error)
     return NextResponse.json(
       { error: 'Failed to get suppression stats' },
       { status: 500 }
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     const result = await syncSuppressions()
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Suppression sync failed:', error)
+    logger.error('Suppression sync failed:', error)
     return NextResponse.json(
       { error: 'Suppression sync failed' },
       { status: 500 }

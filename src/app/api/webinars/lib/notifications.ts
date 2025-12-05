@@ -54,9 +54,13 @@ interface TemplateVars {
 }
 
 function buildTemplateVars(
-  registration: WebinarRegistration & {
-    webinar: Webinar
-    session?: WebinarSession | null
+  registration: {
+    firstName: string | null
+    email: string
+    accessToken: string
+    sessionStartTime: Date | null
+    webinar: { slug: string; title: string }
+    session?: { scheduledAt: Date } | null
   }
 ): TemplateVars {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
@@ -92,7 +96,7 @@ function buildTemplateVars(
 // Get Registration Locale
 // ===========================================
 
-async function getRegistrationLocale(registration: WebinarRegistration): Promise<string> {
+async function getRegistrationLocale(registration: { contactId: string | null }): Promise<string> {
   // If registration has a linked contact, check for a linked user's preferred locale
   if (registration.contactId) {
     const contact = await prisma.contact.findUnique({
@@ -165,19 +169,26 @@ function evaluateConditions(
 }
 
 async function buildRegistrationContext(
-  registration: WebinarRegistration & { webinar: Webinar }
+  registration: {
+    id: string
+    joinedAt: Date | null
+    completedAt: Date | null
+    maxVideoPosition: number
+    webinar: { videoDuration: number | null }
+  }
 ): Promise<RegistrationContext> {
-  const ctaClickCount = await prisma.webinarInteractionEvent.count({
-    where: { registrationId: registration.id, eventType: 'CLICKED' },
-  })
-
-  const pollResponseCount = await prisma.webinarPollResponse.count({
-    where: { registrationId: registration.id },
-  })
-
-  const chatMessageCount = await prisma.webinarChatMessage.count({
-    where: { registrationId: registration.id, isSimulated: false },
-  })
+  // OPTIMIZED: Run all count queries in parallel instead of sequentially
+  const [ctaClickCount, pollResponseCount, chatMessageCount] = await Promise.all([
+    prisma.webinarInteractionEvent.count({
+      where: { registrationId: registration.id, eventType: 'CLICKED' },
+    }),
+    prisma.webinarPollResponse.count({
+      where: { registrationId: registration.id },
+    }),
+    prisma.webinarChatMessage.count({
+      where: { registrationId: registration.id, isSimulated: false },
+    }),
+  ])
 
   let watchedPercent = 0
   if (registration.webinar.videoDuration && registration.webinar.videoDuration > 0) {
@@ -202,7 +213,7 @@ async function buildRegistrationContext(
 
 export async function queueNotification(
   notification: WebinarNotification,
-  registration: WebinarRegistration & { session?: WebinarSession | null },
+  registration: { id: string },
   scheduledAt: Date
 ): Promise<void> {
   const existing = await prisma.webinarNotificationQueue.findFirst({
@@ -230,7 +241,10 @@ export async function queueRegistrationNotifications(
 ): Promise<void> {
   const registration = await prisma.webinarRegistration.findUnique({
     where: { id: registrationId },
-    include: { webinar: true, session: true },
+    include: {
+      webinar: { select: { id: true, slug: true, title: true, videoDuration: true } },
+      session: { select: { id: true, scheduledAt: true } },
+    },
   })
 
   if (!registration) return
@@ -256,7 +270,10 @@ export async function queueSessionReminders(
 ): Promise<void> {
   const registration = await prisma.webinarRegistration.findUnique({
     where: { id: registrationId },
-    include: { webinar: true, session: true },
+    include: {
+      webinar: { select: { id: true, slug: true, title: true, videoDuration: true } },
+      session: { select: { id: true, scheduledAt: true } },
+    },
   })
 
   if (!registration || !registration.session) return
@@ -285,7 +302,10 @@ export async function queuePostSessionNotifications(
 ): Promise<void> {
   const registration = await prisma.webinarRegistration.findUnique({
     where: { id: registrationId },
-    include: { webinar: true, session: true },
+    include: {
+      webinar: { select: { id: true, slug: true, title: true, videoDuration: true } },
+      session: { select: { id: true, scheduledAt: true } },
+    },
   })
 
   if (!registration) return
@@ -343,7 +363,10 @@ export async function sendNotification(
 
   const registration = await prisma.webinarRegistration.findUnique({
     where: { id: queueItem.registrationId },
-    include: { webinar: true, session: true },
+    include: {
+      webinar: { select: { id: true, slug: true, title: true, videoDuration: true, completionPercent: true } },
+      session: { select: { id: true, scheduledAt: true } },
+    },
   })
 
   if (!registration) {
@@ -616,6 +639,7 @@ export async function getWebinarNotifications(webinarId: string) {
         },
       },
     },
+    take: 100, // Reasonable limit for notifications per webinar
   })
 
   return notifications

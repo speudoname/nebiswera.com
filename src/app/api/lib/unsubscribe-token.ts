@@ -1,11 +1,25 @@
 import crypto from 'crypto'
 
 /**
+ * Get the unsubscribe secret, throwing if not configured
+ */
+function getUnsubscribeSecret(): string {
+  const secret = process.env.UNSUBSCRIBE_SECRET
+  if (!secret) {
+    throw new Error(
+      'UNSUBSCRIBE_SECRET environment variable is not configured. ' +
+        'Please set it in your .env file to enable secure unsubscribe tokens.'
+    )
+  }
+  return secret
+}
+
+/**
  * Generate a secure unsubscribe token for an email
  * This token should be included in marketing emails
  */
 export function generateUnsubscribeToken(email: string): string {
-  const secret = process.env.UNSUBSCRIBE_SECRET || 'fallback-secret-change-me'
+  const secret = getUnsubscribeSecret()
   const timestamp = Date.now()
   const data = `${email}:${timestamp}`
   const hmac = crypto.createHmac('sha256', secret).update(data).digest('hex')
@@ -31,7 +45,7 @@ export function verifyUnsubscribeToken(token: string): string | null {
     }
 
     // Verify HMAC
-    const secret = process.env.UNSUBSCRIBE_SECRET || 'fallback-secret-change-me'
+    const secret = getUnsubscribeSecret()
     const data = `${email}:${timestamp}`
     const expectedHmac = crypto.createHmac('sha256', secret).update(data).digest('hex')
 

@@ -143,26 +143,57 @@ export async function syncSuppressions(): Promise<SyncResult> {
     const postmarkSuppressions = await fetchPostmarkSuppressions(settings.marketingServerToken)
     result.fromPostmark.total = postmarkSuppressions.length
 
+    // OPTIMIZED: Batch fetch all contacts by email instead of N+1 queries
+    const suppressionEmails = postmarkSuppressions.map((s) => s.EmailAddress.toLowerCase())
+
+    // Fetch all matching contacts in one query
+    const existingContacts = await prisma.contact.findMany({
+      where: { email: { in: suppressionEmails } },
+      select: { id: true, email: true, marketingStatus: true },
+    })
+
+    // Create lookup map for O(1) access
+    const contactMap = new Map(existingContacts.map((c) => [c.email.toLowerCase(), c]))
+
+    // Group suppressions by reason for batch updates
+    const toUpdate: Array<{
+      id: string
+      reason: 'HARD_BOUNCE' | 'SPAM_COMPLAINT' | 'MANUAL_SUPPRESSION'
+      suppressedAt: Date
+    }> = []
+
     for (const suppression of postmarkSuppressions) {
-      const contact = await prisma.contact.findFirst({
-        where: { email: suppression.EmailAddress.toLowerCase() },
-      })
+      const contact = contactMap.get(suppression.EmailAddress.toLowerCase())
 
       if (contact) {
         if (contact.marketingStatus === 'SUPPRESSED') {
           result.fromPostmark.alreadySuppressed++
         } else {
-          await prisma.contact.update({
-            where: { id: contact.id },
-            data: {
-              marketingStatus: 'SUPPRESSED',
-              suppressionReason: mapSuppressionReason(suppression.SuppressionReason),
-              suppressedAt: new Date(suppression.CreatedAt),
-            },
+          toUpdate.push({
+            id: contact.id,
+            reason: mapSuppressionReason(suppression.SuppressionReason),
+            suppressedAt: new Date(suppression.CreatedAt),
           })
-          result.fromPostmark.newSuppressions++
         }
       }
+    }
+
+    // Batch update all contacts that need suppression
+    // Using transaction for atomicity
+    if (toUpdate.length > 0) {
+      await prisma.$transaction(
+        toUpdate.map((item) =>
+          prisma.contact.update({
+            where: { id: item.id },
+            data: {
+              marketingStatus: 'SUPPRESSED',
+              suppressionReason: item.reason,
+              suppressedAt: item.suppressedAt,
+            },
+          })
+        )
+      )
+      result.fromPostmark.newSuppressions = toUpdate.length
     }
 
     // Step 2: Push our unsubscribes to Postmark

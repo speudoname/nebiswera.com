@@ -3,11 +3,16 @@ import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
 import { verifyUnsubscribeToken } from '@/app/api/lib/unsubscribe-token'
 import { logger } from '@/lib'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
  * POST /api/unsubscribe - Process unsubscribe request
  */
 export async function POST(request: Request) {
+  // Rate limit to prevent abuse (uses 'auth' limiter: 5 requests per minute)
+  const rateLimitResponse = await checkRateLimit(request, 'auth')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
     const { token, reason } = body

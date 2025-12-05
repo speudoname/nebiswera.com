@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { DEFAULT_COURSE_SETTINGS } from '@/lib/lms/types'
+import { generateSimpleSlug } from '@/lib/utils/transliterate'
 
 export default function NewCoursePage() {
   const router = useRouter()
@@ -18,19 +19,12 @@ export default function NewCoursePage() {
     accessType: 'FREE',
   })
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-  }
-
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value
     setFormData(prev => ({
       ...prev,
       title,
-      slug: prev.slug || generateSlug(title),
+      slug: prev.slug || generateSimpleSlug(title),
     }))
   }
 

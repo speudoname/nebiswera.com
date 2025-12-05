@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { BlogPost } from '@prisma/client'
 import { formatDate } from '@/lib/utils/date-format'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface Props {
   post: BlogPost
@@ -191,7 +192,7 @@ export function BlogPostContent({ post, locale }: Props) {
             prose-li:text-text-secondary prose-li:mb-2
             prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
             prose-pre:bg-gray-900 prose-pre:text-gray-100"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
         />
 
         {/* Tags */}

@@ -7,10 +7,12 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   errorResponse,
+  logger,
 } from '@/lib'
 import {
   updatePartVideoProgress,
   completePartWithNotifications,
+  uncompletePart,
 } from '@/lib/lms/progress'
 import { trackPartView, trackVideoProgress } from '@/app/api/courses/lib/analytics'
 
@@ -85,6 +87,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       })
     }
 
+    if (action === 'uncomplete') {
+      // Mark as incomplete
+      const result = await uncompletePart(enrollment.id, partId)
+
+      return successResponse({
+        message: 'Part marked as incomplete',
+        progressPercent: result.progressPercent,
+        isCompleted: result.isCompleted,
+      })
+    }
+
     if (typeof watchTime === 'number' && typeof duration === 'number') {
       // Video/audio progress update
       const result = await updatePartVideoProgress(
@@ -108,7 +121,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             enrollment.id
           )
         } catch (e) {
-          console.error('Failed to track video progress:', e)
+          logger.error('Failed to track video progress:', e)
         }
       }
 
@@ -132,12 +145,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         enrollment.id
       )
     } catch (e) {
-      console.error('Failed to track part view:', e)
+      logger.error('Failed to track part view:', e)
     }
 
     return successResponse({ message: 'Progress tracked' })
   } catch (error) {
-    console.error('Failed to update progress:', error)
+    logger.error('Failed to update progress:', error)
     return errorResponse('Failed to update progress')
   }
 }
@@ -210,7 +223,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to get progress:', error)
+    logger.error('Failed to get progress:', error)
     return errorResponse('Failed to get progress')
   }
 }

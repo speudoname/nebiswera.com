@@ -605,6 +605,51 @@ export async function completePartWithNotifications(
 }
 
 /**
+ * Mark a part as incomplete (uncomplete)
+ * Reverts a completed part back to not started status
+ */
+export async function uncompletePart(
+  enrollmentId: string,
+  partId: string
+): Promise<{
+  progressPercent: number;
+  isCompleted: boolean;
+}> {
+  // Update part progress to NOT_STARTED
+  await prisma.partProgress.update({
+    where: {
+      enrollmentId_partId: {
+        enrollmentId,
+        partId,
+      },
+    },
+    data: {
+      status: 'NOT_STARTED',
+      completedAt: null,
+      completedBy: null,
+      lastAccessedAt: new Date(),
+    },
+  });
+
+  // Recalculate enrollment progress
+  const progressPercent = await calculateEnrollmentProgress(enrollmentId);
+  const isCompleted = progressPercent === 100;
+
+  // Update enrollment - if we uncompleted, course is no longer complete
+  await prisma.enrollment.update({
+    where: { id: enrollmentId },
+    data: {
+      progressPercent,
+      // Only update completedAt if the course is now not complete
+      completedAt: isCompleted ? undefined : null,
+      status: isCompleted ? 'COMPLETED' : 'ACTIVE',
+    },
+  });
+
+  return { progressPercent, isCompleted };
+}
+
+/**
  * Record quiz result and trigger appropriate notifications
  */
 export async function recordQuizResultWithNotifications(

@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Download, ExternalLink, FileText, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { sanitizeHtml } from '@/lib/sanitize'
 import type {
   ContentBlock,
   TextContentBlock,
@@ -69,7 +70,7 @@ function TextRenderer({ block }: { block: TextContentBlock }) {
   return (
     <div
       className="prose prose-lg max-w-none prose-headings:text-text-primary prose-p:text-text-secondary prose-a:text-primary-600 prose-strong:text-text-primary"
-      dangerouslySetInnerHTML={{ __html: block.content }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(block.content) }}
     />
   )
 }
@@ -333,7 +334,7 @@ function HtmlRenderer({ block }: { block: HtmlContentBlock }) {
   return (
     <div
       className="prose prose-lg max-w-none"
-      dangerouslySetInnerHTML={{ __html: block.content }}
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(block.content) }}
     />
   )
 }

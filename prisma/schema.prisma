@@ -379,6 +379,7 @@ model Contact {
   @@index([source])
   @@index([status])
   @@index([marketingStatus])
+  @@index([email, marketingStatus]) // Composite index for filtered email lookups in campaigns
   @@index([createdAt])
   @@schema("crm")
   @@map("contacts")
@@ -1083,6 +1084,7 @@ model WebinarRegistration {
   @@unique([webinarId, email, sessionId])
   @@index([accessToken])
   @@index([email])
+  @@index([email, webinarId]) // Composite index for email-based registration lookups
   @@index([webinarId, status])
   @@index([contactId])
   @@schema("webinar")

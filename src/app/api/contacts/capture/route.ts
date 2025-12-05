@@ -7,7 +7,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, source = 'home_page_test' } = body
 
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // Normalize and validate email
+    const normalizedEmail = email?.toLowerCase().trim()
+
+    // Better regex: requires 2+ char TLD, no consecutive dots, valid local part
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/
+
+    if (!normalizedEmail || !emailRegex.test(normalizedEmail)) {
       return NextResponse.json(
         { error: 'Valid email is required' },
         { status: 400 }
@@ -16,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Check if contact already exists
     const existingContact = await prisma.contact.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: normalizedEmail },
       include: {
         tags: {
           include: {
@@ -76,7 +82,7 @@ export async function POST(request: NextRequest) {
       // Create new contact
       const newContact = await prisma.contact.create({
         data: {
-          email: email.toLowerCase(),
+          email: normalizedEmail,
           source,
           sourceDetails: 'Captured from home page email form',
           status: 'ACTIVE',

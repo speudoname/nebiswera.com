@@ -12,6 +12,8 @@ import type {
   LocalStorageQuizAttempt,
 } from './types'
 
+export type { LocalStoragePartProgress }
+
 const STORAGE_KEY = 'nebiswera_lms'
 const ANONYMOUS_ID_KEY = 'nebiswera_anonymous_id'
 
@@ -145,6 +147,29 @@ export function markPartCompleteLocal(courseId: string, partId: string): LocalSt
     watchPercent: 100,
     completedAt: new Date().toISOString(),
   })
+}
+
+/**
+ * Mark a part as incomplete in localStorage (uncomplete)
+ */
+export function unmarkPartCompleteLocal(courseId: string, partId: string): LocalStoragePartProgress {
+  const data = getLmsData()
+
+  if (data.courses[courseId]?.parts[partId]) {
+    data.courses[courseId].parts[partId] = {
+      status: 'not_started',
+      watchTime: 0,
+      watchPercent: 0,
+    }
+    data.courses[courseId].lastAccessedAt = new Date().toISOString()
+    saveLmsData(data)
+  }
+
+  return data.courses[courseId]?.parts[partId] || {
+    status: 'not_started',
+    watchTime: 0,
+    watchPercent: 0,
+  }
 }
 
 /**

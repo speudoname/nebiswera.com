@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse, logger } from '@/lib'
 import { getEngagementBreakdown } from '@/app/api/webinars/lib/engagement'
 import type { NextRequest } from 'next/server'
 
@@ -10,21 +10,57 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-// Helper to build WHERE clause for raw SQL
-function buildWhereClause(
-  webinarId: string,
-  dateStart?: Date,
-  dateEnd?: Date,
-  sessionId?: string
-): string {
-  let where = `"webinarId" = '${webinarId}'`
-  if (dateStart && dateEnd) {
-    where += ` AND "registeredAt" >= '${dateStart.toISOString()}' AND "registeredAt" <= '${dateEnd.toISOString()}'`
-  }
-  if (sessionId) {
-    where += ` AND "sessionId" = '${sessionId}'`
-  }
-  return where
+// Type for core stats query result
+interface CoreStatsResult {
+  total: number
+  attended: number
+  completed: number
+  engaged: number
+  avg_watch_time: number
+}
+
+// Type for session type result
+interface SessionTypeResult {
+  session_type: string
+  count: number
+}
+
+// Type for date count result
+interface DateCountResult {
+  date: Date
+  count: number
+}
+
+// Type for source result
+interface SourceResult {
+  source: string | null
+  count: number
+}
+
+// Type for bucket result
+interface BucketResult {
+  bucket: string
+  count: number
+}
+
+// Type for UTM result
+interface UtmResult {
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  count: number
+}
+
+// Type for cohort result
+interface CohortResult {
+  session_id: string
+  scheduled_at: Date
+  session_type: string
+  registrations: number
+  attended: number
+  completed: number
+  avg_score: number
+  avg_watch: number
 }
 
 // GET /api/admin/webinars/[id]/analytics - Get webinar analytics (OPTIMIZED)
@@ -36,10 +72,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params
   const { searchParams } = new URL(request.url)
 
-  // Parse filters from query params
-  const dateStart = searchParams.get('dateStart') ? new Date(searchParams.get('dateStart')!) : undefined
-  const dateEnd = searchParams.get('dateEnd') ? new Date(searchParams.get('dateEnd')!) : undefined
-  const sessionId = searchParams.get('sessionId') || undefined
+  // Parse and validate filters from query params
+  const dateStartParam = searchParams.get('dateStart')
+  const dateEndParam = searchParams.get('dateEnd')
+  const sessionIdParam = searchParams.get('sessionId')
+
+  // Validate date formats to prevent injection
+  const dateStart = dateStartParam && !isNaN(Date.parse(dateStartParam)) ? new Date(dateStartParam) : undefined
+  const dateEnd = dateEndParam && !isNaN(Date.parse(dateEndParam)) ? new Date(dateEndParam) : undefined
+  const sessionId = sessionIdParam || undefined
 
   try {
     // Build filter conditions for Prisma
@@ -47,11 +88,61 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       registeredAt: { gte: dateStart, lte: dateEnd },
     } : {}
     const sessionFilter = sessionId ? { sessionId } : {}
-    const whereClause = buildWhereClause(id, dateStart, dateEnd, sessionId)
 
     // ============================================
     // BATCH 1: Get webinar + all core counts in ONE query
     // ============================================
+    // Use parameterized queries to prevent SQL injection
+    const coreStatsQuery = dateStart && dateEnd && sessionId
+      ? prisma.$queryRaw<CoreStatsResult[]>`
+          SELECT
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE "joinedAt" IS NOT NULL)::int as attended,
+            COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int as completed,
+            COUNT(*) FILTER (WHERE "engagementScore" >= 40)::int as engaged,
+            COALESCE(AVG("maxVideoPosition") FILTER (WHERE "joinedAt" IS NOT NULL), 0)::float as avg_watch_time
+          FROM webinar.webinar_registrations
+          WHERE "webinarId" = ${id}
+            AND "registeredAt" >= ${dateStart}
+            AND "registeredAt" <= ${dateEnd}
+            AND "sessionId" = ${sessionId}
+        `
+      : dateStart && dateEnd
+      ? prisma.$queryRaw<CoreStatsResult[]>`
+          SELECT
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE "joinedAt" IS NOT NULL)::int as attended,
+            COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int as completed,
+            COUNT(*) FILTER (WHERE "engagementScore" >= 40)::int as engaged,
+            COALESCE(AVG("maxVideoPosition") FILTER (WHERE "joinedAt" IS NOT NULL), 0)::float as avg_watch_time
+          FROM webinar.webinar_registrations
+          WHERE "webinarId" = ${id}
+            AND "registeredAt" >= ${dateStart}
+            AND "registeredAt" <= ${dateEnd}
+        `
+      : sessionId
+      ? prisma.$queryRaw<CoreStatsResult[]>`
+          SELECT
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE "joinedAt" IS NOT NULL)::int as attended,
+            COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int as completed,
+            COUNT(*) FILTER (WHERE "engagementScore" >= 40)::int as engaged,
+            COALESCE(AVG("maxVideoPosition") FILTER (WHERE "joinedAt" IS NOT NULL), 0)::float as avg_watch_time
+          FROM webinar.webinar_registrations
+          WHERE "webinarId" = ${id}
+            AND "sessionId" = ${sessionId}
+        `
+      : prisma.$queryRaw<CoreStatsResult[]>`
+          SELECT
+            COUNT(*)::int as total,
+            COUNT(*) FILTER (WHERE "joinedAt" IS NOT NULL)::int as attended,
+            COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int as completed,
+            COUNT(*) FILTER (WHERE "engagementScore" >= 40)::int as engaged,
+            COALESCE(AVG("maxVideoPosition") FILTER (WHERE "joinedAt" IS NOT NULL), 0)::float as avg_watch_time
+          FROM webinar.webinar_registrations
+          WHERE "webinarId" = ${id}
+        `
+
     const [webinar, coreStats] = await Promise.all([
       // Get webinar details
       prisma.webinar.findUnique({
@@ -67,24 +158,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           createdAt: true,
         },
       }),
-
-      // Get ALL registration counts in a single query
-      prisma.$queryRaw<Array<{
-        total: number
-        attended: number
-        completed: number
-        engaged: number
-        avg_watch_time: number
-      }>>`
-        SELECT
-          COUNT(*)::int as total,
-          COUNT(*) FILTER (WHERE "joinedAt" IS NOT NULL)::int as attended,
-          COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL)::int as completed,
-          COUNT(*) FILTER (WHERE "engagementScore" >= 40)::int as engaged,
-          COALESCE(AVG("maxVideoPosition") FILTER (WHERE "joinedAt" IS NOT NULL), 0)::float as avg_watch_time
-        FROM webinar.webinar_registrations
-        WHERE ${Prisma.raw(whereClause)}
-      `,
+      coreStatsQuery,
     ])
 
     if (!webinar) {
@@ -93,80 +167,188 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const stats = coreStats[0] || { total: 0, attended: 0, completed: 0, engaged: 0, avg_watch_time: 0 }
 
+    // Build base where condition for Prisma queries
+    const baseWhere: Prisma.WebinarRegistrationWhereInput = {
+      webinarId: id,
+      ...(dateStart && dateEnd ? { registeredAt: { gte: dateStart, lte: dateEnd } } : {}),
+      ...(sessionId ? { sessionId } : {}),
+    }
+
     // ============================================
     // BATCH 2: Get groupings and distributions in parallel
     // ============================================
+    // Use Prisma groupBy instead of raw SQL to prevent injection
     const [
-      registrationsByType,
-      registrationsByDate,
-      sourceBreakdown,
+      registrationsByTypeRaw,
+      registrationsByDateRaw,
+      sourceBreakdownRaw,
       watchTimeDistribution,
-      utmBreakdown,
+      utmBreakdownRaw,
     ] = await Promise.all([
-      // Registrations by session type
-      prisma.$queryRaw<Array<{ session_type: string; count: number }>>`
-        SELECT "sessionType" as session_type, COUNT(*)::int as count
-        FROM webinar.webinar_registrations
-        WHERE ${Prisma.raw(whereClause)}
-        GROUP BY "sessionType"
-      `,
+      // Registrations by session type - using Prisma groupBy
+      prisma.webinarRegistration.groupBy({
+        by: ['sessionType'],
+        where: baseWhere,
+        _count: { id: true },
+      }),
 
-      // Registrations by date
-      prisma.$queryRaw<Array<{ date: Date; count: number }>>`
-        SELECT DATE("registeredAt") as date, COUNT(*)::int as count
-        FROM webinar.webinar_registrations
-        WHERE ${Prisma.raw(whereClause)}
-          ${dateStart && dateEnd ? Prisma.raw('') : Prisma.raw(`AND "registeredAt" >= NOW() - INTERVAL '30 days'`)}
-        GROUP BY DATE("registeredAt")
-        ORDER BY date DESC
-      `,
+      // Registrations by date - using parameterized raw SQL
+      dateStart && dateEnd
+        ? prisma.$queryRaw<DateCountResult[]>`
+            SELECT DATE("registeredAt") as date, COUNT(*)::int as count
+            FROM webinar.webinar_registrations
+            WHERE "webinarId" = ${id}
+              AND "registeredAt" >= ${dateStart}
+              AND "registeredAt" <= ${dateEnd}
+              ${sessionId ? Prisma.sql`AND "sessionId" = ${sessionId}` : Prisma.empty}
+            GROUP BY DATE("registeredAt")
+            ORDER BY date DESC
+          `
+        : prisma.$queryRaw<DateCountResult[]>`
+            SELECT DATE("registeredAt") as date, COUNT(*)::int as count
+            FROM webinar.webinar_registrations
+            WHERE "webinarId" = ${id}
+              AND "registeredAt" >= NOW() - INTERVAL '30 days'
+              ${sessionId ? Prisma.sql`AND "sessionId" = ${sessionId}` : Prisma.empty}
+            GROUP BY DATE("registeredAt")
+            ORDER BY date DESC
+          `,
 
-      // Source breakdown
-      prisma.$queryRaw<Array<{ source: string | null; count: number }>>`
-        SELECT "source", COUNT(*)::int as count
-        FROM webinar.webinar_registrations
-        WHERE ${Prisma.raw(whereClause)}
-        GROUP BY "source"
-      `,
+      // Source breakdown - using Prisma groupBy
+      prisma.webinarRegistration.groupBy({
+        by: ['source'],
+        where: baseWhere,
+        _count: { id: true },
+      }),
 
-      // Watch time distribution
-      prisma.$queryRaw<Array<{ bucket: string; count: number }>>`
-        SELECT bucket, COUNT(*)::int as count
-        FROM (
-          SELECT
-            CASE
-              WHEN "maxVideoPosition" < 60 THEN '0-1 min'
-              WHEN "maxVideoPosition" < 300 THEN '1-5 min'
-              WHEN "maxVideoPosition" < 900 THEN '5-15 min'
-              WHEN "maxVideoPosition" < 1800 THEN '15-30 min'
-              ELSE '30+ min'
-            END as bucket
-          FROM webinar.webinar_registrations
-          WHERE ${Prisma.raw(whereClause)} AND "joinedAt" IS NOT NULL
-        ) buckets
-        GROUP BY bucket
-        ORDER BY CASE bucket
-          WHEN '0-1 min' THEN 1 WHEN '1-5 min' THEN 2
-          WHEN '5-15 min' THEN 3 WHEN '15-30 min' THEN 4 ELSE 5
-        END
-      `,
+      // Watch time distribution - using parameterized raw SQL
+      dateStart && dateEnd && sessionId
+        ? prisma.$queryRaw<BucketResult[]>`
+            SELECT bucket, COUNT(*)::int as count
+            FROM (
+              SELECT
+                CASE
+                  WHEN "maxVideoPosition" < 60 THEN '0-1 min'
+                  WHEN "maxVideoPosition" < 300 THEN '1-5 min'
+                  WHEN "maxVideoPosition" < 900 THEN '5-15 min'
+                  WHEN "maxVideoPosition" < 1800 THEN '15-30 min'
+                  ELSE '30+ min'
+                END as bucket
+              FROM webinar.webinar_registrations
+              WHERE "webinarId" = ${id}
+                AND "registeredAt" >= ${dateStart}
+                AND "registeredAt" <= ${dateEnd}
+                AND "sessionId" = ${sessionId}
+                AND "joinedAt" IS NOT NULL
+            ) buckets
+            GROUP BY bucket
+            ORDER BY CASE bucket
+              WHEN '0-1 min' THEN 1 WHEN '1-5 min' THEN 2
+              WHEN '5-15 min' THEN 3 WHEN '15-30 min' THEN 4 ELSE 5
+            END
+          `
+        : dateStart && dateEnd
+        ? prisma.$queryRaw<BucketResult[]>`
+            SELECT bucket, COUNT(*)::int as count
+            FROM (
+              SELECT
+                CASE
+                  WHEN "maxVideoPosition" < 60 THEN '0-1 min'
+                  WHEN "maxVideoPosition" < 300 THEN '1-5 min'
+                  WHEN "maxVideoPosition" < 900 THEN '5-15 min'
+                  WHEN "maxVideoPosition" < 1800 THEN '15-30 min'
+                  ELSE '30+ min'
+                END as bucket
+              FROM webinar.webinar_registrations
+              WHERE "webinarId" = ${id}
+                AND "registeredAt" >= ${dateStart}
+                AND "registeredAt" <= ${dateEnd}
+                AND "joinedAt" IS NOT NULL
+            ) buckets
+            GROUP BY bucket
+            ORDER BY CASE bucket
+              WHEN '0-1 min' THEN 1 WHEN '1-5 min' THEN 2
+              WHEN '5-15 min' THEN 3 WHEN '15-30 min' THEN 4 ELSE 5
+            END
+          `
+        : sessionId
+        ? prisma.$queryRaw<BucketResult[]>`
+            SELECT bucket, COUNT(*)::int as count
+            FROM (
+              SELECT
+                CASE
+                  WHEN "maxVideoPosition" < 60 THEN '0-1 min'
+                  WHEN "maxVideoPosition" < 300 THEN '1-5 min'
+                  WHEN "maxVideoPosition" < 900 THEN '5-15 min'
+                  WHEN "maxVideoPosition" < 1800 THEN '15-30 min'
+                  ELSE '30+ min'
+                END as bucket
+              FROM webinar.webinar_registrations
+              WHERE "webinarId" = ${id}
+                AND "sessionId" = ${sessionId}
+                AND "joinedAt" IS NOT NULL
+            ) buckets
+            GROUP BY bucket
+            ORDER BY CASE bucket
+              WHEN '0-1 min' THEN 1 WHEN '1-5 min' THEN 2
+              WHEN '5-15 min' THEN 3 WHEN '15-30 min' THEN 4 ELSE 5
+            END
+          `
+        : prisma.$queryRaw<BucketResult[]>`
+            SELECT bucket, COUNT(*)::int as count
+            FROM (
+              SELECT
+                CASE
+                  WHEN "maxVideoPosition" < 60 THEN '0-1 min'
+                  WHEN "maxVideoPosition" < 300 THEN '1-5 min'
+                  WHEN "maxVideoPosition" < 900 THEN '5-15 min'
+                  WHEN "maxVideoPosition" < 1800 THEN '15-30 min'
+                  ELSE '30+ min'
+                END as bucket
+              FROM webinar.webinar_registrations
+              WHERE "webinarId" = ${id}
+                AND "joinedAt" IS NOT NULL
+            ) buckets
+            GROUP BY bucket
+            ORDER BY CASE bucket
+              WHEN '0-1 min' THEN 1 WHEN '1-5 min' THEN 2
+              WHEN '5-15 min' THEN 3 WHEN '15-30 min' THEN 4 ELSE 5
+            END
+          `,
 
-      // UTM breakdown
-      prisma.$queryRaw<Array<{
-        utm_source: string | null
-        utm_medium: string | null
-        utm_campaign: string | null
-        count: number
-      }>>`
-        SELECT "utmSource" as utm_source, "utmMedium" as utm_medium, "utmCampaign" as utm_campaign, COUNT(*)::int as count
-        FROM webinar.webinar_registrations
-        WHERE ${Prisma.raw(whereClause)}
-          AND ("utmSource" IS NOT NULL OR "utmMedium" IS NOT NULL OR "utmCampaign" IS NOT NULL)
-        GROUP BY "utmSource", "utmMedium", "utmCampaign"
-        ORDER BY count DESC
-        LIMIT 20
-      `,
+      // UTM breakdown - using Prisma groupBy
+      prisma.webinarRegistration.groupBy({
+        by: ['utmSource', 'utmMedium', 'utmCampaign'],
+        where: {
+          ...baseWhere,
+          OR: [
+            { utmSource: { not: null } },
+            { utmMedium: { not: null } },
+            { utmCampaign: { not: null } },
+          ],
+        },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 20,
+      }),
     ])
+
+    // Transform Prisma groupBy results to match expected format
+    const registrationsByType = registrationsByTypeRaw.map(r => ({
+      session_type: r.sessionType,
+      count: r._count.id,
+    }))
+    const registrationsByDate = registrationsByDateRaw
+    const sourceBreakdown = sourceBreakdownRaw.map(r => ({
+      source: r.source,
+      count: r._count.id,
+    }))
+    const utmBreakdown = utmBreakdownRaw.map(r => ({
+      utm_source: r.utmSource,
+      utm_medium: r.utmMedium,
+      utm_campaign: r.utmCampaign,
+      count: r._count.id,
+    }))
 
     // Get registration IDs for filtering related tables (only if needed)
     const registrationIds = sessionId || (dateStart && dateEnd)
@@ -268,33 +450,44 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         },
       }),
 
-      // Cohort analysis - OPTIMIZED: single query for all sessions
-      !sessionId ? prisma.$queryRaw<Array<{
-        session_id: string
-        scheduled_at: Date
-        session_type: string
-        registrations: number
-        attended: number
-        completed: number
-        avg_score: number
-        avg_watch: number
-      }>>`
-        SELECT
-          s.id as session_id,
-          s."scheduledAt" as scheduled_at,
-          s.type as session_type,
-          COUNT(r.id)::int as registrations,
-          COUNT(r.id) FILTER (WHERE r."joinedAt" IS NOT NULL)::int as attended,
-          COUNT(r.id) FILTER (WHERE r."completedAt" IS NOT NULL)::int as completed,
-          COALESCE(AVG(r."engagementScore") FILTER (WHERE r."engagementScore" IS NOT NULL), 0)::float as avg_score,
-          COALESCE(AVG(r."maxVideoPosition") FILTER (WHERE r."joinedAt" IS NOT NULL), 0)::float as avg_watch
-        FROM webinar.webinar_sessions s
-        LEFT JOIN webinar.webinar_registrations r ON r."sessionId" = s.id
-          ${dateStart && dateEnd ? Prisma.raw(`AND r."registeredAt" >= '${dateStart.toISOString()}' AND r."registeredAt" <= '${dateEnd.toISOString()}'`) : Prisma.raw('')}
-        WHERE s."webinarId" = ${id}
-        GROUP BY s.id, s."scheduledAt", s.type
-        ORDER BY s."scheduledAt" DESC
-      ` : Promise.resolve([]),
+      // Cohort analysis - OPTIMIZED: single query for all sessions (parameterized)
+      !sessionId
+        ? dateStart && dateEnd
+          ? prisma.$queryRaw<CohortResult[]>`
+              SELECT
+                s.id as session_id,
+                s."scheduledAt" as scheduled_at,
+                s.type as session_type,
+                COUNT(r.id)::int as registrations,
+                COUNT(r.id) FILTER (WHERE r."joinedAt" IS NOT NULL)::int as attended,
+                COUNT(r.id) FILTER (WHERE r."completedAt" IS NOT NULL)::int as completed,
+                COALESCE(AVG(r."engagementScore") FILTER (WHERE r."engagementScore" IS NOT NULL), 0)::float as avg_score,
+                COALESCE(AVG(r."maxVideoPosition") FILTER (WHERE r."joinedAt" IS NOT NULL), 0)::float as avg_watch
+              FROM webinar.webinar_sessions s
+              LEFT JOIN webinar.webinar_registrations r ON r."sessionId" = s.id
+                AND r."registeredAt" >= ${dateStart}
+                AND r."registeredAt" <= ${dateEnd}
+              WHERE s."webinarId" = ${id}
+              GROUP BY s.id, s."scheduledAt", s.type
+              ORDER BY s."scheduledAt" DESC
+            `
+          : prisma.$queryRaw<CohortResult[]>`
+              SELECT
+                s.id as session_id,
+                s."scheduledAt" as scheduled_at,
+                s.type as session_type,
+                COUNT(r.id)::int as registrations,
+                COUNT(r.id) FILTER (WHERE r."joinedAt" IS NOT NULL)::int as attended,
+                COUNT(r.id) FILTER (WHERE r."completedAt" IS NOT NULL)::int as completed,
+                COALESCE(AVG(r."engagementScore") FILTER (WHERE r."engagementScore" IS NOT NULL), 0)::float as avg_score,
+                COALESCE(AVG(r."maxVideoPosition") FILTER (WHERE r."joinedAt" IS NOT NULL), 0)::float as avg_watch
+              FROM webinar.webinar_sessions s
+              LEFT JOIN webinar.webinar_registrations r ON r."sessionId" = s.id
+              WHERE s."webinarId" = ${id}
+              GROUP BY s.id, s."scheduledAt", s.type
+              ORDER BY s."scheduledAt" DESC
+            `
+        : Promise.resolve([]),
     ])
 
     // ============================================
@@ -586,7 +779,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       comparative: comparativeData,
     })
   } catch (error) {
-    console.error('Failed to fetch analytics:', error)
+    logger.error('Failed to fetch analytics:', error)
     return errorResponse('Failed to fetch analytics')
   }
 }

@@ -9,18 +9,29 @@
 import Ably from 'ably'
 import { logger } from '@/lib'
 
+// Singleton instance for server-side Ably client
+let ablyServerClient: Ably.Rest | null = null
+
 /**
  * Server-side Ably client (uses API key)
  * Used in API routes to publish messages
+ * Uses singleton pattern to avoid creating new connections on every request
  */
-export function getAblyServerClient() {
+export function getAblyServerClient(): Ably.Rest {
   const apiKey = process.env.ABLY_API_KEY
 
   if (!apiKey) {
     throw new Error('ABLY_API_KEY environment variable is not set')
   }
 
-  return new Ably.Rest(apiKey)
+  // Return existing client if available
+  if (ablyServerClient) {
+    return ablyServerClient
+  }
+
+  // Create new client and cache it
+  ablyServerClient = new Ably.Rest(apiKey)
+  return ablyServerClient
 }
 
 /**

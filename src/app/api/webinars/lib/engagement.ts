@@ -183,6 +183,7 @@ export async function updateWebinarEngagementScores(webinarId: string): Promise<
   const registrations = await prisma.webinarRegistration.findMany({
     where: { webinarId, joinedAt: { not: null } },
     select: { id: true },
+    take: 10000, // Limit to prevent memory issues on very large webinars
   })
 
   let totalScore = 0
@@ -238,6 +239,7 @@ export async function getEngagementBreakdown(
       engagementScore: true,
     },
     orderBy: { engagementScore: 'desc' },
+    take: 10000, // Limit to prevent memory issues
   })
 
   // Calculate distribution

@@ -15,6 +15,7 @@ import {
   BookOpen,
   Home,
   User,
+  XCircle,
 } from 'lucide-react'
 import { ContentRenderer } from './ContentRenderer'
 import type { ContentBlock, CourseSettings } from '@/lib/lms/types'
@@ -23,6 +24,7 @@ import {
   getCourseProgress,
   initializeCourseProgress,
   markPartCompleteLocal,
+  unmarkPartCompleteLocal,
   updateVideoProgressLocal,
   calculateCourseProgressLocal,
 } from '@/lib/lms/local-storage'
@@ -114,11 +116,31 @@ export function CoursePlayer({
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [localProgress, setLocalProgress] = useState<Record<string, PartProgress>>(partProgress)
-  const [localProgressPercent, setLocalProgressPercent] = useState(0)
+  const [localProgressPercent, setLocalProgressPercent] = useState(enrollment?.progressPercent ?? 0)
   const [isCompleting, setIsCompleting] = useState(false)
+  const [isUncompleting, setIsUncompleting] = useState(false)
   const [showSavePrompt, setShowSavePrompt] = useState(false)
   const [anonymousId, setAnonymousId] = useState<string | null>(null)
   const isKa = locale === 'ka'
+
+  // Calculate progress from local state (for optimistic updates)
+  const calculateLocalProgress = (progressMap: Record<string, PartProgress>) => {
+    const completedCount = Object.values(progressMap).filter(
+      (p) => p.status === 'COMPLETED'
+    ).length
+    return allParts.length > 0 ? Math.round((completedCount / allParts.length) * 100) : 0
+  }
+
+  // Initialize progress for enrolled courses from partProgress prop
+  useEffect(() => {
+    if (!isOpenCourse && partProgress) {
+      // Set local progress from server data
+      setLocalProgress(partProgress)
+      // Calculate and set progress percent
+      const percent = calculateLocalProgress(partProgress)
+      setLocalProgressPercent(percent)
+    }
+  }, []) // Only run on mount - eslint-disable-line react-hooks/exhaustive-deps
 
   // Load local storage progress for open courses
   useEffect(() => {
@@ -207,12 +229,13 @@ export function CoursePlayer({
     return !isPartCompleted(prevPartId)
   }
 
-  // Mark part as complete
+  // Mark part as complete with optimistic update
   const markPartComplete = async () => {
     if (!currentPart || isCompleting) return
 
     setIsCompleting(true)
 
+    // Optimistic update - update local state immediately
     const newProgress: PartProgress = {
       partId: currentPart.id,
       status: 'COMPLETED',
@@ -226,6 +249,10 @@ export function CoursePlayer({
     }
     setLocalProgress(updatedProgress)
 
+    // Update progress bar immediately (optimistic)
+    const newPercent = calculateLocalProgress(updatedProgress)
+    setLocalProgressPercent(newPercent)
+
     // For open courses, save to localStorage
     if (isOpenCourse) {
       updateLocalStorage(currentPart.id, 'completed')
@@ -234,7 +261,7 @@ export function CoursePlayer({
     // For enrolled courses, save to server
     if (enrollment) {
       try {
-        await fetch(`/api/courses/${course.slug}/progress`, {
+        const response = await fetch(`/api/courses/${course.slug}/progress`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -244,8 +271,18 @@ export function CoursePlayer({
             action: 'complete',
           }),
         })
-        router.refresh()
+
+        if (!response.ok) {
+          // Revert on error
+          setLocalProgress(localProgress)
+          setLocalProgressPercent(calculateLocalProgress(localProgress))
+          console.error('Failed to save progress')
+        }
+        // Success - no need to refresh, we already updated optimistically
       } catch (error) {
+        // Revert on error
+        setLocalProgress(localProgress)
+        setLocalProgressPercent(calculateLocalProgress(localProgress))
         console.error('Failed to save progress:', error)
       }
     }
@@ -258,7 +295,60 @@ export function CoursePlayer({
     }
   }
 
-  // Handle video progress update
+  // Unmark part as complete (uncomplete) with optimistic update
+  const unmarkPartComplete = async () => {
+    if (!currentPart || isUncompleting) return
+
+    setIsUncompleting(true)
+
+    // Store current state for potential rollback
+    const previousProgress = { ...localProgress }
+    const previousPercent = localProgressPercent
+
+    // Optimistic update - remove completion immediately
+    const updatedProgress = { ...localProgress }
+    delete updatedProgress[currentPart.id]
+    setLocalProgress(updatedProgress)
+
+    // Update progress bar immediately
+    const newPercent = calculateLocalProgress(updatedProgress)
+    setLocalProgressPercent(newPercent)
+
+    // For open courses, save to localStorage
+    if (isOpenCourse) {
+      unmarkPartCompleteLocal(course.id, currentPart.id)
+    }
+
+    // For enrolled courses, save to server
+    if (enrollment) {
+      try {
+        const response = await fetch(`/api/courses/${course.slug}/progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            partId: currentPart.id,
+            action: 'uncomplete',
+          }),
+        })
+
+        if (!response.ok) {
+          // Revert on error
+          setLocalProgress(previousProgress)
+          setLocalProgressPercent(previousPercent)
+          console.error('Failed to uncomplete part')
+        }
+      } catch (error) {
+        // Revert on error
+        setLocalProgress(previousProgress)
+        setLocalProgressPercent(previousPercent)
+        console.error('Failed to uncomplete part:', error)
+      }
+    }
+
+    setIsUncompleting(false)
+  }
+
+  // Handle video progress update with optimistic updates
   const handleVideoProgress = async (
     partId: string,
     watchTime: number,
@@ -279,41 +369,36 @@ export function CoursePlayer({
     }
     setLocalProgress(updatedProgress)
 
+    // Update progress bar immediately (optimistic)
+    const newPercent = calculateLocalProgress(updatedProgress)
+    setLocalProgressPercent(newPercent)
+
     // For open courses, save to localStorage
     if (isOpenCourse) {
       updateLocalStorage(partId, isComplete ? 'completed' : 'in_progress', watchTime, watchPercent)
     }
 
-    // For enrolled courses, save to server
+    // For enrolled courses, save to server (no need to await for optimistic UX)
     if (enrollment) {
-      try {
-        await fetch(`/api/courses/${course.slug}/progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            partId,
-            lessonId: currentLesson?.id,
-            watchTime,
-            duration,
-            watchPercent,
-          }),
-        })
-      } catch (error) {
+      fetch(`/api/courses/${course.slug}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partId,
+          lessonId: currentLesson?.id,
+          watchTime,
+          duration,
+          watchPercent,
+        }),
+      }).catch((error) => {
         console.error('Failed to save video progress:', error)
-      }
+      })
     }
   }
 
-  // Calculate overall progress
-  const calculateProgress = () => {
-    if (isOpenCourse) {
-      return localProgressPercent
-    }
-    const completedCount = allParts.filter((p) => isPartCompleted(p.id)).length
-    return Math.round((completedCount / allParts.length) * 100)
-  }
-
-  const progress = enrollment?.progressPercent ?? calculateProgress()
+  // Use local progress percent for immediate updates (optimistic)
+  // This will be the server value initially, then updated optimistically
+  const progress = localProgressPercent
 
   // Dismiss save progress prompt
   const dismissSavePrompt = () => {
@@ -584,9 +669,24 @@ export function CoursePlayer({
                 ))}
               </div>
 
-              {/* Mark Complete Button */}
-              {!isPartCompleted(currentPart.id) && (
-                <div className="flex justify-center mb-8">
+              {/* Mark Complete / Uncomplete Toggle Button */}
+              <div className="flex justify-center mb-8">
+                {isPartCompleted(currentPart.id) ? (
+                  <button
+                    onClick={unmarkPartComplete}
+                    disabled={isUncompleting}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50 border border-gray-300"
+                  >
+                    <XCircle className="w-5 h-5" />
+                    {isUncompleting
+                      ? isKa
+                        ? 'ამოშლა...'
+                        : 'Removing...'
+                      : isKa
+                        ? 'დასრულების მონიშვნის მოხსნა'
+                        : 'Mark as Incomplete'}
+                  </button>
+                ) : (
                   <button
                     onClick={markPartComplete}
                     disabled={isCompleting}
@@ -601,8 +701,8 @@ export function CoursePlayer({
                         ? 'მონიშვნა დასრულებულად'
                         : 'Mark as Complete'}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Navigation */}
               <div className="flex items-center justify-between pt-6 border-t">

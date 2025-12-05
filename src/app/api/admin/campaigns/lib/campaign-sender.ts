@@ -244,76 +244,127 @@ async function sendBatch(
 
     const results: PostmarkBatchResult[] = await response.json()
 
-    // Process individual results
-    let sent = 0
-    let failed = 0
+    // OPTIMIZED: Collect all updates first, then batch execute
+    const successfulRecipients: Array<{
+      id: string
+      messageId: string
+      sentAt: Date
+      email: string
+      subject: string
+      variables: Variables
+    }> = []
+    const failedRecipients: Array<{
+      id: string
+      error: string
+      email: string
+      errorCode: number
+    }> = []
     const errors: Array<{ email: string; error: string }> = []
 
+    // First pass: categorize results
     for (let i = 0; i < results.length; i++) {
       const result = results[i]
       const recipient = recipients[i]
 
       if (result.ErrorCode === 0) {
-        // Success
-        sent++
-        await prisma.campaignRecipient.update({
-          where: { id: recipient.id },
-          data: {
-            status: 'SENT',
-            messageId: result.MessageID,
-            sentAt: new Date(result.SubmittedAt),
-          },
-        })
-
-        // Create email log entry
-        await prisma.emailLog.create({
-          data: {
-            messageId: result.MessageID,
-            to: recipient.email,
-            subject: replaceVariables(
-              campaign.subject,
-              (recipient.variables as Variables) || {}
-            ),
-            type: 'CAMPAIGN',
-            status: 'SENT',
-            category: 'MARKETING',
-            metadata: {
-              campaignId: campaign.id,
-              recipientId: recipient.id,
-              fromName: campaign.fromName,
-              fromEmail: campaign.fromEmail,
-            },
-          },
+        successfulRecipients.push({
+          id: recipient.id,
+          messageId: result.MessageID,
+          sentAt: new Date(result.SubmittedAt),
+          email: recipient.email,
+          subject: replaceVariables(campaign.subject, (recipient.variables as Variables) || {}),
+          variables: (recipient.variables as Variables) || {},
         })
       } else {
-        // Failed
-        failed++
         const errorMsg = result.Message || `Error code: ${result.ErrorCode}`
         errors.push({ email: recipient.email, error: errorMsg })
-
-        await prisma.campaignRecipient.update({
-          where: { id: recipient.id },
-          data: {
-            status: 'FAILED',
-            error: errorMsg,
-          },
+        failedRecipients.push({
+          id: recipient.id,
+          error: errorMsg,
+          email: recipient.email,
+          errorCode: result.ErrorCode,
         })
-
-        // Handle suppression cases
-        if (result.ErrorCode === 406) {
-          // Inactive recipient - mark contact as suppressed
-          await updateContactSuppression(recipient.email, 'HARD_BOUNCE')
-        } else if (result.ErrorCode === 300) {
-          // Invalid email
-          await prisma.contact.updateMany({
-            where: { email: recipient.email },
-            data: { status: 'BOUNCED' },
-          })
-        }
       }
     }
 
-    return { success: true, sent, failed, errors }
+    // Second pass: batch database operations using transaction
+    await prisma.$transaction(async (tx) => {
+      // Update successful recipients
+      for (const recipient of successfulRecipients) {
+        await tx.campaignRecipient.update({
+          where: { id: recipient.id },
+          data: {
+            status: 'SENT',
+            messageId: recipient.messageId,
+            sentAt: recipient.sentAt,
+          },
+        })
+      }
+
+      // Create email logs for successful sends (batch create)
+      if (successfulRecipients.length > 0) {
+        await tx.emailLog.createMany({
+          data: successfulRecipients.map((r) => ({
+            messageId: r.messageId,
+            to: r.email,
+            subject: r.subject,
+            type: 'CAMPAIGN' as const,
+            status: 'SENT' as const,
+            category: 'MARKETING' as const,
+            metadata: {
+              campaignId: campaign.id,
+              fromName: campaign.fromName,
+              fromEmail: campaign.fromEmail,
+            },
+          })),
+        })
+      }
+
+      // Update failed recipients
+      for (const recipient of failedRecipients) {
+        await tx.campaignRecipient.update({
+          where: { id: recipient.id },
+          data: {
+            status: 'FAILED',
+            error: recipient.error,
+          },
+        })
+      }
+
+      // Batch handle suppression cases by error code
+      const hardBounceEmails = failedRecipients
+        .filter((r) => r.errorCode === 406)
+        .map((r) => r.email)
+
+      const invalidEmails = failedRecipients
+        .filter((r) => r.errorCode === 300)
+        .map((r) => r.email)
+
+      if (hardBounceEmails.length > 0) {
+        await tx.contact.updateMany({
+          where: { email: { in: hardBounceEmails } },
+          data: {
+            marketingStatus: 'SUPPRESSED',
+            suppressionReason: 'HARD_BOUNCE',
+            suppressedAt: new Date(),
+          },
+        })
+      }
+
+      if (invalidEmails.length > 0) {
+        await tx.contact.updateMany({
+          where: { email: { in: invalidEmails } },
+          data: { status: 'BOUNCED' },
+        })
+      }
+    })
+
+    return {
+      success: true,
+      sent: successfulRecipients.length,
+      failed: failedRecipients.length,
+      errors,
+    }
   } catch (error) {
     logger.error('Postmark batch request failed:', error)
 
@@ -341,21 +392,37 @@ async function sendBatch(
 }
 
 /**
+ * Escape HTML entities to prevent XSS when inserting user data into HTML emails
+ */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return ''
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }
+  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char)
+}
+
+/**
  * Replace personalization variables in content
+ * Values are HTML-escaped to prevent XSS attacks
  */
 function replaceVariables(content: string, variables: Variables): string {
   let result = content
 
-  // Replace {{variableName}} patterns
+  // Replace {{variableName}} patterns with HTML-escaped values
   Object.entries(variables).forEach(([key, value]) => {
     const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g')
-    result = result.replace(regex, value || '')
+    result = result.replace(regex, escapeHtml(value))
   })
 
   // Handle variables with fallbacks: {{variableName|fallback}}
   result = result.replace(/\{\{\s*(\w+)\s*\|\s*([^}]+)\s*\}\}/g, (match, varName, fallback) => {
     const value = variables[varName]
-    return value || fallback.trim()
+    return escapeHtml(value || fallback.trim())
   })
 
   return result

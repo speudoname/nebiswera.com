@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle, Clock, Loader2 } from 'lucide-react'
 import { Card } from '@/components/ui'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface ThankYouClientProps {
   slug: string
@@ -207,7 +208,7 @@ export function ThankYouClient({ slug, token, locale }: ThankYouClientProps) {
           <Card variant="raised" padding="lg">
             <div
               className="prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: data.customThankYouHtml }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.customThankYouHtml) }}
             />
           </Card>
         )}

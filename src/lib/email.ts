@@ -4,19 +4,61 @@ import { getSettings } from '@/lib/settings'
 import { EmailType } from '@prisma/client'
 import { getVerificationEmail, getPasswordResetEmail } from '../../content/email-templates'
 
+// Cache for email settings to avoid DB query on every email
+interface CachedEmailSettings {
+  postmarkServerToken: string
+  emailFromAddress: string
+  emailFromName: string
+  postmarkStreamName: string
+}
+
+let cachedSettings: CachedEmailSettings | null = null
+let cacheTimestamp = 0
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+
 async function getEmailClient() {
+  const now = Date.now()
+
+  // Return cached settings if still valid
+  if (cachedSettings && now - cacheTimestamp < CACHE_TTL_MS) {
+    return {
+      client: new postmark.ServerClient(cachedSettings.postmarkServerToken),
+      fromAddress: cachedSettings.emailFromAddress,
+      fromName: cachedSettings.emailFromName,
+      streamName: cachedSettings.postmarkStreamName,
+    }
+  }
+
+  // Fetch fresh settings
   const settings = await getSettings()
 
   if (!settings.postmarkServerToken) {
     throw new Error('Postmark server token not configured. Please configure it in Admin > Settings.')
   }
 
-  return {
-    client: new postmark.ServerClient(settings.postmarkServerToken),
-    fromAddress: settings.emailFromAddress || 'noreply@nebiswera.com',
-    fromName: settings.emailFromName,
-    streamName: settings.postmarkStreamName,
+  // Update cache
+  cachedSettings = {
+    postmarkServerToken: settings.postmarkServerToken,
+    emailFromAddress: settings.emailFromAddress || 'noreply@nebiswera.com',
+    emailFromName: settings.emailFromName || 'Nebiswera',
+    postmarkStreamName: settings.postmarkStreamName || 'outbound',
   }
+  cacheTimestamp = now
+
+  return {
+    client: new postmark.ServerClient(cachedSettings.postmarkServerToken),
+    fromAddress: cachedSettings.emailFromAddress,
+    fromName: cachedSettings.emailFromName,
+    streamName: cachedSettings.postmarkStreamName,
+  }
+}
+
+/**
+ * Clear the email settings cache (call after settings are updated in admin)
+ */
+export function clearEmailSettingsCache() {
+  cachedSettings = null
+  cacheTimestamp = 0
 }
 
 export async function sendVerificationEmail(email: string, token: string, locale: string = 'ka') {

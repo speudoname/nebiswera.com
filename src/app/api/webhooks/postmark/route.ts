@@ -55,9 +55,10 @@ function verifyBasicAuth(request: Request): boolean {
   const webhookUsername = process.env.POSTMARK_WEBHOOK_USERNAME
   const webhookPassword = process.env.POSTMARK_WEBHOOK_PASSWORD
 
-  // If no credentials configured, skip authentication (not recommended for production)
+  // SECURITY: Require authentication in production - deny if not configured
   if (!webhookUsername || !webhookPassword) {
-    return true
+    logger.error('Postmark webhook credentials not configured - denying request')
+    return false
   }
 
   const authHeader = request.headers.get('Authorization')

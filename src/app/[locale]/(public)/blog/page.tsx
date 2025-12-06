@@ -3,7 +3,9 @@ import { getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/db'
 import { seoConfig } from '@/config/seo'
 import { BlogHeroSection } from './components/BlogHeroSection'
-import { BlogPostCard } from './components/BlogPostCard'
+import { BlogPostList } from './components/BlogPostList'
+
+const POSTS_PER_PAGE = 10
 
 // SEO metadata for blog list page
 const blogSeo = {
@@ -53,22 +55,45 @@ export default async function BlogPage() {
   const locale = await getLocale()
   const isKa = locale === 'ka'
 
-  // Only fetch posts that are published AND have the current locale enabled
+  // Fetch first page of posts with pagination
   const posts = await prisma.blogPost.findMany({
     where: {
       status: 'PUBLISHED',
-      // Filter by locale-specific publish flag
       ...(isKa ? { publishedKa: true } : { publishedEn: true }),
     },
     orderBy: { publishedAt: 'desc' },
+    take: POSTS_PER_PAGE + 1, // Fetch one extra to check for more
+    select: {
+      id: true,
+      slugKa: true,
+      slugEn: true,
+      titleKa: true,
+      titleEn: true,
+      excerptKa: true,
+      excerptEn: true,
+      featuredImage: true,
+      featuredImageAlt: true,
+      category: true,
+      tags: true,
+      publishedAt: true,
+      authorName: true,
+      authorAvatar: true,
+      readingTimeMinutes: true,
+      viewCount: true,
+    },
   })
 
-  // Filter out posts that don't have content in the current locale
+  // Filter posts that have content in the current locale
   const postsWithContent = posts.filter((post) => {
     const title = isKa ? post.titleKa : post.titleEn
     const slug = isKa ? post.slugKa : post.slugEn
-    return title && slug // Must have title and slug for the locale
+    return title && slug
   })
+
+  // Check if there are more posts
+  const hasMore = postsWithContent.length > POSTS_PER_PAGE
+  const initialPosts = hasMore ? postsWithContent.slice(0, POSTS_PER_PAGE) : postsWithContent
+  const initialCursor = hasMore ? initialPosts[initialPosts.length - 1]?.id : null
 
   return (
     <div className="min-h-screen">
@@ -77,19 +102,12 @@ export default async function BlogPage() {
       {/* Blog posts */}
       <section className="py-16 md:py-24 px-4 sm:px-6 md:px-8 bg-neu-base">
         <div className="max-w-5xl mx-auto">
-          {postsWithContent.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-xl text-text-secondary">
-                {isKa ? 'სტატიები მალე დაემატება...' : 'Articles coming soon...'}
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-8 md:gap-12">
-              {postsWithContent.map((post, index) => (
-                <BlogPostCard key={post.id} post={post} locale={locale} featured={index === 0} />
-              ))}
-            </div>
-          )}
+          <BlogPostList
+            initialPosts={initialPosts}
+            initialCursor={initialCursor}
+            initialHasMore={hasMore}
+            locale={locale}
+          />
         </div>
       </section>
     </div>

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { WebinarRoom } from './WebinarRoom'
 import { AlertTriangle, RefreshCw, Clock, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { usePixel } from '@/hooks/usePixel'
 
 interface WatchPageClientProps {
   slug: string
@@ -62,6 +63,24 @@ export function WatchPageClient({ slug, token, locale }: WatchPageClientProps) {
   const [errorType, setErrorType] = useState<'generic' | 'expired' | 'disabled' | 'sessionEnded' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [waitingRoom, setWaitingRoom] = useState<{ startsAt: string } | null>(null)
+  const [hasTrackedPageView, setHasTrackedPageView] = useState(false)
+
+  // Facebook Pixel tracking
+  const { trackPageView, trackEvent } = usePixel({ pageType: 'webinar-watch' })
+
+  // Track PageView when data is loaded
+  useEffect(() => {
+    if (data && !hasTrackedPageView) {
+      trackPageView({
+        content_name: data.webinar.title,
+        content_category: 'Webinar Watch',
+        content_type: 'webinar',
+        webinar_id: data.webinar.id,
+        webinar_name: data.webinar.title,
+      })
+      setHasTrackedPageView(true)
+    }
+  }, [data, hasTrackedPageView, trackPageView])
 
   useEffect(() => {
     const fetchAccessData = async () => {

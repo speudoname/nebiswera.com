@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Play, ArrowRight, Loader2 } from 'lucide-react'
+import { usePixel } from '@/hooks/usePixel'
 
 interface EnrollButtonProps {
   courseId: string
   courseSlug: string
+  courseTitle?: string
   accessType: 'OPEN' | 'FREE' | 'PAID'
   price: number | null
   currency: string | null
@@ -21,6 +23,7 @@ interface EnrollButtonProps {
 export function EnrollButton({
   courseId,
   courseSlug,
+  courseTitle,
   accessType,
   price,
   currency,
@@ -31,6 +34,7 @@ export function EnrollButton({
   variant = 'default',
 }: EnrollButtonProps) {
   const router = useRouter()
+  const { trackCompleteRegistration } = usePixel({ pageType: 'lms-course' })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isKa = locale === 'ka'
@@ -108,6 +112,17 @@ export function EnrollButton({
       if (!res.ok) {
         throw new Error(data.error || 'Failed to enroll')
       }
+
+      // Track CompleteRegistration for course enrollment
+      await trackCompleteRegistration({
+        content_name: courseTitle || 'Course Enrollment',
+        content_category: 'Course',
+        content_ids: [courseId],
+        content_type: 'course',
+        course_id: courseId,
+        course_name: courseTitle,
+        status: 'enrolled',
+      })
 
       // Redirect to the course player
       router.push(`/courses/${courseSlug}/learn`)

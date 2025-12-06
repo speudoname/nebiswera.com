@@ -69,6 +69,7 @@ interface QuizPlayerProps {
   partId: string
   isGate?: boolean
   onComplete?: (passed: boolean) => void
+  onPixelTrack?: (quizId: string, quizTitle: string, passed: boolean, score: number) => void
   locale: string
 }
 
@@ -78,6 +79,7 @@ export function QuizPlayer({
   partId,
   isGate,
   onComplete,
+  onPixelTrack,
   locale,
 }: QuizPlayerProps) {
   const isKa = locale === 'ka'
@@ -205,6 +207,11 @@ export function QuizPlayer({
 
       if (onComplete) {
         onComplete(data.passed)
+      }
+
+      // Track quiz completion for pixel
+      if (onPixelTrack && quiz) {
+        onPixelTrack(quizId, quiz.title, data.passed, data.score)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit quiz')

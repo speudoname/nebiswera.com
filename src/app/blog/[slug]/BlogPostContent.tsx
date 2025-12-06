@@ -1,11 +1,14 @@
 'use client'
 
-import { Calendar, Clock, ArrowLeft, Share2, BookmarkPlus, User } from 'lucide-react'
+import { useEffect } from 'react'
+import { Calendar, Clock, ArrowLeft, Share2, User } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { BlogPost } from '@prisma/client'
 import { formatDate } from '@/lib/time-utils'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { usePixel } from '@/hooks/usePixel'
+import { useViewContentTracker } from '@/hooks/useViewContentTracker'
 
 interface Props {
   post: BlogPost
@@ -15,6 +18,33 @@ interface Props {
 export function BlogPostContent({ post, locale }: Props) {
   const isKa = locale === 'ka'
   const title = isKa ? post.titleKa : post.titleEn
+
+  // Facebook Pixel tracking
+  const { trackPageView } = usePixel({ pageType: 'blog' })
+
+  // ViewContent tracking based on scroll and read time
+  useViewContentTracker({
+    pageType: 'blog',
+    readingTimeMinutes: post.readingTimeMinutes || undefined,
+    contentParams: {
+      content_name: title,
+      content_category: post.category || 'Blog',
+      content_ids: [post.id],
+      content_type: 'article',
+      blog_post_id: post.id,
+      blog_post_title: title,
+    },
+  })
+
+  // Track PageView on mount
+  useEffect(() => {
+    trackPageView({
+      content_name: title,
+      content_category: post.category || 'Blog',
+      content_type: 'article',
+    })
+  }, [trackPageView, title, post.category])
+
   const content = isKa ? post.contentKa : post.contentEn
   const excerpt = isKa ? post.excerptKa : post.excerptEn
 
@@ -158,12 +188,6 @@ export function BlogPostContent({ post, locale }: Props) {
           >
             <Share2 className="w-5 h-5" />
           </button>
-          <button
-            className="p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-shadow text-text-secondary hover:text-primary-600"
-            title={isKa ? 'შენახვა' : 'Save'}
-          >
-            <BookmarkPlus className="w-5 h-5" />
-          </button>
         </div>
       </div>
 
@@ -212,17 +236,13 @@ export function BlogPostContent({ post, locale }: Props) {
         )}
 
         {/* Mobile Actions */}
-        <div className="lg:hidden mt-8 flex gap-4">
+        <div className="lg:hidden mt-8">
           <button
             onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 rounded-lg text-text-secondary hover:bg-gray-200 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-gray-100 rounded-lg text-text-secondary hover:bg-gray-200 transition-colors"
           >
             <Share2 className="w-5 h-5" />
             {isKa ? 'გაზიარება' : 'Share'}
-          </button>
-          <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 rounded-lg text-text-secondary hover:bg-gray-200 transition-colors">
-            <BookmarkPlus className="w-5 h-5" />
-            {isKa ? 'შენახვა' : 'Save'}
           </button>
         </div>
 

@@ -145,7 +145,7 @@ export function BlogPostsTable() {
           )}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -208,7 +208,7 @@ export function BlogPostsTable() {
                           </button>
                           {openPreviewDropdown === post.id && (
                             <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                              {post.slugKa && (
+                              {post.slugKa ? (
                                 <Link
                                   href={`/blog/${post.slugKa}`}
                                   target="_blank"
@@ -217,8 +217,12 @@ export function BlogPostsTable() {
                                 >
                                   Georgian
                                 </Link>
+                              ) : (
+                                <span className="block px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                                  Georgian (no slug)
+                                </span>
                               )}
-                              {post.slugEn && (
+                              {post.slugEn ? (
                                 <Link
                                   href={`/blog/${post.slugEn}`}
                                   target="_blank"
@@ -227,6 +231,10 @@ export function BlogPostsTable() {
                                 >
                                   English
                                 </Link>
+                              ) : (
+                                <span className="block px-4 py-2 text-sm text-gray-400 cursor-not-allowed">
+                                  English (no slug)
+                                </span>
                               )}
                             </div>
                           )}

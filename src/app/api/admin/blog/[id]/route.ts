@@ -53,6 +53,33 @@ export async function PUT(
       return notFoundResponse('Post not found')
     }
 
+    // Check for slug conflicts (exclude current post)
+    const slugKa = body.slugKa || existingPost.slugKa
+    const slugEn = body.slugEn || existingPost.slugEn
+
+    const conflictingPosts = await prisma.blogPost.findMany({
+      where: {
+        id: { not: id },
+        OR: [{ slugKa }, { slugEn }],
+      },
+      select: { id: true, slugKa: true, slugEn: true },
+    })
+
+    // Return friendly error if slug conflict exists
+    if (conflictingPosts.length > 0) {
+      const conflicts: string[] = []
+      if (conflictingPosts.some((p) => p.slugKa === slugKa)) {
+        conflicts.push(`Georgian slug "${slugKa}" is already in use`)
+      }
+      if (conflictingPosts.some((p) => p.slugEn === slugEn)) {
+        conflicts.push(`English slug "${slugEn}" is already in use`)
+      }
+      return NextResponse.json(
+        { error: conflicts.join('. '), code: 'SLUG_CONFLICT' },
+        { status: 400 }
+      )
+    }
+
     // Calculate reading time if content changed
     const readingTimeMinutes =
       body.contentKa !== existingPost.contentKa ||
@@ -71,8 +98,8 @@ export async function PUT(
     const post = await prisma.blogPost.update({
       where: { id },
       data: {
-        slugKa: body.slugKa,
-        slugEn: body.slugEn,
+        slugKa,
+        slugEn,
         titleKa: body.titleKa,
         titleEn: body.titleEn,
         excerptKa: body.excerptKa,

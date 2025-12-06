@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button, Input, Badge } from '@/components/ui'
 import { Mail, User, Link, Loader2, Megaphone, Eye, EyeOff, Building2, Phone, Share2 } from 'lucide-react'
+import FacebookPixelSettings from './FacebookPixelSettings'
 
 interface SocialLinks {
   facebook?: string
@@ -597,6 +598,9 @@ export default function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      {/* Facebook Pixel Settings - Separate form */}
+      <FacebookPixelSettings />
     </div>
   )
 }

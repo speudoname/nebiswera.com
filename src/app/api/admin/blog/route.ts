@@ -34,8 +34,38 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     // Generate slugs from titles if not provided
-    const slugKa = body.slugKa || (body.titleKa ? generateSlug(body.titleKa) : '')
-    const slugEn = body.slugEn || (body.titleEn ? generateSlug(body.titleEn) : '')
+    let slugKa = body.slugKa || (body.titleKa ? generateSlug(body.titleKa) : '')
+    let slugEn = body.slugEn || (body.titleEn ? generateSlug(body.titleEn) : '')
+
+    // Check for slug conflicts and generate unique slugs if needed
+    const existingSlugs = await prisma.blogPost.findMany({
+      where: {
+        OR: [
+          { slugKa: { startsWith: slugKa } },
+          { slugEn: { startsWith: slugEn } },
+        ],
+      },
+      select: { slugKa: true, slugEn: true },
+    })
+
+    // Make slugs unique if conflicts exist
+    if (existingSlugs.some((p) => p.slugKa === slugKa)) {
+      const existingKaSlugs = existingSlugs.map((p) => p.slugKa)
+      let counter = 2
+      while (existingKaSlugs.includes(`${slugKa}-${counter}`)) {
+        counter++
+      }
+      slugKa = `${slugKa}-${counter}`
+    }
+
+    if (existingSlugs.some((p) => p.slugEn === slugEn)) {
+      const existingEnSlugs = existingSlugs.map((p) => p.slugEn)
+      let counter = 2
+      while (existingEnSlugs.includes(`${slugEn}-${counter}`)) {
+        counter++
+      }
+      slugEn = `${slugEn}-${counter}`
+    }
 
     // Calculate reading time from content
     const readingTimeMinutes = calculateReadingTime(body.contentKa || body.contentEn || '')
@@ -62,6 +92,8 @@ export async function POST(request: NextRequest) {
         tags: body.tags || [],
         status: body.status || 'DRAFT',
         publishedAt: body.status === 'PUBLISHED' ? new Date() : null,
+        publishedKa: body.publishedKa ?? false,
+        publishedEn: body.publishedEn ?? false,
         authorId: token?.sub,
         authorName: body.authorName || (token?.name as string),
         authorAvatar: body.authorAvatar,

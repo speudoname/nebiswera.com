@@ -24,6 +24,7 @@ import {
 import { parseCourseSettings, parseContentBlocks } from '@/lib/lms/types'
 import { formatDuration } from '@/lib'
 import { EnrollButton } from './EnrollButton'
+import { CoursePageTracker } from './CoursePageTracker'
 
 interface PageParams {
   params: Promise<{ locale: string; slug: string }>
@@ -264,6 +265,9 @@ export default async function CourseLandingPage({ params }: PageParams) {
 
   return (
     <div className="min-h-screen">
+      {/* Pixel Tracking */}
+      <CoursePageTracker courseId={course.id} courseTitle={course.title} />
+
       {/* Hero Section */}
       <section className="py-12 md:py-20 px-4 sm:px-6 md:px-8 bg-gradient-to-b from-primary-50 to-white">
         <div className="max-w-6xl mx-auto">
@@ -309,6 +313,7 @@ export default async function CourseLandingPage({ params }: PageParams) {
               <EnrollButton
                 courseId={course.id}
                 courseSlug={course.slug}
+                courseTitle={course.title}
                 accessType={course.accessType}
                 price={course.price ? Number(course.price) : null}
                 currency={course.currency}
@@ -436,6 +441,7 @@ export default async function CourseLandingPage({ params }: PageParams) {
           <EnrollButton
             courseId={course.id}
             courseSlug={course.slug}
+            courseTitle={course.title}
             accessType={course.accessType}
             price={course.price ? Number(course.price) : null}
             currency={course.currency}

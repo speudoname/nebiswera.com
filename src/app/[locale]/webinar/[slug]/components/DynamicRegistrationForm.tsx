@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, ArrowRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
+import { usePixel } from '@/hooks/usePixel'
 import type { RegistrationFieldConfig, RegistrationFormData, CustomField } from '@/app/api/webinars/lib/registration-fields'
 
 interface Session {
@@ -25,6 +26,7 @@ interface DynamicRegistrationFormProps {
 
 export function DynamicRegistrationForm({ slug, locale, initialEmail }: DynamicRegistrationFormProps) {
   const router = useRouter()
+  const { trackCompleteRegistration } = usePixel({ pageType: 'webinar-landing' })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -125,6 +127,21 @@ export function DynamicRegistrationForm({ slug, locale, initialEmail }: DynamicR
       if (!response.ok) {
         throw new Error(data.error || 'Registration failed')
       }
+
+      // Track CompleteRegistration event with user data
+      await trackCompleteRegistration(
+        {
+          content_name: 'Webinar Registration',
+          content_category: 'Webinar',
+          status: 'registered',
+        },
+        {
+          email: formData.email,
+          firstName: payload.firstName || undefined,
+          lastName: payload.lastName || undefined,
+          phone: formData.phone || undefined,
+        }
+      )
 
       // Redirect to thank you page
       router.push(`/${locale}/webinar/${slug}/thank-you?token=${data.registration.accessToken}`)

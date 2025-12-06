@@ -111,8 +111,8 @@ export default function WarmupDashboard() {
     try {
       const res = await fetch('/api/admin/warmup')
       const data = await res.json()
-      if (data.success === false) throw new Error(data.error)
-      setState(data.data)
+      if (data.error) throw new Error(data.error)
+      setState(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch warmup status')
     } finally {
@@ -124,8 +124,8 @@ export default function WarmupDashboard() {
     try {
       const res = await fetch('/api/admin/warmup/logs')
       const data = await res.json()
-      if (data.success === false) throw new Error(data.error)
-      setLogs(data.data.logs)
+      if (data.error) throw new Error(data.error)
+      setLogs(data.logs || [])
     } catch (err) {
       console.error('Failed to fetch logs:', err)
     }
@@ -157,7 +157,7 @@ export default function WarmupDashboard() {
         body: JSON.stringify(action === 'start' ? { action: 'start' } : body || {}),
       })
       const data = await res.json()
-      if (data.success === false) throw new Error(data.error || data.data?.message)
+      if (data.error) throw new Error(data.error)
 
       await fetchState()
       await fetchLogs()

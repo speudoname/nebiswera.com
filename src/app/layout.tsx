@@ -37,5 +37,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Passthrough layout - each route segment ([locale], admin, blog) provides its own html/body
   return children
 }

@@ -1,8 +1,11 @@
 'use client'
 
+import { useEffect } from 'react'
 import { CheckCircle } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { DynamicRegistrationForm } from './DynamicRegistrationForm'
+import { usePixel } from '@/hooks/usePixel'
+import { useViewContentTracker } from '@/hooks/useViewContentTracker'
 import {
   ImageRightTemplate,
   ImageLeftTemplate,
@@ -44,6 +47,32 @@ export function WebinarLandingClient({
   slug,
   locale,
 }: WebinarLandingClientProps) {
+  // Facebook Pixel tracking
+  const { trackPageView } = usePixel({ pageType: 'webinar-landing' })
+
+  // ViewContent tracking - 60% scroll OR 30s on page
+  useViewContentTracker({
+    pageType: 'webinar-landing',
+    contentParams: {
+      content_name: webinar.title,
+      content_category: 'Webinar',
+      content_ids: [webinar.id],
+      content_type: 'webinar',
+      webinar_id: webinar.id,
+      webinar_name: webinar.title,
+    },
+  })
+
+  // Track PageView on mount
+  useEffect(() => {
+    trackPageView({
+      content_name: webinar.title,
+      content_category: 'Webinar',
+      content_type: 'webinar',
+      webinar_id: webinar.id,
+    })
+  }, [trackPageView, webinar.id, webinar.title])
+
   // If landing page config exists, use the customized template
   if (landingPageConfig) {
     const webinarData: WebinarData = {

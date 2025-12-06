@@ -18,7 +18,7 @@ interface ChatPanelProps {
   playbackMode: 'simulated_live' | 'on_demand' | 'replay'
   interactions: InteractionData[]
   onInteractionDismiss: (id: string) => void
-  onInteractionRespond: (id: string, response: unknown) => void
+  onInteractionRespond: (id: string, response: unknown, interactionType?: string, interactionTitle?: string) => void
 }
 
 export function ChatPanel({

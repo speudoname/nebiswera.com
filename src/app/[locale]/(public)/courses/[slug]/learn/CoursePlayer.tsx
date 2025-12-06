@@ -18,6 +18,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { ContentRenderer } from './ContentRenderer'
+import { useCoursePixelTracking } from './useCoursePixelTracking'
 import type { ContentBlock, CourseSettings } from '@/lib/lms/types'
 import {
   getAnonymousId,
@@ -122,6 +123,17 @@ export function CoursePlayer({
   const [showSavePrompt, setShowSavePrompt] = useState(false)
   const [anonymousId, setAnonymousId] = useState<string | null>(null)
   const isKa = locale === 'ka'
+
+  // Facebook Pixel tracking
+  const { trackLessonCompleted, trackQuizCompleted } = useCoursePixelTracking({
+    courseId: course.id,
+    courseTitle: course.title,
+    courseSlug: course.slug,
+    currentPartId: currentPart?.id || null,
+    currentPartTitle: currentPart?.title || null,
+    currentLessonTitle: currentLesson?.title || null,
+    progressPercent: localProgressPercent,
+  })
 
   // Calculate progress from local state (for optimistic updates)
   const calculateLocalProgress = (progressMap: Record<string, PartProgress>) => {
@@ -288,6 +300,9 @@ export function CoursePlayer({
     }
 
     setIsCompleting(false)
+
+    // Track lesson completion for pixel
+    trackLessonCompleted(currentPart.id, currentPart.title)
 
     // Auto-advance to next part if available
     if (nextPart && !isPartLocked(nextPart.id)) {
@@ -665,6 +680,7 @@ export function CoursePlayer({
                         router.refresh()
                       }
                     }}
+                    onQuizPixelTrack={trackQuizCompleted}
                   />
                 ))}
               </div>

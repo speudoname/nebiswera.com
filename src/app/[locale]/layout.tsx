@@ -5,7 +5,9 @@ import { notFound } from 'next/navigation'
 import Script from 'next/script'
 import { locales, type Locale } from '@/i18n/config'
 import { SessionProvider } from '@/providers/SessionProvider'
+import { AnalyticsProvider } from '@/providers/AnalyticsProvider'
 import { getOrganizationSchema, getWebSiteSchema } from '@/lib/metadata'
+import { FacebookPixel } from '@/components/analytics/FacebookPixel'
 
 const GA_MEASUREMENT_ID = 'G-W670GS5SSX'
 
@@ -161,9 +163,14 @@ export default async function LocaleLayout({
           `}
         </Script>
 
+        {/* Facebook Pixel */}
+        <FacebookPixel />
+
         <SessionProvider>
           <NextIntlClientProvider messages={messages}>
-            {children}
+            <AnalyticsProvider>
+              {children}
+            </AnalyticsProvider>
           </NextIntlClientProvider>
         </SessionProvider>
       </body>

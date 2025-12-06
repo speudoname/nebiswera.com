@@ -8,7 +8,7 @@ import type { InteractionData } from '@/types'
 interface InteractionOverlayProps {
   interactions: InteractionData[]
   onDismiss: (id: string) => void
-  onRespond: (id: string, response: unknown) => void
+  onRespond: (id: string, response: unknown, interactionType?: string, interactionTitle?: string) => void
   registrationId: string
 }
 
@@ -41,7 +41,7 @@ function InteractionCard({
   interaction: InteractionData
   interactionId: string
   onDismiss: (id: string) => void
-  onRespond: (id: string, response: unknown) => void
+  onRespond: (id: string, response: unknown, interactionType?: string, interactionTitle?: string) => void
 }) {
   // Memoized handlers to prevent unnecessary re-renders
   const handleDismiss = useCallback(() => {
@@ -49,8 +49,8 @@ function InteractionCard({
   }, [onDismiss, interactionId])
 
   const handleRespond = useCallback((response: unknown) => {
-    onRespond(interactionId, response)
-  }, [onRespond, interactionId])
+    onRespond(interactionId, response, interaction.type, interaction.title)
+  }, [onRespond, interactionId, interaction.type, interaction.title])
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const [textResponse, setTextResponse] = useState('')

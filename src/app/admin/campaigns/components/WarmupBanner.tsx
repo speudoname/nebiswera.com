@@ -31,10 +31,9 @@ export function WarmupBanner() {
     async function fetchWarmup() {
       try {
         const res = await fetch('/api/admin/warmup')
+        if (!res.ok) return
         const data = await res.json()
-        if (data.success !== false) {
-          setState(data.data)
-        }
+        setState(data)
       } catch {
         // Silently fail - banner is optional
       } finally {

@@ -11,6 +11,7 @@ import { useWaitingRoom } from '../hooks/useWaitingRoom'
 import { useWebinarAnalytics } from '../hooks/useWebinarAnalytics'
 import { useProgressTracking } from '../hooks/useProgressTracking'
 import { useInteractionTiming } from '../hooks/useInteractionTiming'
+import { useWebinarPixelTracking } from '../hooks/useWebinarPixelTracking'
 import type { InteractionData } from '@/types'
 
 interface WebinarData {
@@ -102,6 +103,17 @@ export function WebinarRoom({
     sessionStartsAt,
   })
 
+  // Facebook Pixel tracking
+  const { trackCTAClick } = useWebinarPixelTracking({
+    webinarId: webinar.id,
+    webinarTitle: webinar.title,
+    showWaitingRoom,
+    playbackMode: playback.mode,
+    sessionType: access.sessionType,
+    progress,
+    videoEnded,
+  })
+
   // Interaction timing
   const { activeInteractions, dismissInteraction } = useInteractionTiming({
     currentTime,
@@ -128,9 +140,16 @@ export function WebinarRoom({
   // Handle interaction response
   const handleInteractionResponse = useCallback(async (
     interactionId: string,
-    response: unknown
+    response: unknown,
+    interactionType?: string,
+    interactionTitle?: string
   ) => {
     try {
+      // Track CTA click for pixel
+      if (interactionType) {
+        trackCTAClick(interactionType, interactionTitle)
+      }
+
       await fetch(`/api/webinars/${slug}/interactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,7 +163,7 @@ export function WebinarRoom({
     } catch (error) {
       console.error('Failed to submit interaction response:', error)
     }
-  }, [slug, accessToken, dismissInteraction])
+  }, [slug, accessToken, dismissInteraction, trackCTAClick])
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {

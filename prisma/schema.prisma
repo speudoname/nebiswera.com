@@ -207,11 +207,49 @@ model Settings {
   companyPhone      String?
   socialLinks       Json?    // { facebook?: string, instagram?: string, linkedin?: string, etc. }
 
+  // Facebook Pixel Configuration
+  fbPixelId         String?  // Facebook Pixel ID (e.g., "1234567890")
+  fbAccessToken     String?  // Conversions API Access Token
+  fbTestEventCode   String?  // Test Event Code (e.g., "TEST4243")
+  fbPixelEnabled    Boolean  @default(false)
+  fbTestMode        Boolean  @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@schema("public")
   @@map("settings")
+}
+
+// ===========================================
+// Facebook Pixel Event Logs
+// ===========================================
+
+model PixelEventLog {
+  id          String   @id @default(cuid())
+  eventId     String   // Deduplication ID (same for client+server pair)
+  eventName   String   // PageView, ViewContent, CompleteRegistration, etc.
+  source      String   // 'client' | 'server'
+  pageType    String   // blog, webinar, lms, landing, home, about
+  pageUrl     String
+  userId      String?  // Authenticated user ID if logged in
+  contactId   String?  // CRM contact ID if available
+  fbp         String?  // _fbp cookie value
+  fbc         String?  // _fbc cookie (from fbclid URL param)
+  eventData   Json?    // Custom event parameters
+  userData    Json?    // Hashed user data sent (for debugging, not actual values)
+  status      String   // 'sent' | 'failed' | 'test'
+  errorMsg    String?  // Error message if status is 'failed'
+  fbResponse  Json?    // Facebook API response
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([eventName])
+  @@index([status])
+  @@index([source])
+  @@index([pageType])
+  @@schema("public")
+  @@map("pixel_event_logs")
 }
 
 // ===========================================
@@ -2433,5 +2471,123 @@ enum CourseEventType {
   RESUMED_AFTER_INACTIVITY
 
   @@schema("lms")
+}
+
+// ===========================================
+// Site Analytics - Page Views & Engagement
+// ===========================================
+
+model PageView {
+  id            String   @id @default(cuid())
+
+  // Page identification
+  path          String   // URL path: /blog/my-post, /ka/about
+  pageType      PageType @default(OTHER) // blog, webinar, course, etc.
+  pageId        String?  // ID of the specific resource (blog post ID, etc.)
+  locale        String?  // ka, en
+
+  // Visitor identification
+  userId        String?  // Logged-in user ID
+  sessionId     String   // Anonymous session ID (from cookie)
+  visitorId     String?  // Persistent visitor ID (from cookie)
+
+  // Traffic source
+  referrer      String?
+  referrerDomain String? // Extracted domain from referrer
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  utmContent    String?
+  utmTerm       String?
+
+  // Device & location info
+  userAgent     String?
+  deviceType    DeviceType @default(DESKTOP)
+  browser       String?
+  browserVersion String?
+  os            String?
+  country       String?
+  city          String?
+
+  // Engagement metrics (updated via JS)
+  duration      Int      @default(0) // Time on page in seconds
+  scrollDepth   Int      @default(0) // Max scroll percentage (0-100)
+  engaged       Boolean  @default(false) // True if scrolled >25% or stayed >10s
+  bounced       Boolean  @default(true) // True if left without interaction
+
+  // Timestamps
+  enteredAt     DateTime @default(now())
+  exitedAt      DateTime?
+
+  @@index([path, enteredAt])
+  @@index([pageType, enteredAt])
+  @@index([pageId])
+  @@index([sessionId])
+  @@index([visitorId])
+  @@index([userId])
+  @@index([enteredAt])
+  @@index([referrerDomain])
+  @@schema("public")
+  @@map("page_views")
+}
+
+// Page click/interaction events
+model PageEvent {
+  id          String   @id @default(cuid())
+  pageViewId  String
+
+  // Event details
+  eventType   PageEventType
+  elementId   String?  // HTML element ID if available
+  elementText String?  // Button/link text (truncated)
+  targetUrl   String?  // For link clicks
+  metadata    Json?    // Additional event data
+
+  createdAt   DateTime @default(now())
+
+  @@index([pageViewId])
+  @@index([eventType, createdAt])
+  @@schema("public")
+  @@map("page_events")
+}
+
+enum PageType {
+  HOME
+  BLOG_LIST
+  BLOG_POST
+  WEBINAR_LANDING
+  WEBINAR_ROOM
+  COURSE_LIST
+  COURSE_PAGE
+  ABOUT
+  CONTACT
+  AUTH
+  OTHER
+
+  @@schema("public")
+}
+
+enum DeviceType {
+  DESKTOP
+  MOBILE
+  TABLET
+
+  @@schema("public")
+}
+
+enum PageEventType {
+  CLICK           // General click
+  LINK_CLICK      // External/internal link
+  BUTTON_CLICK    // Button interaction
+  FORM_SUBMIT     // Form submission
+  VIDEO_PLAY      // Video started
+  VIDEO_PAUSE     // Video paused
+  SCROLL_MILESTONE // 25%, 50%, 75%, 100%
+  CTA_CLICK       // Call-to-action button
+  SHARE           // Social share
+  COPY            // Copy to clipboard
+  DOWNLOAD        // File download
+
+  @@schema("public")
 }
 

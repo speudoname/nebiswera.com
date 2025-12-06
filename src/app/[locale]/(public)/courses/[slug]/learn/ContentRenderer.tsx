@@ -24,6 +24,7 @@ interface ContentRendererProps {
   locale: string
   onVideoProgress?: (watchTime: number, duration: number, percent: number) => void
   onQuizComplete?: (passed: boolean) => void
+  onQuizPixelTrack?: (quizId: string, quizTitle: string, passed: boolean, score: number) => void
 }
 
 export function ContentRenderer({
@@ -33,6 +34,7 @@ export function ContentRenderer({
   locale,
   onVideoProgress,
   onQuizComplete,
+  onQuizPixelTrack,
 }: ContentRendererProps) {
   switch (block.type) {
     case 'text':
@@ -57,6 +59,7 @@ export function ContentRenderer({
           partId={partId}
           isGate={block.isGate}
           onComplete={onQuizComplete}
+          onPixelTrack={onQuizPixelTrack}
           locale={locale}
         />
       )

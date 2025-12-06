@@ -6,7 +6,7 @@ import { WaitingRoom } from './WaitingRoom'
 import { InteractionOverlay } from './InteractionOverlay'
 import { ChatPanel } from './ChatPanel'
 import { EndScreen } from './EndScreen'
-import { Maximize2, Minimize2, MessageCircle, X } from 'lucide-react'
+import { Maximize2, Minimize2, MessageCircle, X, Play, MessageSquare } from 'lucide-react'
 import { useWaitingRoom } from '../hooks/useWaitingRoom'
 import { useWebinarAnalytics } from '../hooks/useWebinarAnalytics'
 import { useProgressTracking } from '../hooks/useProgressTracking'
@@ -61,6 +61,55 @@ interface WebinarRoomProps {
   endScreen?: EndScreenConfig
 }
 
+// Hook to detect landscape orientation
+function useIsLandscape() {
+  const [isLandscape, setIsLandscape] = useState(false)
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      // Check if mobile/tablet AND landscape
+      const isMobileDevice = window.innerWidth < 1024
+      const isLandscapeOrientation = window.innerWidth > window.innerHeight
+      setIsLandscape(isMobileDevice && isLandscapeOrientation)
+    }
+
+    checkOrientation()
+    window.addEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', checkOrientation)
+
+    return () => {
+      window.removeEventListener('resize', checkOrientation)
+      window.removeEventListener('orientationchange', checkOrientation)
+    }
+  }, [])
+
+  return isLandscape
+}
+
+// Hook to detect mobile (portrait) mode
+function useIsMobilePortrait() {
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false)
+
+  useEffect(() => {
+    const check = () => {
+      const isMobile = window.innerWidth < 1024
+      const isPortrait = window.innerHeight > window.innerWidth
+      setIsMobilePortrait(isMobile && isPortrait)
+    }
+
+    check()
+    window.addEventListener('resize', check)
+    window.addEventListener('orientationchange', check)
+
+    return () => {
+      window.removeEventListener('resize', check)
+      window.removeEventListener('orientationchange', check)
+    }
+  }, [])
+
+  return isMobilePortrait
+}
+
 export function WebinarRoom({
   webinar,
   access,
@@ -75,9 +124,12 @@ export function WebinarRoom({
   const [videoEnded, setVideoEnded] = useState(false)
   const [showEndScreen, setShowEndScreen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showChatInFullscreen, setShowChatInFullscreen] = useState(false)
-  const [showMobileChat, setShowMobileChat] = useState(false)
+  const [showChatInLandscape, setShowChatInLandscape] = useState(false)
+  const [mobileTab, setMobileTab] = useState<'video' | 'chat'>('video')
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const isLandscape = useIsLandscape()
+  const isMobilePortrait = useIsMobilePortrait()
 
   // Waiting room management
   const { showWaitingRoom, handleStart } = useWaitingRoom({
@@ -203,10 +255,218 @@ export function WebinarRoom({
     )
   }
 
+  // ===========================================
+  // MOBILE PORTRAIT LAYOUT
+  // ===========================================
+  if (isMobilePortrait && !isFullscreen) {
+    return (
+      <div ref={containerRef} className="flex flex-col h-full bg-black">
+        {/* Video section - fixed aspect ratio 16:9 */}
+        <div className="w-full bg-black" style={{ aspectRatio: '16/9' }}>
+          <WebinarPlayer
+            hlsUrl={webinar.hlsUrl}
+            playbackMode={playback.mode}
+            allowSeeking={playback.allowSeeking}
+            startPosition={playback.startPosition}
+            duration={webinar.duration}
+            poster={webinar.thumbnailUrl}
+            slug={slug}
+            accessToken={accessToken}
+            onTimeUpdate={handleTimeUpdate}
+            onVideoEnd={handleVideoEnd}
+          />
+        </div>
+
+        {/* Tab bar */}
+        {chatEnabled && (
+          <div className="flex border-b border-gray-200 bg-white">
+            <button
+              onClick={() => setMobileTab('video')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                mobileTab === 'video'
+                  ? 'text-primary-600 border-b-2 border-primary-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Play className="w-4 h-4" />
+              Video
+            </button>
+            <button
+              onClick={() => setMobileTab('chat')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors ${
+                mobileTab === 'chat'
+                  ? 'text-primary-600 border-b-2 border-primary-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              Chat
+            </button>
+          </div>
+        )}
+
+        {/* Tab content area */}
+        <div className="flex-1 overflow-hidden bg-white">
+          {mobileTab === 'video' ? (
+            // Video tab - show interactions
+            <div className="h-full overflow-y-auto p-4">
+              {activeInteractions.length > 0 ? (
+                <div className="space-y-4">
+                  {activeInteractions.map((interaction) => (
+                    <MobileInteractionCard
+                      key={interaction.id}
+                      interaction={interaction}
+                      onDismiss={dismissInteraction}
+                      onRespond={handleInteractionResponse}
+                      registrationId={access.registrationId}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <Play className="w-12 h-12 mb-3 opacity-30" />
+                  <p className="text-sm">Watching: {webinar.title}</p>
+                  {webinar.presenterName && (
+                    <p className="text-xs text-gray-400 mt-1">with {webinar.presenterName}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            // Chat tab
+            <ChatPanel
+              webinarId={webinar.id}
+              registrationId={access.registrationId}
+              userName={userName}
+              accessToken={accessToken}
+              slug={slug}
+              currentVideoTime={currentTime}
+              playbackMode={playback.mode}
+              interactions={[]} // Don't show interactions in chat panel on mobile
+              onInteractionDismiss={dismissInteraction}
+              onInteractionRespond={handleInteractionResponse}
+            />
+          )}
+        </div>
+
+        {/* End screen overlay */}
+        {showEndScreen && endScreen?.enabled && (
+          <EndScreen
+            title={endScreen.title}
+            message={endScreen.message}
+            buttonText={endScreen.buttonText}
+            buttonUrl={endScreen.buttonUrl}
+            redirectUrl={endScreen.redirectUrl}
+            redirectDelay={endScreen.redirectDelay}
+            slug={slug}
+            accessToken={accessToken}
+            onClose={() => setShowEndScreen(false)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // ===========================================
+  // MOBILE LANDSCAPE LAYOUT
+  // ===========================================
+  if (isLandscape && !isFullscreen) {
+    return (
+      <div ref={containerRef} className="flex h-full bg-black relative">
+        {/* Full-width video */}
+        <div className="flex-1 relative">
+          <WebinarPlayer
+            hlsUrl={webinar.hlsUrl}
+            playbackMode={playback.mode}
+            allowSeeking={playback.allowSeeking}
+            startPosition={playback.startPosition}
+            duration={webinar.duration}
+            poster={webinar.thumbnailUrl}
+            slug={slug}
+            accessToken={accessToken}
+            onTimeUpdate={handleTimeUpdate}
+            onVideoEnd={handleVideoEnd}
+          />
+
+          {/* Interaction overlay on video in landscape */}
+          {activeInteractions.length > 0 && (
+            <InteractionOverlay
+              interactions={activeInteractions}
+              onDismiss={dismissInteraction}
+              onRespond={handleInteractionResponse}
+              registrationId={access.registrationId}
+            />
+          )}
+
+          {/* Chat toggle button */}
+          {chatEnabled && (
+            <button
+              onClick={() => setShowChatInLandscape(!showChatInLandscape)}
+              className="absolute bottom-4 right-4 p-3 rounded-full bg-black/60 hover:bg-black/80 transition-colors z-10"
+            >
+              {showChatInLandscape ? (
+                <X className="w-5 h-5 text-white" />
+              ) : (
+                <MessageCircle className="w-5 h-5 text-white" />
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Chat panel - slides in from right */}
+        {chatEnabled && showChatInLandscape && (
+          <div className="w-[300px] bg-white flex-shrink-0 animate-slide-in-right">
+            <div className="flex items-center justify-between p-2 border-b">
+              <span className="font-medium text-gray-900 text-sm">Chat</span>
+              <button
+                onClick={() => setShowChatInLandscape(false)}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="h-[calc(100%-40px)]">
+              <ChatPanel
+                webinarId={webinar.id}
+                registrationId={access.registrationId}
+                userName={userName}
+                accessToken={accessToken}
+                slug={slug}
+                currentVideoTime={currentTime}
+                playbackMode={playback.mode}
+                interactions={[]}
+                onInteractionDismiss={dismissInteraction}
+                onInteractionRespond={handleInteractionResponse}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* End screen overlay */}
+        {showEndScreen && endScreen?.enabled && (
+          <EndScreen
+            title={endScreen.title}
+            message={endScreen.message}
+            buttonText={endScreen.buttonText}
+            buttonUrl={endScreen.buttonUrl}
+            redirectUrl={endScreen.redirectUrl}
+            redirectDelay={endScreen.redirectDelay}
+            slug={slug}
+            accessToken={accessToken}
+            onClose={() => setShowEndScreen(false)}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // ===========================================
+  // DESKTOP LAYOUT (and fullscreen)
+  // ===========================================
   return (
     <div
       ref={containerRef}
-      className="flex flex-col lg:flex-row h-full bg-black"
+      className="flex h-full bg-black"
     >
       {/* Main video area */}
       <div className="flex-1 relative flex flex-col min-h-0">
@@ -238,14 +498,14 @@ export function WebinarRoom({
 
         {/* Video control buttons (bottom right) */}
         <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
-          {/* Chat toggle button for fullscreen mode (desktop) */}
+          {/* Chat toggle button for fullscreen mode */}
           {chatEnabled && isFullscreen && (
             <button
-              onClick={() => setShowChatInFullscreen(!showChatInFullscreen)}
+              onClick={() => setShowChatInLandscape(!showChatInLandscape)}
               className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
-              title={showChatInFullscreen ? 'Hide chat' : 'Show chat'}
+              title={showChatInLandscape ? 'Hide chat' : 'Show chat'}
             >
-              {showChatInFullscreen ? (
+              {showChatInLandscape ? (
                 <X className="w-5 h-5 text-white" />
               ) : (
                 <MessageCircle className="w-5 h-5 text-white" />
@@ -253,10 +513,10 @@ export function WebinarRoom({
             </button>
           )}
 
-          {/* Fullscreen toggle - hidden on mobile */}
+          {/* Fullscreen toggle */}
           <button
             onClick={toggleFullscreen}
-            className="hidden lg:block p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+            className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
             title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
           >
             {isFullscreen ? (
@@ -266,26 +526,11 @@ export function WebinarRoom({
             )}
           </button>
         </div>
-
-        {/* Mobile chat toggle button (floating) */}
-        {chatEnabled && !isFullscreen && (
-          <button
-            onClick={() => setShowMobileChat(!showMobileChat)}
-            className="lg:hidden fixed bottom-4 right-4 p-4 rounded-full bg-primary-600 hover:bg-primary-700 shadow-lg transition-colors z-30"
-            title={showMobileChat ? 'Hide chat' : 'Show chat'}
-          >
-            {showMobileChat ? (
-              <X className="w-6 h-6 text-white" />
-            ) : (
-              <MessageCircle className="w-6 h-6 text-white" />
-            )}
-          </button>
-        )}
       </div>
 
-      {/* Desktop chat panel - Right side, hidden on mobile */}
+      {/* Desktop chat panel - Right side */}
       {chatEnabled && !isFullscreen && (
-        <div className="hidden lg:block w-[400px] flex-shrink-0 bg-white h-full">
+        <div className="w-[400px] flex-shrink-0 bg-white h-full">
           <ChatPanel
             webinarId={webinar.id}
             registrationId={access.registrationId}
@@ -301,50 +546,13 @@ export function WebinarRoom({
         </div>
       )}
 
-      {/* Mobile chat panel - Slide up from bottom */}
-      {chatEnabled && !isFullscreen && showMobileChat && (
-        <div className="lg:hidden fixed inset-0 z-40 flex flex-col">
-          {/* Backdrop */}
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setShowMobileChat(false)}
-          />
-          {/* Chat panel */}
-          <div className="h-[70vh] bg-white rounded-t-2xl shadow-2xl animate-slide-up">
-            <div className="flex items-center justify-between p-3 border-b">
-              <span className="font-medium text-gray-900">Chat</span>
-              <button
-                onClick={() => setShowMobileChat(false)}
-                className="p-1 rounded-full hover:bg-gray-100"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="h-[calc(70vh-52px)]">
-              <ChatPanel
-                webinarId={webinar.id}
-                registrationId={access.registrationId}
-                userName={userName}
-                accessToken={accessToken}
-                slug={slug}
-                currentVideoTime={currentTime}
-                playbackMode={playback.mode}
-                interactions={activeInteractions}
-                onInteractionDismiss={dismissInteraction}
-                onInteractionRespond={handleInteractionResponse}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Fullscreen chat overlay - Toggleable */}
-      {chatEnabled && isFullscreen && showChatInFullscreen && (
+      {chatEnabled && isFullscreen && showChatInLandscape && (
         <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white/95 backdrop-blur-sm shadow-2xl z-20">
           <div className="flex items-center justify-between p-3 border-b bg-white">
             <span className="font-medium text-gray-900">Chat</span>
             <button
-              onClick={() => setShowChatInFullscreen(false)}
+              onClick={() => setShowChatInLandscape(false)}
               className="p-1 rounded-full hover:bg-gray-100"
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -381,6 +589,113 @@ export function WebinarRoom({
           onClose={() => setShowEndScreen(false)}
         />
       )}
+    </div>
+  )
+}
+
+// ===========================================
+// Mobile Interaction Card Component
+// ===========================================
+interface MobileInteractionCardProps {
+  interaction: InteractionData
+  onDismiss: (id: string) => void
+  onRespond: (id: string, response: unknown, type?: string, title?: string) => void
+  registrationId: string
+}
+
+function MobileInteractionCard({
+  interaction,
+  onDismiss,
+  onRespond,
+  registrationId,
+}: MobileInteractionCardProps) {
+  const [selectedOption, setSelectedOption] = useState<string | null>(null)
+  const [textResponse, setTextResponse] = useState('')
+
+  const handleSubmit = () => {
+    if (interaction.type === 'POLL' && selectedOption) {
+      onRespond(interaction.id, selectedOption, interaction.type, interaction.title)
+    } else if (interaction.type === 'QUESTION' && textResponse.trim()) {
+      onRespond(interaction.id, textResponse, interaction.type, interaction.title)
+    } else if (interaction.type === 'CTA' || interaction.type === 'SPECIAL_OFFER') {
+      const url = interaction.config?.buttonUrl
+      if (url) {
+        window.open(url, '_blank')
+      }
+      onRespond(interaction.id, 'clicked', interaction.type, interaction.title)
+    } else {
+      onDismiss(interaction.id)
+    }
+  }
+
+  return (
+    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+      <div className="flex items-start justify-between mb-3">
+        <h3 className="font-medium text-gray-900">{interaction.title}</h3>
+        <button
+          onClick={() => onDismiss(interaction.id)}
+          className="p-1 rounded-full hover:bg-gray-200 text-gray-400"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Poll options */}
+      {interaction.type === 'POLL' && interaction.config?.options && (
+        <div className="space-y-2 mb-4">
+          {(interaction.config.options as string[]).map((option, index) => (
+            <button
+              key={index}
+              onClick={() => setSelectedOption(option)}
+              className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                selectedOption === option
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Question input */}
+      {interaction.type === 'QUESTION' && (
+        <textarea
+          value={textResponse}
+          onChange={(e) => setTextResponse(e.target.value)}
+          placeholder="Type your answer..."
+          className="w-full p-3 border border-gray-200 rounded-lg mb-4 resize-none"
+          rows={3}
+        />
+      )}
+
+      {/* CTA / Special offer */}
+      {(interaction.type === 'CTA' || interaction.type === 'SPECIAL_OFFER') && (
+        <p className="text-gray-600 text-sm mb-4">
+          {interaction.config?.description || 'Click the button below to learn more.'}
+        </p>
+      )}
+
+      {/* Tip */}
+      {interaction.type === 'TIP' && (
+        <p className="text-gray-600 text-sm mb-4">
+          {interaction.config?.description}
+        </p>
+      )}
+
+      {/* Submit button */}
+      <button
+        onClick={handleSubmit}
+        className="w-full py-2.5 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors"
+      >
+        {interaction.type === 'POLL' && 'Submit Answer'}
+        {interaction.type === 'QUESTION' && 'Submit'}
+        {(interaction.type === 'CTA' || interaction.type === 'SPECIAL_OFFER') &&
+          (interaction.config?.buttonText || 'Learn More')}
+        {interaction.type === 'TIP' && 'Got it'}
+        {!['POLL', 'QUESTION', 'CTA', 'SPECIAL_OFFER', 'TIP'].includes(interaction.type) && 'Continue'}
+      </button>
     </div>
   )
 }

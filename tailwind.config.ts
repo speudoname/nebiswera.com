@@ -176,11 +176,21 @@ const config: Config = {
           '0%': { transform: 'translateY(0)' },
           '100%': { transform: 'translateY(100%)' },
         },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'slide-out-right': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
       },
       animation: {
         flash: 'flash 200ms ease-out',
         'slide-up': 'slide-up 300ms ease-out',
         'slide-down': 'slide-down 300ms ease-out',
+        'slide-in-right': 'slide-in-right 300ms ease-out',
+        'slide-out-right': 'slide-out-right 300ms ease-out',
       },
     },
   },

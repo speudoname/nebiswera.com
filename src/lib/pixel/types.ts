@@ -50,12 +50,6 @@ export type PageType =
   | 'landing'
   | 'other'
 
-// Event source
-export type EventSource = 'client' | 'server'
-
-// Event status
-export type EventStatus = 'sent' | 'failed' | 'test'
-
 // Standard event parameters
 export interface PixelEventParams {
   // Standard parameters
@@ -165,24 +159,6 @@ export interface PixelConfig {
   fbTestEventCode: string | null
   fbPixelEnabled: boolean
   fbTestMode: boolean
-}
-
-// Event log entry
-export interface PixelEventLogEntry {
-  eventId: string
-  eventName: string
-  source: EventSource
-  pageType: string
-  pageUrl: string
-  userId?: string
-  contactId?: string
-  fbp?: string
-  fbc?: string
-  eventData?: PixelEventParams
-  userData?: Record<string, boolean> // Field presence indicators
-  status: EventStatus
-  errorMsg?: string
-  fbResponse?: ConversionsAPIResponse
 }
 
 // ViewContent tracking configuration

@@ -9,8 +9,6 @@ export type {
   CustomPixelEvent,
   PixelEventName,
   PageType,
-  EventSource,
-  EventStatus,
   PixelEventParams,
   UserData,
   HashedUserData,
@@ -19,7 +17,6 @@ export type {
   ConversionsAPIRequest,
   ConversionsAPIResponse,
   PixelConfig,
-  PixelEventLogEntry,
   ViewContentConfig,
 } from './types'
 
@@ -47,14 +44,10 @@ export {
   parseFbpCookie,
   parseFbcCookie,
   extractFbclid,
-  getUserDataFieldsSummary,
 } from './utils'
 
 // Server-side tracking
 export {
   trackServerEvent,
   trackServerEventsBatch,
-  cleanupOldEventLogs,
-  getEventLogs,
-  getEventLogDetails,
 } from './server'

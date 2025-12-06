@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import {
   BarChart3,
   Eye,
@@ -25,8 +26,17 @@ import {
   Languages,
   ExternalLink,
   ChevronRight,
+  Play,
+  Video,
+  HardDrive,
+  CheckCircle,
+  BookOpen,
+  Radio,
 } from 'lucide-react'
 import { BlogPostDetailModal } from './BlogPostDetailModal'
+import { VideoDetailModal } from './VideoDetailModal'
+
+type TabType = 'overview' | 'blog' | 'video'
 
 interface AnalyticsData {
   overview: {
@@ -111,6 +121,74 @@ interface BlogAnalytics {
   }>
 }
 
+interface VideoAnalytics {
+  // From existing /api/admin/video-analytics (Bunny.net inventory)
+  videos: Array<{
+    videoId: string
+    title: string
+    thumbnail: string
+    hlsUrl: string
+    duration: number
+    status: string
+    dateUploaded: string
+    storageSize: number
+    bunnyViews: number
+    dbViews: number
+    uniqueViewers: number
+    totalWatchTime: number
+    averageWatchPercent: number
+    completions: number
+    usedIn: Array<{
+      type: 'course' | 'webinar'
+      id: string
+      title: string
+      slug?: string
+    }>
+  }>
+  summary: {
+    totalVideos: number
+    totalStorageBytes: number
+    totalDurationSeconds: number
+    videosInUse: number
+    unusedVideos: number
+  }
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+interface VideoEventAnalytics {
+  // From /api/admin/analytics/video (event-based)
+  overview: {
+    totalVideoStarts: number
+    courseVideoStarts: number
+    pageVideoPlays: number
+    videoCompletes: number
+    completionRate: number
+    avgProgress: number
+    uniqueViewers: number
+  }
+  dailyViews: Array<{
+    date: string
+    count: number
+  }>
+  recentEvents: Array<{
+    type: 'course' | 'page'
+    eventType: string
+    createdAt: string
+    courseId?: string
+    courseName?: string
+    lessonId?: string
+    lessonName?: string
+    path?: string
+    pageType?: string
+    eventData?: unknown
+  }>
+}
+
 const TIME_RANGES = [
   { label: '7 days', value: 7 },
   { label: '30 days', value: 30 },
@@ -128,6 +206,24 @@ function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
   if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
   return num.toLocaleString()
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`
+}
+
+function formatVideoDuration(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)}s`
+  const hours = Math.floor(seconds / 3600)
+  const mins = Math.floor((seconds % 3600) / 60)
+  if (hours > 0) {
+    return `${hours}h ${mins}m`
+  }
+  return `${mins}m`
 }
 
 function StatCard({
@@ -284,20 +380,42 @@ function SectionCard({
   )
 }
 
-export default function AnalyticsDashboard() {
+function AnalyticsDashboardContent() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [blogData, setBlogData] = useState<BlogAnalytics | null>(null)
+  const [videoData, setVideoData] = useState<VideoAnalytics | null>(null)
+  const [videoEventData, setVideoEventData] = useState<VideoEventAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(30)
-  const [activeTab, setActiveTab] = useState<'overview' | 'blog'>('overview')
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null)
+
+  // Get active tab from URL, default to 'overview'
+  const activeTab = (searchParams.get('tab') as TabType) || 'overview'
+
+  // Update URL when tab changes
+  const setActiveTab = useCallback((tab: TabType) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (tab === 'overview') {
+      params.delete('tab')
+    } else {
+      params.set('tab', tab)
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, pathname])
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [analyticsRes, blogRes] = await Promise.all([
+      const [analyticsRes, blogRes, videoRes, videoEventRes] = await Promise.all([
         fetch(`/api/admin/analytics?days=${days}`),
         fetch(`/api/admin/analytics/blog?days=${days}`),
+        fetch(`/api/admin/video-analytics?limit=50`), // Bunny.net inventory
+        fetch(`/api/admin/analytics/video?days=${days}`), // Event-based analytics
       ])
 
       if (analyticsRes.ok) {
@@ -305,6 +423,13 @@ export default function AnalyticsDashboard() {
       }
       if (blogRes.ok) {
         setBlogData(await blogRes.json())
+      }
+      if (videoRes.ok) {
+        const result = await videoRes.json()
+        setVideoData(result.data) // Note: wrapped in data object
+      }
+      if (videoEventRes.ok) {
+        setVideoEventData(await videoEventRes.json())
       }
     } catch (error) {
       console.error('Failed to fetch analytics:', error)
@@ -409,6 +534,17 @@ export default function AnalyticsDashboard() {
         >
           <FileText className="w-4 h-4" />
           Blog Posts
+        </button>
+        <button
+          onClick={() => setActiveTab('video')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'video'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Video className="w-4 h-4" />
+          Videos
         </button>
       </div>
 
@@ -830,6 +966,236 @@ export default function AnalyticsDashboard() {
         </>
       )}
 
+      {activeTab === 'video' && (videoData || videoEventData) && (
+        <>
+          {/* Video Library Stats (from Bunny.net) */}
+          {videoData?.summary && (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+              <StatCard
+                title="Total Videos"
+                value={formatNumber(videoData.summary.totalVideos)}
+                icon={Video}
+                color="primary"
+              />
+              <StatCard
+                title="Total Storage"
+                value={formatBytes(videoData.summary.totalStorageBytes)}
+                icon={HardDrive}
+                color="blue"
+              />
+              <StatCard
+                title="Total Duration"
+                value={formatVideoDuration(videoData.summary.totalDurationSeconds)}
+                icon={Clock}
+                color="green"
+              />
+              <StatCard
+                title="In Use"
+                value={videoData.summary.videosInUse}
+                icon={CheckCircle}
+                color="orange"
+              />
+              <StatCard
+                title="Unused"
+                value={videoData.summary.unusedVideos}
+                icon={Layers}
+                color="red"
+              />
+            </div>
+          )}
+
+          {/* Event-based Stats (user behavior) */}
+          {videoEventData?.overview && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <StatCard
+                title="Video Plays"
+                value={formatNumber(videoEventData.overview.totalVideoStarts)}
+                icon={Play}
+                color="primary"
+                description={`${days} day period`}
+              />
+              <StatCard
+                title="Completions"
+                value={formatNumber(videoEventData.overview.videoCompletes)}
+                icon={TrendingUp}
+                color="green"
+              />
+              <StatCard
+                title="Completion Rate"
+                value={videoEventData.overview.completionRate}
+                suffix="%"
+                icon={Percent}
+                color="orange"
+              />
+              <StatCard
+                title="Unique Viewers"
+                value={formatNumber(videoEventData.overview.uniqueViewers)}
+                icon={Users}
+                color="purple"
+              />
+            </div>
+          )}
+
+          {/* Video Plays Over Time */}
+          {videoEventData?.dailyViews && videoEventData.dailyViews.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Video Plays Over Time</h3>
+              </div>
+              <div className="h-32">
+                <MiniBarChart data={videoEventData.dailyViews} height={128} />
+              </div>
+              <div className="flex justify-between mt-2 text-xs text-gray-400">
+                <span>{new Date(videoEventData.dailyViews[0]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                <span>{new Date(videoEventData.dailyViews[videoEventData.dailyViews.length - 1]?.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Video Library Table */}
+          {videoData?.videos && videoData.videos.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Video Library</h3>
+                <p className="text-sm text-gray-500 mt-1">Click a row for detailed analytics</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Video
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Duration
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Views
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Used In
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {videoData.videos.slice(0, 15).map((video) => (
+                      <tr
+                        key={video.videoId}
+                        onClick={() => setSelectedVideoId(video.videoId)}
+                        className="hover:bg-primary-50 transition-colors cursor-pointer"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-16 h-10 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                              {video.thumbnail ? (
+                                <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <Video className="w-4 h-4 text-gray-400" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                              {video.title}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                            video.status === 'ready' ? 'bg-green-100 text-green-700' :
+                            video.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {video.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right text-sm text-gray-600">
+                          {formatVideoDuration(video.duration)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {video.bunnyViews + video.dbViews}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {video.usedIn.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {video.usedIn.slice(0, 2).map((usage, i) => (
+                                <span
+                                  key={i}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                                    usage.type === 'course'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-purple-100 text-purple-700'
+                                  }`}
+                                >
+                                  {usage.type === 'course' ? <BookOpen className="w-3 h-3" /> : <Radio className="w-3 h-3" />}
+                                  {usage.title.length > 15 ? usage.title.substring(0, 15) + '...' : usage.title}
+                                </span>
+                              ))}
+                              {video.usedIn.length > 2 && (
+                                <span className="text-xs text-gray-500">+{video.usedIn.length - 2}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-400">Not used</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {videoData.pagination.total > 15 && (
+                <div className="px-6 py-3 bg-gray-50 border-t text-sm text-gray-500 text-center">
+                  Showing 15 of {videoData.pagination.total} videos
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Recent Video Events */}
+          {videoEventData?.recentEvents && videoEventData.recentEvents.length > 0 && (
+            <SectionCard title="Recent Video Events" icon={Clock}>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {videoEventData.recentEvents.slice(0, 15).map((event, idx) => (
+                  <div key={idx} className="flex items-center gap-2 py-2 border-b border-gray-50 last:border-0 text-sm">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                      event.eventType.includes('COMPLETED') || event.eventType.includes('COMPLETE')
+                        ? 'bg-green-100 text-green-700'
+                        : event.eventType.includes('STARTED') || event.eventType.includes('PLAY')
+                        ? 'bg-blue-100 text-blue-700'
+                        : event.eventType.includes('PAUSED') || event.eventType.includes('PAUSE')
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {event.eventType.replace(/_/g, ' ')}
+                    </span>
+                    <span className="text-gray-600 truncate flex-1">
+                      {event.type === 'course' ? event.lessonName || event.courseName : event.path}
+                    </span>
+                    <span className="text-gray-400 text-xs whitespace-nowrap">
+                      {new Date(event.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+        </>
+      )}
+
+      {activeTab === 'video' && !videoData && !videoEventData && !loading && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <Video className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500">No video analytics data available</p>
+          <p className="text-sm text-gray-400 mt-1">Video events will appear here once users start watching videos</p>
+        </div>
+      )}
+
       {/* Blog Post Detail Modal */}
       {selectedPostId && (
         <BlogPostDetailModal
@@ -838,6 +1204,22 @@ export default function AnalyticsDashboard() {
           onClose={() => setSelectedPostId(null)}
         />
       )}
+
+      {/* Video Detail Modal */}
+      {selectedVideoId && (
+        <VideoDetailModal
+          videoId={selectedVideoId}
+          onClose={() => setSelectedVideoId(null)}
+        />
+      )}
     </div>
+  )
+}
+
+export default function AnalyticsDashboard() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" /></div>}>
+      <AnalyticsDashboardContent />
+    </Suspense>
   )
 }

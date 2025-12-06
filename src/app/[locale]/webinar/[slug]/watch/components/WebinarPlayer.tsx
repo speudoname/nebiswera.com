@@ -141,21 +141,31 @@ export function WebinarPlayer({
     const dur = video.duration || 0
     setVideoDuration(dur)
 
-    // Set start position for on-demand/replay
-    if (startPosition > 0 && allowSeeking) {
-      video.currentTime = startPosition
+    // Set start position based on playback mode
+    if (startPosition > 0) {
+      // Cap at video duration - 1 to avoid seeking past end
+      const targetPosition = Math.min(startPosition, Math.max(0, dur - 1))
+
+      if (playbackMode === 'simulated_live') {
+        // Simulated live: position is calculated from session start time
+        // This ensures if user refreshes, they continue at the right spot
+        video.currentTime = targetPosition
+        lastValidTime.current = targetPosition
+        lastReportedTime.current = targetPosition // Avoid immediate progress report
+      } else if (allowSeeking) {
+        // On-demand/replay: resume from last watched position
+        video.currentTime = targetPosition
+        lastReportedTime.current = targetPosition
+      }
     }
 
-    // For simulated live, calculate current position
-    if (playbackMode === 'simulated_live' && startPosition > 0) {
-      video.currentTime = Math.min(startPosition, dur)
-      lastValidTime.current = video.currentTime
-    }
-
-    // Auto-play
-    video.play().catch(() => {
-      // Autoplay was prevented
-    })
+    // Auto-play after a short delay to ensure seeking has completed
+    setTimeout(() => {
+      video.play().catch((error) => {
+        // Autoplay was prevented - this is common on mobile
+        console.log('Autoplay prevented, user interaction required:', error)
+      })
+    }, 100)
   }, [startPosition, allowSeeking, playbackMode])
 
   // Handle time updates

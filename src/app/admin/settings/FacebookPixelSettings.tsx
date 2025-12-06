@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button, Input, Badge } from '@/components/ui'
-import { BarChart3, Eye, EyeOff, ExternalLink, RefreshCw, CheckCircle2, XCircle, FlaskConical } from 'lucide-react'
-import Link from 'next/link'
+import { BarChart3, Eye, EyeOff, RefreshCw, CheckCircle2, XCircle, FlaskConical } from 'lucide-react'
 
 interface PixelConfig {
   fbPixelId: string | null
@@ -140,22 +139,14 @@ export default function FacebookPixelSettings() {
   return (
     <div className="bg-neu-light rounded-neu shadow-neu mb-6">
       <div className="px-6 py-4 border-b border-neu-dark">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="no-margin flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary-600" />
-              Facebook Pixel & Conversions API
-            </h3>
-            <p className="text-body-sm text-muted mt-1 no-margin">
-              Track user actions for Facebook Ads optimization with both browser and server-side tracking.
-            </p>
-          </div>
-          <Link
-            href="/admin/pixel-logs"
-            className="text-body-sm text-primary-600 hover:text-primary-700 flex items-center gap-1"
-          >
-            View Logs <ExternalLink className="h-4 w-4" />
-          </Link>
+        <div>
+          <h3 className="no-margin flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary-600" />
+            Facebook Pixel & Conversions API
+          </h3>
+          <p className="text-body-sm text-muted mt-1 no-margin">
+            Track user actions for Facebook Ads optimization with both browser and server-side tracking.
+          </p>
         </div>
       </div>
 

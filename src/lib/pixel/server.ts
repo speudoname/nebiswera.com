@@ -3,10 +3,8 @@
  * Sends events to Facebook's server-side API for better accuracy
  */
 
-import { prisma } from '@/lib/db'
-import type { Prisma } from '@prisma/client'
 import { getPixelConfig, isServerSideEnabled, isTestMode } from './config'
-import { hashUserData, generateEventId, getUnixTimestamp, getUserDataFieldsSummary } from './utils'
+import { hashUserData, generateEventId, getUnixTimestamp } from './utils'
 import type {
   PixelEventName,
   PageType,
@@ -15,7 +13,6 @@ import type {
   ConversionsAPIEvent,
   ConversionsAPIRequest,
   ConversionsAPIResponse,
-  PixelEventLogEntry,
 } from './types'
 
 const FACEBOOK_API_VERSION = 'v18.0'
@@ -89,8 +86,6 @@ interface TrackServerEventParams {
     fbp?: string
     fbc?: string
   }
-  userId?: string
-  contactId?: string
 }
 
 /**
@@ -104,8 +99,6 @@ export async function trackServerEvent({
   params,
   userData,
   browserData,
-  userId,
-  contactId,
 }: TrackServerEventParams): Promise<{
   success: boolean
   eventId: string
@@ -174,23 +167,7 @@ export async function trackServerEvent({
 
     if (!response.ok) {
       const errorMessage = responseData.error?.message || 'Unknown error from Facebook API'
-
-      // Log failed event
-      await logPixelEvent({
-        eventId: finalEventId,
-        eventName,
-        source: 'server',
-        pageType,
-        pageUrl,
-        userId,
-        contactId,
-        fbp: browserData?.fbp,
-        fbc: browserData?.fbc,
-        eventData: params,
-        userData: userData ? getUserDataFieldsSummary(userData) : undefined,
-        status: 'failed',
-        errorMsg: errorMessage,
-      })
+      console.error('[Pixel] Facebook API error:', errorMessage)
 
       return {
         success: false,
@@ -199,23 +176,6 @@ export async function trackServerEvent({
       }
     }
 
-    // Log successful event
-    await logPixelEvent({
-      eventId: finalEventId,
-      eventName,
-      source: 'server',
-      pageType,
-      pageUrl,
-      userId,
-      contactId,
-      fbp: browserData?.fbp,
-      fbc: browserData?.fbc,
-      eventData: params,
-      userData: userData ? getUserDataFieldsSummary(userData) : undefined,
-      status: testMode ? 'test' : 'sent',
-      fbResponse: responseData as ConversionsAPIResponse,
-    })
-
     return {
       success: true,
       eventId: finalEventId,
@@ -223,57 +183,13 @@ export async function trackServerEvent({
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-
-    // Log error
-    await logPixelEvent({
-      eventId: finalEventId,
-      eventName,
-      source: 'server',
-      pageType,
-      pageUrl,
-      userId,
-      contactId,
-      fbp: browserData?.fbp,
-      fbc: browserData?.fbc,
-      eventData: params,
-      userData: userData ? getUserDataFieldsSummary(userData) : undefined,
-      status: 'failed',
-      errorMsg: errorMessage,
-    })
+    console.error('[Pixel] Server tracking error:', errorMessage)
 
     return {
       success: false,
       eventId: finalEventId,
       error: errorMessage,
     }
-  }
-}
-
-/**
- * Log pixel event to database for debugging
- */
-async function logPixelEvent(entry: PixelEventLogEntry): Promise<void> {
-  try {
-    await prisma.pixelEventLog.create({
-      data: {
-        eventId: entry.eventId,
-        eventName: entry.eventName,
-        source: entry.source,
-        pageType: entry.pageType,
-        pageUrl: entry.pageUrl,
-        userId: entry.userId,
-        contactId: entry.contactId,
-        fbp: entry.fbp,
-        fbc: entry.fbc,
-        eventData: entry.eventData || undefined,
-        userData: entry.userData || undefined,
-        status: entry.status,
-        errorMsg: entry.errorMsg,
-        fbResponse: entry.fbResponse ? (entry.fbResponse as unknown as Prisma.InputJsonValue) : undefined,
-      },
-    })
-  } catch (error) {
-    console.error('[Pixel] Failed to log event:', error)
   }
 }
 
@@ -298,116 +214,4 @@ export async function trackServerEventsBatch(
       error: r.error,
     })),
   }
-}
-
-/**
- * Cleanup old event logs (called by cron job)
- */
-export async function cleanupOldEventLogs(daysToKeep: number = 7): Promise<number> {
-  const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() - daysToKeep)
-
-  const result = await prisma.pixelEventLog.deleteMany({
-    where: {
-      createdAt: {
-        lt: cutoffDate,
-      },
-    },
-  })
-
-  return result.count
-}
-
-/**
- * Get event logs for admin panel
- */
-export async function getEventLogs(options: {
-  page?: number
-  limit?: number
-  eventName?: string
-  source?: 'client' | 'server'
-  status?: 'sent' | 'failed' | 'test'
-  pageType?: string
-  startDate?: Date
-  endDate?: Date
-}): Promise<{
-  logs: Array<{
-    id: string
-    eventId: string
-    eventName: string
-    source: string
-    pageType: string
-    pageUrl: string
-    status: string
-    createdAt: Date
-    errorMsg?: string | null
-  }>
-  total: number
-  page: number
-  totalPages: number
-}> {
-  const page = options.page || 1
-  const limit = options.limit || 50
-  const skip = (page - 1) * limit
-
-  const where: Record<string, unknown> = {}
-
-  if (options.eventName) {
-    where.eventName = options.eventName
-  }
-  if (options.source) {
-    where.source = options.source
-  }
-  if (options.status) {
-    where.status = options.status
-  }
-  if (options.pageType) {
-    where.pageType = options.pageType
-  }
-  if (options.startDate || options.endDate) {
-    where.createdAt = {}
-    if (options.startDate) {
-      (where.createdAt as Record<string, Date>).gte = options.startDate
-    }
-    if (options.endDate) {
-      (where.createdAt as Record<string, Date>).lte = options.endDate
-    }
-  }
-
-  const [logs, total] = await Promise.all([
-    prisma.pixelEventLog.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-      select: {
-        id: true,
-        eventId: true,
-        eventName: true,
-        source: true,
-        pageType: true,
-        pageUrl: true,
-        status: true,
-        createdAt: true,
-        errorMsg: true,
-      },
-    }),
-    prisma.pixelEventLog.count({ where }),
-  ])
-
-  return {
-    logs,
-    total,
-    page,
-    totalPages: Math.ceil(total / limit),
-  }
-}
-
-/**
- * Get single event log with full details
- */
-export async function getEventLogDetails(id: string) {
-  return prisma.pixelEventLog.findUnique({
-    where: { id },
-  })
 }

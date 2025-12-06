@@ -230,22 +230,3 @@ export function extractFbclid(url: string): string | undefined {
   }
 }
 
-/**
- * Get user data field names (for logging purposes, not values)
- * Returns which fields were provided without exposing actual values
- */
-export function getUserDataFieldsSummary(userData: UserData): Record<string, boolean> {
-  return {
-    email: !!userData.email,
-    phone: !!userData.phone,
-    firstName: !!userData.firstName,
-    lastName: !!userData.lastName,
-    city: !!userData.city,
-    state: !!userData.state,
-    country: !!userData.country,
-    zipCode: !!userData.zipCode,
-    dateOfBirth: !!userData.dateOfBirth,
-    gender: !!userData.gender,
-    externalId: !!userData.externalId,
-  }
-}

@@ -222,37 +222,6 @@ model Settings {
 }
 
 // ===========================================
-// Facebook Pixel Event Logs
-// ===========================================
-
-model PixelEventLog {
-  id          String   @id @default(cuid())
-  eventId     String   // Deduplication ID (same for client+server pair)
-  eventName   String   // PageView, ViewContent, CompleteRegistration, etc.
-  source      String   // 'client' | 'server'
-  pageType    String   // blog, webinar, lms, landing, home, about
-  pageUrl     String
-  userId      String?  // Authenticated user ID if logged in
-  contactId   String?  // CRM contact ID if available
-  fbp         String?  // _fbp cookie value
-  fbc         String?  // _fbc cookie (from fbclid URL param)
-  eventData   Json?    // Custom event parameters
-  userData    Json?    // Hashed user data sent (for debugging, not actual values)
-  status      String   // 'sent' | 'failed' | 'test'
-  errorMsg    String?  // Error message if status is 'failed'
-  fbResponse  Json?    // Facebook API response
-  createdAt   DateTime @default(now())
-
-  @@index([createdAt])
-  @@index([eventName])
-  @@index([status])
-  @@index([source])
-  @@index([pageType])
-  @@schema("public")
-  @@map("pixel_event_logs")
-}
-
-// ===========================================
 // Testimonials
 // ===========================================
 

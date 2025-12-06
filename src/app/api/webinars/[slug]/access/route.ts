@@ -274,16 +274,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await request.json()
-    const { token, progress, currentTime } = body
+    // Support both `position` (from useProgressTracking) and `currentTime` (legacy)
+    const { token, position, currentTime } = body
+    const videoPosition = position ?? currentTime ?? 0
 
     if (!token) {
       return unauthorizedResponse('Access token required')
     }
 
-    // Find webinar
+    // Find webinar with duration for validation
     const webinar = await prisma.webinar.findUnique({
       where: { slug },
-      select: { id: true },
+      select: { id: true, videoDuration: true },
     })
 
     if (!webinar) {
@@ -297,11 +299,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return unauthorizedResponse('Invalid access token')
     }
 
+    // Cap position at video duration and ensure non-negative
+    const videoDurationSeconds = (webinar.videoDuration || 60) * 60
+    const cappedPosition = Math.max(0, Math.min(videoPosition, videoDurationSeconds))
+
+    // Only update if new position is greater than current (track max position watched)
+    const currentMaxPosition = validation.registration.maxVideoPosition || 0
+    const newMaxPosition = Math.max(currentMaxPosition, Math.floor(cappedPosition))
+
     // Update progress
     await prisma.webinarRegistration.update({
       where: { id: validation.registration.id },
       data: {
-        maxVideoPosition: currentTime || 0,
+        maxVideoPosition: newMaxPosition,
         lastActiveAt: new Date(),
       },
     })

@@ -34,7 +34,7 @@ interface Distribution {
   percentage: number
 }
 
-interface InteractionData {
+interface InteractionAnalyticsData {
   interaction: {
     id: string
     type: string
@@ -70,7 +70,7 @@ export function WidgetResponseModal({
   onClose,
   onUserClick,
 }: WidgetResponseModalProps) {
-  const [data, setData] = useState<InteractionData | null>(null)
+  const [data, setData] = useState<InteractionAnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

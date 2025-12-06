@@ -5,6 +5,8 @@ import {
   processCampaignBatch,
 } from '@/app/api/admin/campaigns/lib/campaign-sender'
 import { logger } from '@/lib'
+import { errorResponse } from '@/lib/api-response'
+import { verifyCronSecret } from '@/lib/middleware/cron'
 
 /**
  * POST /api/cron/process-campaigns
@@ -24,22 +26,8 @@ import { logger } from '@/lib'
  * Recommended: Call every 1-2 minutes for responsive sending
  */
 export async function POST(request: NextRequest) {
-  // Verify cron secret - fail closed if not configured
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
-    logger.error('CRON_SECRET environment variable is not configured')
-    return NextResponse.json(
-      { error: 'Cron endpoint not configured' },
-      { status: 503 }
-    )
-  }
-
-  const authHeader = request.headers.get('authorization')
-  const providedSecret = authHeader?.replace('Bearer ', '')
-  if (providedSecret !== cronSecret) {
-    logger.warn('Unauthorized cron request')
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = verifyCronSecret(request)
+  if (!auth.success) return auth.response
 
   try {
     const results: Array<{
@@ -91,13 +79,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Campaign processing error:', error)
-    return NextResponse.json(
-      {
-        error: 'Campaign processing failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
+    return errorResponse('Campaign processing failed')
   }
 }
 
@@ -107,20 +89,8 @@ export async function POST(request: NextRequest) {
  * Returns status of campaigns that need processing (for monitoring)
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret - fail closed if not configured
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
-    return NextResponse.json(
-      { error: 'Cron endpoint not configured' },
-      { status: 503 }
-    )
-  }
-
-  const authHeader = request.headers.get('authorization')
-  const providedSecret = authHeader?.replace('Bearer ', '')
-  if (providedSecret !== cronSecret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = verifyCronSecret(request)
+  if (!auth.success) return auth.response
 
   try {
     const campaigns = await getCampaignsToProcess()
@@ -135,9 +105,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Failed to get campaign status:', error)
-    return NextResponse.json(
-      { error: 'Failed to get campaign status' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to get campaign status')
   }
 }

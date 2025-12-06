@@ -1,10 +1,11 @@
 // API endpoint for uploading LMS course media
 // Images/Audio/Files → Bunny Storage, Videos → Bunny Stream
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToBunnyStorage, generateLmsContentKey, type LmsMediaType } from '@/lib/bunny-storage'
+import { uploadToBunnyStorage, generateLmsContentKey, type LmsMediaType } from '@/lib/storage'
 import { uploadVideo } from '@/lib/storage/bunny'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 
 export const runtime = 'nodejs'
 
@@ -41,7 +42,7 @@ const mediaTypeMap: Record<string, LmsMediaType> = {
 export async function POST(request: NextRequest) {
   // Check admin auth
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -52,16 +53,16 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!courseId) {
-      return NextResponse.json({ error: 'Course ID is required' }, { status: 400 })
+      return badRequestResponse('Course ID is required')
     }
 
     if (!requestMediaType || !['video', 'audio', 'image', 'document'].includes(requestMediaType)) {
-      return NextResponse.json({ error: 'Valid media type is required (video, audio, image, document)' }, { status: 400 })
+      return badRequestResponse('Valid media type is required (video, audio, image, document)')
     }
 
     // Validate file exists
     if (!file || typeof file === 'string' || !('size' in file) || !('type' in file)) {
-      return NextResponse.json({ error: 'Invalid or missing file' }, { status: 400 })
+      return badRequestResponse('Invalid or missing file')
     }
 
     const uploadFile = file as Blob & { name: string; size: number; type: string }
@@ -88,24 +89,18 @@ export async function POST(request: NextRequest) {
         maxSize = MAX_DOCUMENT_SIZE
         break
       default:
-        return NextResponse.json({ error: 'Invalid media type' }, { status: 400 })
+        return badRequestResponse('Invalid media type')
     }
 
     // Validate file size
     if (uploadFile.size > maxSize) {
       const sizeMB = Math.round(maxSize / 1024 / 1024)
-      return NextResponse.json(
-        { error: `File too large. Maximum size: ${sizeMB}MB` },
-        { status: 413 }
-      )
+      return badRequestResponse(`File too large. Maximum size: ${sizeMB}MB`)
     }
 
     // Validate MIME type
     if (!allowedTypes.includes(uploadFile.type)) {
-      return NextResponse.json(
-        { error: `Invalid file type for ${requestMediaType}. Allowed types: ${allowedTypes.join(', ')}` },
-        { status: 400 }
-      )
+      return badRequestResponse(`Invalid file type for ${requestMediaType}. Allowed types: ${allowedTypes.join(', ')}`)
     }
 
     // Convert file to buffer
@@ -146,9 +141,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: unknown) {
     logger.error('Error uploading course media:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload media' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to upload media')
   }
 }

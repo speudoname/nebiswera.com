@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { WebinarVideoStatus } from '@prisma/client'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -10,7 +12,7 @@ import type { NextRequest } from 'next/server'
  */
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { webinarId, videoId, fileSize } = body
 
     if (!webinarId || !videoId) {
-      return NextResponse.json({ error: 'webinarId and videoId are required' }, { status: 400 })
+      return badRequestResponse('webinarId and videoId are required')
     }
 
     logger.info('[Bunny Direct Upload] Upload complete notification:', { webinarId, videoId, fileSize })
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     const job = await prisma.videoProcessingJob.update({
       where: { webinarId },
       data: {
-        status: 'PROCESSING',
+        status: WebinarVideoStatus.PROCESSING,
         progress: 0,
         originalSize: fileSize ? BigInt(fileSize) : null,
         startedAt: new Date(),
@@ -38,7 +40,7 @@ export async function POST(request: NextRequest) {
     await prisma.webinar.update({
       where: { id: webinarId },
       data: {
-        videoStatus: 'processing',
+        videoStatus: WebinarVideoStatus.PROCESSING,
         hlsUrl: job.hlsUrl,
         thumbnailUrl: job.thumbnailUrl,
       },
@@ -52,9 +54,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('[Bunny Direct Upload] Failed to mark upload complete:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to mark upload complete' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to mark upload complete')
   }
 }

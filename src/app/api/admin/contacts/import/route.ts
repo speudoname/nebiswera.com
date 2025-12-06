@@ -47,26 +47,39 @@ export async function POST(request: NextRequest) {
       return badRequestResponse('No contacts to import')
     }
 
-    // Create any new tags first
-    const createdTagIds: string[] = []
-    for (const newTag of newTags) {
-      if (newTag.name?.trim()) {
-        const existing = await prisma.tag.findUnique({
-          where: { name: newTag.name.trim() },
+    // Create any new tags first (batch operation)
+    const newTagNames = newTags.filter(t => t.name?.trim()).map(t => t.name.trim())
+
+    // Batch fetch existing tags by name
+    const existingTags = newTagNames.length > 0
+      ? await prisma.tag.findMany({
+          where: { name: { in: newTagNames } },
+          select: { id: true, name: true },
         })
-        if (existing) {
-          createdTagIds.push(existing.id)
-        } else {
-          const created = await prisma.tag.create({
-            data: {
-              name: newTag.name.trim(),
-              color: newTag.color || '#8B5CF6',
-            },
-          })
-          createdTagIds.push(created.id)
-        }
-      }
+      : []
+    const existingTagMap = new Map(existingTags.map(t => [t.name, t.id]))
+
+    // Create missing tags
+    const tagsToCreate = newTags.filter(t => t.name?.trim() && !existingTagMap.has(t.name.trim()))
+    if (tagsToCreate.length > 0) {
+      await prisma.tag.createMany({
+        data: tagsToCreate.map(t => ({
+          name: t.name.trim(),
+          color: t.color || '#8B5CF6',
+        })),
+        skipDuplicates: true,
+      })
     }
+
+    // Fetch all tag IDs (existing + newly created)
+    const allNewTagNames = newTags.filter(t => t.name?.trim()).map(t => t.name.trim())
+    const createdTags = allNewTagNames.length > 0
+      ? await prisma.tag.findMany({
+          where: { name: { in: allNewTagNames } },
+          select: { id: true },
+        })
+      : []
+    const createdTagIds = createdTags.map(t => t.id)
 
     // Combine existing tag IDs with newly created ones (deduplicated)
     const allTagIds = Array.from(new Set([...tagIds, ...createdTagIds]))
@@ -79,16 +92,14 @@ export async function POST(request: NextRequest) {
       errors: [] as { row: number; email: string; error: string }[],
     }
 
+    // Pre-validate and normalize all emails
+    const validContacts: { index: number; email: string; contact: ImportContact }[] = []
     for (let i = 0; i < contacts.length; i++) {
       const contact = contacts[i]
 
       if (!contact.email) {
         results.failed++
-        results.errors.push({
-          row: i + 1,
-          email: '',
-          error: 'Email is required',
-        })
+        results.errors.push({ row: i + 1, email: '', error: 'Email is required' })
         continue
       }
 
@@ -96,19 +107,25 @@ export async function POST(request: NextRequest) {
 
       if (!isValidEmail(email)) {
         results.failed++
-        results.errors.push({
-          row: i + 1,
-          email: contact.email,
-          error: 'Invalid email format',
-        })
+        results.errors.push({ row: i + 1, email: contact.email, error: 'Invalid email format' })
         continue
       }
 
+      validContacts.push({ index: i, email, contact })
+    }
+
+    // Batch fetch all existing contacts by email (single query instead of O(n))
+    const emailsToCheck = validContacts.map(c => c.email)
+    const existingContacts = await prisma.contact.findMany({
+      where: { email: { in: emailsToCheck } },
+      include: { tags: true },
+    })
+    const existingContactMap = new Map(existingContacts.map(c => [c.email, c]))
+
+    // Process each valid contact
+    for (const { index, email, contact } of validContacts) {
       try {
-        const existing = await prisma.contact.findUnique({
-          where: { email },
-          include: { tags: true },
-        })
+        const existing = existingContactMap.get(email)
 
         if (existing) {
           // Handle existing contact based on strategy
@@ -237,7 +254,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         results.failed++
         results.errors.push({
-          row: i + 1,
+          row: index + 1,
           email: contact.email,
           error: 'Database error',
         })

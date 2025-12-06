@@ -39,8 +39,8 @@ export function Step2ProfilePhoto({
       if (!updateRes.ok) throw new Error('Failed to save')
 
       onComplete()
-    } catch (error: any) {
-      alert(error.message)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Upload failed')
       setIsUploading(false)
     }
   }

@@ -16,6 +16,17 @@ interface Certificate {
   completedAt: string
 }
 
+interface CourseEnrollment {
+  enrollmentId: string
+  certificateUrl: string | null
+  certificateIssuedAt: string | null
+  completedAt: string | null
+  course: {
+    title: string
+    slug: string
+  }
+}
+
 export function MyCertificates() {
   const t = useTranslations('profile')
   const locale = useLocale()
@@ -28,17 +39,17 @@ export function MyCertificates() {
         const res = await fetch('/api/profile/courses')
         if (res.ok) {
           const data = await res.json()
-          const courses = data.data?.courses || []
+          const courses: CourseEnrollment[] = data.data?.courses || []
           // Filter to only courses with certificates
           const certs = courses
-            .filter((c: any) => c.certificateUrl)
-            .map((c: any) => ({
+            .filter((c) => c.certificateUrl)
+            .map((c) => ({
               enrollmentId: c.enrollmentId,
               courseTitle: c.course.title,
               courseSlug: c.course.slug,
-              certificateUrl: c.certificateUrl,
-              certificateIssuedAt: c.certificateIssuedAt,
-              completedAt: c.completedAt,
+              certificateUrl: c.certificateUrl!,
+              certificateIssuedAt: c.certificateIssuedAt!,
+              completedAt: c.completedAt!,
             }))
           setCertificates(certs)
         }

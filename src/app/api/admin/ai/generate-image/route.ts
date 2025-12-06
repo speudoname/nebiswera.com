@@ -1,7 +1,7 @@
 // API endpoint for generating blog images using Google Nano Banana Pro (Gemini 3 Pro Image)
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { uploadToBunnyStorage, generateBlogImageKey } from '@/lib/bunny-storage'
+import { uploadToBunnyStorage, generateBlogImageKey } from '@/lib/storage'
 import { logger, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'
 
 export const runtime = 'nodejs'

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 
 interface RouteParams {
   params: Promise<{ id: string; ruleId: string }>
@@ -10,7 +11,7 @@ interface RouteParams {
 // PUT /api/admin/webinars/[id]/automation-rules/[ruleId] - Update automation rule
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, ruleId } = await params
@@ -25,17 +26,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (trigger !== undefined) {
       const validTriggers = ['REGISTERED', 'ATTENDED', 'COMPLETED', 'MISSED']
       if (!validTriggers.includes(trigger)) {
-        return NextResponse.json(
-          { error: 'Invalid trigger. Must be one of: REGISTERED, ATTENDED, COMPLETED, MISSED' },
-          { status: 400 }
-        )
+        return badRequestResponse('Invalid trigger. Must be one of: REGISTERED, ATTENDED, COMPLETED, MISSED')
       }
       updateData.trigger = trigger
     }
 
     if (tagIds !== undefined) {
       if (!Array.isArray(tagIds) || tagIds.length === 0) {
-        return NextResponse.json({ error: 'tagIds must be a non-empty array' }, { status: 400 })
+        return badRequestResponse('tagIds must be a non-empty array')
       }
 
       // Validate tags exist
@@ -44,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       })
 
       if (tags.length !== tagIds.length) {
-        return NextResponse.json({ error: 'One or more tag IDs are invalid' }, { status: 400 })
+        return badRequestResponse('One or more tag IDs are invalid')
       }
 
       updateData.tagIds = tagIds
@@ -63,14 +61,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ rule })
   } catch (error) {
     logger.error('Failed to update automation rule:', error)
-    return NextResponse.json({ error: 'Failed to update automation rule' }, { status: 500 })
+    return errorResponse('Failed to update automation rule')
   }
 }
 
 // DELETE /api/admin/webinars/[id]/automation-rules/[ruleId] - Delete automation rule
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, ruleId } = await params
@@ -83,6 +81,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to delete automation rule:', error)
-    return NextResponse.json({ error: 'Failed to delete automation rule' }, { status: 500 })
+    return errorResponse('Failed to delete automation rule')
   }
 }

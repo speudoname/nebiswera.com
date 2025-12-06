@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { uploadToBunnyStorage, generateLmsCertificateKey } from '@/lib/bunny-storage'
+import { uploadToBunnyStorage, generateLmsCertificateKey } from '@/lib/storage'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createCertificatePdf } from './certificate-template'
 import { nanoid } from 'nanoid'

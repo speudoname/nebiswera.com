@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { logContactUpdated, logStatusChanged, logTagsAdded, logTagsRemoved } from '@/app/api/admin/contacts/lib/contact-activity'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 
 export async function GET(
@@ -9,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -33,7 +35,7 @@ export async function GET(
   })
 
   if (!contact) {
-    return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+    return notFoundResponse('Contact not found')
   }
 
   return NextResponse.json({
@@ -47,7 +49,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -64,7 +66,7 @@ export async function PATCH(
     })
 
     if (!existingContact) {
-      return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+      return notFoundResponse('Contact not found')
     }
 
     // Check if email is being changed and already exists
@@ -73,10 +75,7 @@ export async function PATCH(
         where: { email },
       })
       if (emailExists) {
-        return NextResponse.json(
-          { error: 'A contact with this email already exists' },
-          { status: 400 }
-        )
+        return badRequestResponse('A contact with this email already exists')
       }
     }
 
@@ -191,11 +190,8 @@ export async function PATCH(
       tags: contact.tags.map((ct) => ct.tag),
     })
   } catch (error) {
-    console.error('Failed to update contact:', error)
-    return NextResponse.json(
-      { error: 'Failed to update contact' },
-      { status: 500 }
-    )
+    logger.error('Failed to update contact:', error)
+    return errorResponse('Failed to update contact')
   }
 }
 
@@ -204,7 +200,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -215,7 +211,7 @@ export async function DELETE(
     })
 
     if (!contact) {
-      return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
+      return notFoundResponse('Contact not found')
     }
 
     await prisma.contact.delete({
@@ -224,10 +220,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete contact:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete contact' },
-      { status: 500 }
-    )
+    logger.error('Failed to delete contact:', error)
+    return errorResponse('Failed to delete contact')
   }
 }

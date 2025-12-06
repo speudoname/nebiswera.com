@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
 import { useVideoAnalytics } from '@/hooks/useVideoAnalytics'
+import { useTranslations } from 'next-intl'
 
 const HERO_VIDEO = {
   videoId: '973721e6-63ae-4773-877f-021b677f08f7',
@@ -11,17 +12,14 @@ const HERO_VIDEO = {
   poster: 'https://vz-1693fee0-2ad.b-cdn.net/973721e6-63ae-4773-877f-021b677f08f7/thumbnail_8f42b11e.jpg',
 }
 
-interface HeroVideoPlayerProps {
-  locale: string
-}
-
 /**
  * Hero video player with HLS streaming, custom unmute button, and analytics
  * Uses HLS for instant playback, falls back to MP4
  */
-export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
+export function HeroVideoPlayer() {
+  const t = useTranslations('home')
   const videoRef = useRef<HTMLVideoElement>(null)
-  const hlsRef = useRef<any>(null)
+  const hlsRef = useRef<import('hls.js').default | null>(null)
   const [isMuted, setIsMuted] = useState(true)
 
   // Use shared analytics hook - trackOnlyFirstLoop for looping video
@@ -70,7 +68,7 @@ export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
         hls.loadSource(HERO_VIDEO.hlsUrl)
       })
 
-      hls.on(Hls.Events.ERROR, (_: any, data: any) => {
+      hls.on(Hls.Events.ERROR, (_: unknown, data: { fatal: boolean }) => {
         if (data.fatal) {
           console.error('HLS error, falling back to MP4:', data)
           hls.destroy()
@@ -128,14 +126,14 @@ export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
       <button
         onClick={toggleMute}
         className="absolute top-4 right-4 md:top-6 md:right-6 bg-primary-500 text-white rounded-neu shadow-neu-md hover:shadow-neu-lg hover:bg-primary-600 active:shadow-neu-pressed transition-all z-10 p-3 md:px-6 md:py-4"
-        aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+        aria-label={isMuted ? t('unmuteVideo') : t('muteVideo')}
       >
         <div className="flex flex-col md:flex-row items-center gap-1 md:gap-2">
           {isMuted ? (
             <>
               <VolumeX className="w-6 h-6 md:w-6 md:h-6" />
               <span className="font-medium text-[10px] md:text-sm leading-tight md:leading-normal">
-                {locale === 'ka' ? 'ხმის ჩართვა' : 'Turn on sound'}
+                {t('turnOnSound')}
               </span>
             </>
           ) : (

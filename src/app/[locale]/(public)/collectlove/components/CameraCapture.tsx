@@ -43,8 +43,8 @@ export function CameraCapture({ onCapture, onCancel }: CameraCaptureProps) {
           setIsReady(true)
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'Camera access denied')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Camera access denied')
     }
   }
 

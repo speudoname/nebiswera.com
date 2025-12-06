@@ -38,60 +38,69 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // Get sent/pending counts per notification
-    const notificationsWithStats = await Promise.all(
-      notifications.map(async (n) => {
-        const sentCount = await prisma.webinarNotificationLog.count({
-          where: {
-            notificationId: n.id,
-            status: { in: ['SENT', 'DELIVERED', 'OPENED', 'CLICKED'] },
-          },
-        })
+    // Batch fetch sent/pending counts for all notifications (avoids N+1 queries)
+    const notificationIds = notifications.map((n) => n.id)
 
-        const pendingCount = await prisma.webinarNotificationQueue.count({
-          where: {
-            notificationId: n.id,
-            status: 'PENDING',
-          },
-        })
+    // Get sent counts grouped by notificationId
+    const sentCounts = await prisma.webinarNotificationLog.groupBy({
+      by: ['notificationId'],
+      where: {
+        notificationId: { in: notificationIds },
+        status: { in: ['SENT', 'DELIVERED', 'OPENED', 'CLICKED'] },
+      },
+      _count: { id: true },
+    })
 
-        return {
-          id: n.id,
-          templateKey: n.templateKey,
-          triggerType: n.triggerType,
-          triggerMinutes: n.triggerMinutes,
-          triggerDescription: formatTriggerDescription(n.triggerType, n.triggerMinutes),
-          conditions: n.conditions,
-          channel: n.channel,
-          // Content
-          subject: n.subject,
-          bodyHtml: n.bodyHtml,
-          bodyText: n.bodyText,
-          // Sender settings
-          fromName: n.fromName,
-          fromEmail: n.fromEmail,
-          replyTo: n.replyTo,
-          // Actions
-          actions: n.actions,
-          isActive: n.isActive,
-          isDefault: n.isDefault,
-          sortOrder: n.sortOrder,
-          stats: {
-            sent: sentCount,
-            pending: pendingCount,
-            queued: n._count.queueItems,
-            logged: n._count.logs,
-          },
-          createdAt: n.createdAt,
-          updatedAt: n.updatedAt,
-        }
-      })
-    )
+    // Get pending counts grouped by notificationId
+    const pendingCounts = await prisma.webinarNotificationQueue.groupBy({
+      by: ['notificationId'],
+      where: {
+        notificationId: { in: notificationIds },
+        status: 'PENDING',
+      },
+      _count: { id: true },
+    })
+
+    // Create lookup maps for O(1) access
+    const sentCountMap = new Map(sentCounts.map((s) => [s.notificationId, s._count.id]))
+    const pendingCountMap = new Map(pendingCounts.map((p) => [p.notificationId, p._count.id]))
+
+    // Map notifications with stats (no additional queries)
+    const notificationsWithStats = notifications.map((n) => ({
+      id: n.id,
+      templateKey: n.templateKey,
+      triggerType: n.triggerType,
+      triggerMinutes: n.triggerMinutes,
+      triggerDescription: formatTriggerDescription(n.triggerType, n.triggerMinutes),
+      conditions: n.conditions,
+      channel: n.channel,
+      // Content
+      subject: n.subject,
+      bodyHtml: n.bodyHtml,
+      bodyText: n.bodyText,
+      // Sender settings
+      fromName: n.fromName,
+      fromEmail: n.fromEmail,
+      replyTo: n.replyTo,
+      // Actions
+      actions: n.actions,
+      isActive: n.isActive,
+      isDefault: n.isDefault,
+      sortOrder: n.sortOrder,
+      stats: {
+        sent: sentCountMap.get(n.id) || 0,
+        pending: pendingCountMap.get(n.id) || 0,
+        queued: n._count.queueItems,
+        logged: n._count.logs,
+      },
+      createdAt: n.createdAt,
+      updatedAt: n.updatedAt,
+    }))
 
     return successResponse({ notifications: notificationsWithStats })
   } catch (error) {
     logger.error('Failed to fetch notifications:', error)
-    return errorResponse(error)
+    return errorResponse('Failed to fetch notifications')
   }
 }
 

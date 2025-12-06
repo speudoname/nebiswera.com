@@ -2,9 +2,13 @@
  * Framer Motion Animation Variants
  * Reusable animation configurations for scroll-based animations
  */
+import type { Variants } from 'framer-motion'
+
+// Custom cubic-bezier easing
+const smoothEase: [number, number, number, number] = [0.25, 0.46, 0.45, 0.94]
 
 // Fade up animation - most common
-export const fadeUpVariants = {
+export const fadeUpVariants: Variants = {
   hidden: {
     opacity: 0,
     y: 30,
@@ -14,25 +18,25 @@ export const fadeUpVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94] as any, // Custom cubic-bezier easing
+      ease: smoothEase,
     },
   },
 }
 
 // Fade in (no movement)
-export const fadeInVariants = {
+export const fadeInVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
       duration: 0.5,
-      ease: 'easeOut' as any,
+      ease: 'easeOut',
     },
   },
 }
 
 // Scale + fade (for images)
-export const scaleUpVariants = {
+export const scaleUpVariants: Variants = {
   hidden: {
     opacity: 0,
     scale: 0.95,
@@ -42,13 +46,13 @@ export const scaleUpVariants = {
     scale: 1,
     transition: {
       duration: 0.7,
-      ease: [0.25, 0.46, 0.45, 0.94] as any,
+      ease: smoothEase,
     },
   },
 }
 
 // Slide from left
-export const slideLeftVariants = {
+export const slideLeftVariants: Variants = {
   hidden: {
     opacity: 0,
     x: -30,
@@ -58,13 +62,13 @@ export const slideLeftVariants = {
     x: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94] as any,
+      ease: smoothEase,
     },
   },
 }
 
 // Slide from right
-export const slideRightVariants = {
+export const slideRightVariants: Variants = {
   hidden: {
     opacity: 0,
     x: 30,
@@ -74,13 +78,13 @@ export const slideRightVariants = {
     x: 0,
     transition: {
       duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94] as any,
+      ease: smoothEase,
     },
   },
 }
 
 // Container for staggered children
-export const staggerContainerVariants = {
+export const staggerContainerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -92,7 +96,7 @@ export const staggerContainerVariants = {
 }
 
 // Stagger item (use with staggerContainer)
-export const staggerItemVariants = {
+export const staggerItemVariants: Variants = {
   hidden: {
     opacity: 0,
     y: 20,
@@ -102,7 +106,7 @@ export const staggerItemVariants = {
     y: 0,
     transition: {
       duration: 0.5,
-      ease: 'easeOut' as any,
+      ease: 'easeOut',
     },
   },
 }

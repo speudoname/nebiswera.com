@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -10,7 +11,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/automation-rules - Get all automation rules for a webinar
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -39,14 +40,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ rules: rulesWithTagNames })
   } catch (error) {
     logger.error('Failed to fetch automation rules:', error)
-    return NextResponse.json({ error: 'Failed to fetch automation rules' }, { status: 500 })
+    return errorResponse('Failed to fetch automation rules')
   }
 }
 
 // POST /api/admin/webinars/[id]/automation-rules - Create new automation rule
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -57,19 +58,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Validate required fields
     if (!trigger || !tagIds || !Array.isArray(tagIds) || tagIds.length === 0) {
-      return NextResponse.json(
-        { error: 'trigger and tagIds are required' },
-        { status: 400 }
-      )
+      return badRequestResponse('trigger and tagIds are required')
     }
 
     // Validate trigger
     const validTriggers = ['REGISTERED', 'ATTENDED', 'COMPLETED', 'MISSED']
     if (!validTriggers.includes(trigger)) {
-      return NextResponse.json(
-        { error: 'Invalid trigger. Must be one of: REGISTERED, ATTENDED, COMPLETED, MISSED' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid trigger. Must be one of: REGISTERED, ATTENDED, COMPLETED, MISSED')
     }
 
     // Validate tags exist
@@ -78,7 +73,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (tags.length !== tagIds.length) {
-      return NextResponse.json({ error: 'One or more tag IDs are invalid' }, { status: 400 })
+      return badRequestResponse('One or more tag IDs are invalid')
     }
 
     // Create rule
@@ -94,6 +89,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ rule })
   } catch (error) {
     logger.error('Failed to create automation rule:', error)
-    return NextResponse.json({ error: 'Failed to create automation rule' }, { status: 500 })
+    return errorResponse('Failed to create automation rule')
   }
 }

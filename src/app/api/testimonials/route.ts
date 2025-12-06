@@ -1,14 +1,15 @@
 // API route for testimonials (admin and public)
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/config'
+import { getAuthToken } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
+import { Prisma, TestimonialSource } from '@prisma/client'
 import { logger, errorResponse, badRequestResponse } from '@/lib'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 // GET /api/testimonials - List testimonials (admin with all, public with approved only)
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const token = await getAuthToken(request)
     const searchParams = request.nextUrl.searchParams
 
     const page = parseInt(searchParams.get('page') || '1')
@@ -18,9 +19,9 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const tags = searchParams.get('tags') || ''
 
-    const isAdmin = session?.user?.role === 'ADMIN'
+    const isAdmin = token?.role === 'ADMIN'
 
-    const where: any = {}
+    const where: Prisma.TestimonialWhereInput = {}
 
     // Admin can see all testimonials, non-admins only see APPROVED
     if (isAdmin) {
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
         videoUrl: body.videoUrl || null,
         type: body.type || 'TEXT',
         status: 'PENDING', // All submissions start as pending
-        source: 'website_form',
+        source: TestimonialSource.WEBSITE_FORM,
       },
     })
 

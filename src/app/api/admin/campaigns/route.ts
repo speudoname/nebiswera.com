@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { CampaignStatus, TargetType, Prisma } from '@prisma/client'
 
 // GET /api/admin/campaigns - List campaigns with filters
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
@@ -71,23 +72,20 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Failed to fetch campaigns:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch campaigns' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch campaigns')
   }
 }
 
 // POST /api/admin/campaigns - Create new campaign
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
     const token = await getAuthToken(request)
     if (!token?.sub) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const body = await request.json()
@@ -109,10 +107,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!name || !subject || !targetType) {
-      return NextResponse.json(
-        { error: 'Name, subject, and target type are required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Name, subject, and target type are required')
     }
 
     // Validate target type
@@ -124,10 +119,7 @@ export async function POST(request: NextRequest) {
       'CUSTOM_FILTER',
     ]
     if (!validTargetTypes.includes(targetType)) {
-      return NextResponse.json(
-        { error: 'Invalid target type' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid target type')
     }
 
     const campaign = await prisma.campaign.create({
@@ -152,9 +144,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(campaign, { status: 201 })
   } catch (error) {
     logger.error('Failed to create campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to create campaign' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to create campaign')
   }
 }

@@ -7,7 +7,10 @@
 
 // Webinar types
 export type {
-  Interaction,
+  InteractionData,
+  InteractionDataFull,
+  InteractionType,
+  InteractionPosition,
   InteractionOption,
   InteractionResponse,
   Webinar,
@@ -17,7 +20,6 @@ export type {
 } from './webinar'
 
 export {
-  InteractionType,
   isInteractionType,
   hasOptions,
   requiresCorrectAnswer

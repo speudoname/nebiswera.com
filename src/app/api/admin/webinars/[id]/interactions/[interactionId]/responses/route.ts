@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -11,7 +12,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/interactions/[interactionId]/responses
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, interactionId } = await params
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!interaction) {
-      return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+      return notFoundResponse('Interaction not found')
     }
 
     // Get all responses for this interaction
@@ -161,9 +162,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch interaction responses:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch interaction responses' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch interaction responses')
   }
 }

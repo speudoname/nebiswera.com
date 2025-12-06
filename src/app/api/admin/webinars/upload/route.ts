@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import {
   uploadVideo,
   getBunnyVideo,
@@ -12,12 +13,13 @@ import {
   hasVideoError,
   getVideoStatusText,
 } from '@/lib/storage/bunny'
+import { WebinarVideoStatus } from '@prisma/client'
 import type { NextRequest } from 'next/server'
 
 // POST /api/admin/webinars/upload - Upload video directly to Bunny
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -32,12 +34,12 @@ export async function POST(request: NextRequest) {
 
     if (!file || typeof file === 'string') {
       logger.error('[Webinar Upload] No file provided')
-      return NextResponse.json({ error: 'Video file is required' }, { status: 400 })
+      return badRequestResponse('Video file is required')
     }
 
     if (!webinarId) {
       logger.error('[Webinar Upload] No webinarId provided')
-      return NextResponse.json({ error: 'Webinar ID is required' }, { status: 400 })
+      return badRequestResponse('Webinar ID is required')
     }
 
     // Verify webinar exists
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
 
     if (!webinar) {
       logger.error('[Webinar Upload] Webinar not found:', webinarId)
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const uploadFile = file as Blob & { name: string; size: number; type: string }
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
       where: { webinarId },
       create: {
         webinarId,
-        status: 'PROCESSING',
+        status: WebinarVideoStatus.PROCESSING,
         progress: 0,
         originalUrl: result.hlsUrl,
         originalSize: BigInt(uploadFile.size),
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest) {
         startedAt: new Date(),
       },
       update: {
-        status: 'PROCESSING',
+        status: WebinarVideoStatus.PROCESSING,
         progress: 0,
         originalUrl: result.hlsUrl,
         originalSize: BigInt(uploadFile.size),
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
     await prisma.webinar.update({
       where: { id: webinarId },
       data: {
-        videoStatus: 'processing',
+        videoStatus: WebinarVideoStatus.PROCESSING,
         hlsUrl: result.hlsUrl,
         thumbnailUrl: result.thumbnailUrl,
       },
@@ -120,24 +122,21 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Failed to upload video to Bunny:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to upload video' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to upload video')
   }
 }
 
 // GET /api/admin/webinars/upload?webinarId=xxx - Get video processing status from Bunny
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
   const webinarId = searchParams.get('webinarId')
 
   if (!webinarId) {
-    return NextResponse.json({ error: 'Webinar ID required' }, { status: 400 })
+    return badRequestResponse('Webinar ID required')
   }
 
   try {
@@ -146,7 +145,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!job) {
-      return NextResponse.json({ error: 'No video processing job found' }, { status: 404 })
+      return notFoundResponse('No video processing job found')
     }
 
     // If job is PROCESSING, check Bunny for real-time status
@@ -165,7 +164,7 @@ export async function GET(request: NextRequest) {
           await prisma.videoProcessingJob.update({
             where: { id: job.id },
             data: {
-              status: 'COMPLETED',
+              status: WebinarVideoStatus.READY,
               progress: 100,
               hlsUrl,
               thumbnailUrl,
@@ -178,7 +177,7 @@ export async function GET(request: NextRequest) {
           await prisma.webinar.update({
             where: { id: webinarId },
             data: {
-              videoStatus: 'ready',
+              videoStatus: WebinarVideoStatus.READY,
               hlsUrl,
               thumbnailUrl,
               videoDuration: bunnyVideo.length || null,
@@ -187,13 +186,13 @@ export async function GET(request: NextRequest) {
 
           return NextResponse.json({
             jobId: job.id,
-            status: 'COMPLETED',
+            status: WebinarVideoStatus.READY,
             progress: 100,
             hlsUrl,
             thumbnailUrl,
             duration: bunnyVideo.length,
             error: null,
-            videoStatus: 'ready',
+            videoStatus: WebinarVideoStatus.READY,
           })
         }
 
@@ -203,7 +202,7 @@ export async function GET(request: NextRequest) {
           await prisma.videoProcessingJob.update({
             where: { id: job.id },
             data: {
-              status: 'FAILED',
+              status: WebinarVideoStatus.FAILED,
               error: errorMessage,
               completedAt: new Date(),
             },
@@ -211,15 +210,15 @@ export async function GET(request: NextRequest) {
 
           await prisma.webinar.update({
             where: { id: webinarId },
-            data: { videoStatus: 'error' },
+            data: { videoStatus: WebinarVideoStatus.FAILED },
           })
 
           return NextResponse.json({
             jobId: job.id,
-            status: 'FAILED',
+            status: WebinarVideoStatus.FAILED,
             progress: 0,
             error: errorMessage,
-            videoStatus: 'error',
+            videoStatus: WebinarVideoStatus.FAILED,
           })
         }
 
@@ -233,12 +232,12 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
           jobId: job.id,
-          status: 'PROCESSING',
+          status: WebinarVideoStatus.PROCESSING,
           progress,
           hlsUrl: job.hlsUrl,
           thumbnailUrl: job.thumbnailUrl,
           error: null,
-          videoStatus: 'processing',
+          videoStatus: WebinarVideoStatus.PROCESSING,
           bunnyStatus: getVideoStatusText(bunnyVideo.status),
         })
       } catch (pollError) {
@@ -272,9 +271,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Failed to get video status:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get video status' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to get video status')
   }
 }

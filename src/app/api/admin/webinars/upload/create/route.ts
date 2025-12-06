@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import { createBunnyVideo, getBunnyHlsUrl, getBunnyThumbnailUrl } from '@/lib/storage/bunny'
+import { WebinarVideoStatus } from '@prisma/client'
 import type { NextRequest } from 'next/server'
 
 // Environment variables for Bunny
@@ -15,7 +17,7 @@ const BUNNY_LIBRARY_API_KEY = process.env.BUNNY_LIBRARY_API_KEY!
  */
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { webinarId, title } = body
 
     if (!webinarId) {
-      return NextResponse.json({ error: 'Webinar ID is required' }, { status: 400 })
+      return badRequestResponse('Webinar ID is required')
     }
 
     // Verify webinar exists
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Create video entry in Bunny
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
       where: { webinarId },
       create: {
         webinar: { connect: { id: webinarId } },
-        status: 'PENDING',
+        status: WebinarVideoStatus.PENDING,
         progress: 0,
         originalUrl: hlsUrl, // We use the HLS URL as the "original" since we're doing direct upload
         bunnyVideoId: videoId,
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
         thumbnailUrl,
       },
       update: {
-        status: 'PENDING',
+        status: WebinarVideoStatus.PENDING,
         progress: 0,
         originalUrl: hlsUrl,
         bunnyVideoId: videoId,
@@ -87,9 +89,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     logger.error('[Bunny Direct Upload] Failed to create upload:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create upload' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to create upload')
   }
 }

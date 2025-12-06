@@ -11,6 +11,7 @@ import { useWaitingRoom } from '../hooks/useWaitingRoom'
 import { useWebinarAnalytics } from '../hooks/useWebinarAnalytics'
 import { useProgressTracking } from '../hooks/useProgressTracking'
 import { useInteractionTiming } from '../hooks/useInteractionTiming'
+import type { InteractionData } from '@/types'
 
 interface WebinarData {
   id: string
@@ -35,14 +36,6 @@ interface PlaybackData {
   allowSeeking: boolean
   startPosition: number
   lastPosition: number
-}
-
-interface InteractionData {
-  id: string
-  type: string
-  triggerTime: number
-  title: string
-  config: Record<string, unknown>
 }
 
 interface EndScreenConfig {

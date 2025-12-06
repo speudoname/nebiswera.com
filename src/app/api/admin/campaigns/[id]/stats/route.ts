@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -10,7 +12,7 @@ interface RouteParams {
 // GET /api/admin/campaigns/[id]/stats - Get detailed campaign statistics
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Get recipient status breakdown
@@ -154,10 +156,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to get campaign stats:', error)
-    return NextResponse.json(
-      { error: 'Failed to get campaign stats' },
-      { status: 500 }
-    )
+    logger.error('Failed to get campaign stats:', error)
+    return errorResponse('Failed to get campaign stats')
   }
 }

@@ -42,6 +42,7 @@ model User {
   quizAttempts            LmsQuizAttempt[]
 
   @@index([createdAt])
+  @@index([role])
   @@schema("public")
   @@map("users")
 }
@@ -166,6 +167,7 @@ model EmailLog {
   openedAt    DateTime?
   bouncedAt   DateTime?
   bounceType  String?
+  /// Email provider response data: { messageId, recipient, timestamp, ... }
   metadata    Json?
 
   @@index([status])
@@ -173,6 +175,7 @@ model EmailLog {
   @@index([category])
   @@index([sentAt])
   @@index([to])
+  @@index([status, sentAt]) // For delivery reports
   @@schema("public")
   @@map("email_logs")
 }
@@ -195,6 +198,14 @@ model Settings {
   marketingStreamName  String   @default("broadcast")
   marketingFromAddress String?
   marketingFromName    String   @default("ლევან ბახია (წერილები)")
+
+  // Campaign Footer Settings (CAN-SPAM Compliance)
+  companyName       String   @default("Solo Entrepreneur \"Levan Bakhia\"")
+  companyNameKa     String   @default("მცირე მეწარმე \"ლევან ბახია\"")
+  companyAddress    String   @default("Akhmeteli St. 10a, Tbilisi, Georgia 0177")
+  companyAddressKa  String   @default("ახმეტელის ქუჩა 10ა, თბილისი, საქართველო 0177")
+  companyPhone      String?
+  socialLinks       Json?    // { facebook?: string, instagram?: string, linkedin?: string, etc. }
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -223,12 +234,12 @@ model Testimonial {
   videoUrl       String?         // Raw video URL (R2) - kept as fallback
   videoThumbnail String?         // Auto-generated thumbnail for video
   hlsUrl         String?         // HLS manifest URL for adaptive streaming
-  videoStatus    String?         // 'pending' | 'processing' | 'ready' | 'error'
+  videoStatus    VideoProcessingStatus?
 
   // Metadata
   status       TestimonialStatus @default(PENDING)
   type         TestimonialType   @default(TEXT)
-  source       String?           // "shapo_import" or "website_form"
+  source       TestimonialSource?
   tags         String[]          @default([]) // Admin tags for filtering/organizing
 
   createdAt    DateTime          @default(now())
@@ -254,6 +265,22 @@ enum TestimonialType {
   TEXT
   AUDIO
   VIDEO
+
+  @@schema("public")
+}
+
+enum VideoProcessingStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+
+  @@schema("public")
+}
+
+enum TestimonialSource {
+  WEBSITE_FORM
+  SHAPO_IMPORT
 
   @@schema("public")
 }
@@ -702,7 +729,7 @@ model Webinar {
   hlsUrl            String?       // Bunny Stream HLS URL (playlist.m3u8)
   thumbnailUrl      String?       // Thumbnail image URL
   videoDuration     Int?          // Duration in seconds
-  videoStatus       String?       // 'processing' | 'ready' | 'failed'
+  videoStatus       WebinarVideoStatus? // PENDING, PROCESSING, READY, FAILED
 
   // Settings
   status            WebinarStatus @default(DRAFT)
@@ -1086,7 +1113,9 @@ model WebinarRegistration {
   @@index([email])
   @@index([email, webinarId]) // Composite index for email-based registration lookups
   @@index([webinarId, status])
+  @@index([webinarId, status, registeredAt]) // For analytics/reporting queries
   @@index([contactId])
+  @@index([registeredAt])
   @@schema("webinar")
   @@map("webinar_registrations")
 }
@@ -1551,7 +1580,7 @@ model VideoProcessingJob {
   webinarId       String                @unique
   webinar         Webinar               @relation(fields: [webinarId], references: [id], onDelete: Cascade)
 
-  status          VideoProcessingStatus @default(PENDING)
+  status          WebinarVideoStatus @default(PENDING)
   progress        Int                   @default(0) // 0-100
 
   // Source
@@ -1582,10 +1611,12 @@ model VideoProcessingJob {
   @@map("video_processing_jobs")
 }
 
-enum VideoProcessingStatus {
+// Video processing status for webinar schema
+// Note: Matches VideoProcessingStatus in public schema for consistency
+enum WebinarVideoStatus {
   PENDING
   PROCESSING
-  COMPLETED
+  READY
   FAILED
 
   @@schema("webinar")
@@ -1935,6 +1966,8 @@ model Enrollment {
   @@unique([courseId, userId])
   @@index([userId])
   @@index([status])
+  @@index([userId, status])
+  @@index([enrolledAt])
   @@schema("lms")
   @@map("enrollments")
 }

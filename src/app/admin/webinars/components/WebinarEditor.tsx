@@ -47,7 +47,7 @@ interface WebinarData {
   hlsUrl?: string
   videoDuration?: number
   thumbnailUrl?: string
-  videoStatus?: string // 'processing' | 'ready' | 'failed'
+  videoStatus?: string // WebinarVideoStatus: PENDING | PROCESSING | READY | FAILED
 }
 
 const defaultData: WebinarData = {

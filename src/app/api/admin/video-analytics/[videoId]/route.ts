@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import { checkRateLimit } from '@/lib/rate-limit'
 import {
   getBunnyVideo,
@@ -25,14 +26,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   if (rateLimitResponse) return rateLimitResponse
 
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { videoId } = await params
 
   // Validate videoId format (UUID)
   if (!UUID_REGEX.test(videoId)) {
-    return NextResponse.json({ error: 'Invalid video ID format' }, { status: 400 })
+    return badRequestResponse('Invalid video ID format')
   }
 
   try {
@@ -41,48 +42,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
       bunnyVideo = await getBunnyVideo(videoId)
     } catch {
-      return NextResponse.json({ error: 'Video not found in Bunny' }, { status: 404 })
+      return notFoundResponse('Video not found in Bunny')
     }
 
     // Get Bunny statistics
     const bunnyStats = await getBunnyVideoStats(videoId)
 
-    // Find where this video is used
-    // Check courses
-    const courses = await prisma.course.findMany({
+    // Find where this video is used in courses
+    // Query parts directly (much more efficient than loading entire course hierarchy)
+    const parts = await prisma.lmsPart.findMany({
       select: {
         id: true,
         title: true,
-        slug: true,
-        modules: {
+        contentBlocks: true,
+        lesson: {
           select: {
             id: true,
             title: true,
-            lessons: {
+            courseId: true,
+            moduleId: true,
+            course: {
               select: {
                 id: true,
                 title: true,
-                parts: {
-                  select: {
-                    id: true,
-                    title: true,
-                    contentBlocks: true,
-                  },
-                },
+                slug: true,
               },
             },
-          },
-        },
-        lessons: {
-          where: { moduleId: null },
-          select: {
-            id: true,
-            title: true,
-            parts: {
+            module: {
               select: {
                 id: true,
                 title: true,
-                contentBlocks: true,
               },
             },
           },
@@ -90,7 +79,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    // Find parts that use this video
+    // Filter parts that contain this video (single pass through parts only)
     const usedInParts: {
       courseId: string
       courseTitle: string
@@ -101,52 +90,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       partTitle: string
     }[] = []
 
-    for (const course of courses) {
-      // Check module lessons
-      for (const module of course.modules) {
-        for (const lesson of module.lessons) {
-          for (const part of lesson.parts) {
-            const blocks = part.contentBlocks as unknown[]
-            if (Array.isArray(blocks)) {
-              for (const block of blocks) {
-                const b = block as Record<string, unknown>
-                if (b.type === 'video' && b.bunnyVideoId === videoId) {
-                  usedInParts.push({
-                    courseId: course.id,
-                    courseTitle: course.title,
-                    courseSlug: course.slug,
-                    moduleTitle: module.title,
-                    lessonTitle: lesson.title,
-                    partId: part.id,
-                    partTitle: part.title,
-                  })
-                }
-              }
-            }
-          }
-        }
-      }
+    for (const part of parts) {
+      const blocks = part.contentBlocks as unknown[]
+      if (!Array.isArray(blocks)) continue
 
-      // Check direct lessons
-      for (const lesson of course.lessons) {
-        for (const part of lesson.parts) {
-          const blocks = part.contentBlocks as unknown[]
-          if (Array.isArray(blocks)) {
-            for (const block of blocks) {
-              const b = block as Record<string, unknown>
-              if (b.type === 'video' && b.bunnyVideoId === videoId) {
-                usedInParts.push({
-                  courseId: course.id,
-                  courseTitle: course.title,
-                  courseSlug: course.slug,
-                  lessonTitle: lesson.title,
-                  partId: part.id,
-                  partTitle: part.title,
-                })
-              }
-            }
-          }
-        }
+      const hasVideo = blocks.some((block) => {
+        const b = block as Record<string, unknown>
+        return b.type === 'video' && b.bunnyVideoId === videoId
+      })
+
+      if (hasVideo && part.lesson) {
+        usedInParts.push({
+          courseId: part.lesson.course.id,
+          courseTitle: part.lesson.course.title,
+          courseSlug: part.lesson.course.slug,
+          moduleTitle: part.lesson.module?.title,
+          lessonTitle: part.lesson.title,
+          partId: part.id,
+          partTitle: part.title,
+        })
       }
     }
 
@@ -334,6 +296,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch video details:', error)
-    return NextResponse.json({ error: 'Failed to fetch video details' }, { status: 500 })
+    return errorResponse('Failed to fetch video details')
   }
 }

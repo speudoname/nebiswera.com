@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -11,7 +12,7 @@ interface RouteParams {
 // PATCH /api/admin/webinars/[id]/chat/simulated/[messageId] - Update simulated message
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id: webinarId, messageId } = await params
@@ -27,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Simulated message not found' }, { status: 404 })
+      return notFoundResponse('Simulated message not found')
     }
 
     const body = await request.json()
@@ -54,17 +55,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to update simulated message:', error)
-    return NextResponse.json(
-      { error: 'Failed to update simulated message' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to update simulated message')
   }
 }
 
 // DELETE /api/admin/webinars/[id]/chat/simulated/[messageId] - Delete simulated message
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id: webinarId, messageId } = await params
@@ -80,7 +78,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Simulated message not found' }, { status: 404 })
+      return notFoundResponse('Simulated message not found')
     }
 
     await prisma.webinarChatMessage.delete({
@@ -90,9 +88,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to delete simulated message:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete simulated message' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete simulated message')
   }
 }

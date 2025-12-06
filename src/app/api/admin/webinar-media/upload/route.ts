@@ -1,10 +1,11 @@
 // API endpoint for uploading webinar media
 // Images → Bunny Storage, Videos → Bunny Stream
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToBunnyStorage, generateWebinarMediaKey } from '@/lib/bunny-storage'
+import { uploadToBunnyStorage, generateWebinarMediaKey } from '@/lib/storage'
 import { uploadVideo } from '@/lib/storage/bunny'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 
 export const runtime = 'nodejs'
 
@@ -17,7 +18,7 @@ const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime']
 export async function POST(request: NextRequest) {
   // Check admin auth
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -27,10 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file exists
     if (!file || typeof file === 'string' || !('size' in file) || !('type' in file)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing file' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid or missing file')
     }
 
     const uploadFile = file as Blob & { name: string; size: number; type: string }
@@ -43,18 +41,12 @@ export async function POST(request: NextRequest) {
     // Validate file size
     if (uploadFile.size > maxSize) {
       const sizeLabel = isVideo ? '500MB' : '10MB'
-      return NextResponse.json(
-        { error: `File too large. Maximum size: ${sizeLabel}` },
-        { status: 413 }
-      )
+      return badRequestResponse(`File too large. Maximum size: ${sizeLabel}`)
     }
 
     // Validate MIME type
     if (!allowedTypes.includes(uploadFile.type)) {
-      return NextResponse.json(
-        { error: `Invalid file type. Allowed types: ${allowedTypes.join(', ')}` },
-        { status: 400 }
-      )
+      return badRequestResponse(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`)
     }
 
     // Convert file to buffer
@@ -90,11 +82,8 @@ export async function POST(request: NextRequest) {
         name: uploadFile.name,
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.error('Error uploading webinar media:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload media' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to upload media')
   }
 }

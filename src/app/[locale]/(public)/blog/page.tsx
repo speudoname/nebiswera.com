@@ -2,8 +2,8 @@ import { Metadata } from 'next'
 import { getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/db'
 import { seoConfig } from '@/config/seo'
-import { BlogHeroSection } from './BlogHeroSection'
-import { BlogPostCard } from './BlogPostCard'
+import { BlogHeroSection } from './components/BlogHeroSection'
+import { BlogPostCard } from './components/BlogPostCard'
 
 // SEO metadata for blog list page
 const blogSeo = {

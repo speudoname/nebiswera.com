@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { WebinarLandingClient } from './WebinarLandingClient'
+import { WebinarLandingClient } from './components/WebinarLandingClient'
 import { prisma } from '@/lib/db'
 import { seoConfig } from '@/config/seo'
 import { getWebinarEventSchema } from '@/lib/metadata'

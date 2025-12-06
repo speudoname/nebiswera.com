@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { WebinarRoom } from './components/WebinarRoom'
+import { WebinarRoom } from './WebinarRoom'
 import { AlertTriangle, RefreshCw, Clock, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 

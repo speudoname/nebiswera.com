@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { WebinarStatus } from '@prisma/client'
 
@@ -12,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id] - Get webinar details
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -35,23 +36,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     return NextResponse.json(webinar)
   } catch (error) {
     logger.error('Failed to fetch webinar:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch webinar' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch webinar')
   }
 }
 
 // PATCH /api/admin/webinars/[id] - Update webinar
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -64,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const body = await request.json()
@@ -108,10 +106,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         select: { id: true },
       })
       if (slugExists) {
-        return NextResponse.json(
-          { error: 'Slug already exists' },
-          { status: 400 }
-        )
+        return badRequestResponse('Slug already exists')
       }
       updateData.slug = slug
     }
@@ -120,10 +115,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (status !== undefined) {
       const validStatuses: WebinarStatus[] = ['DRAFT', 'PUBLISHED', 'ARCHIVED']
       if (!validStatuses.includes(status)) {
-        return NextResponse.json(
-          { error: 'Invalid status' },
-          { status: 400 }
-        )
+        return badRequestResponse('Invalid status')
       }
       updateData.status = status
 
@@ -151,17 +143,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(webinar)
   } catch (error) {
     logger.error('Failed to update webinar:', error)
-    return NextResponse.json(
-      { error: 'Failed to update webinar' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to update webinar')
   }
 }
 
 // DELETE /api/admin/webinars/[id] - Delete webinar
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -174,15 +163,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Only allow deleting DRAFT or ARCHIVED webinars
     if (!['DRAFT', 'ARCHIVED'].includes(existing.status)) {
-      return NextResponse.json(
-        { error: 'Can only delete draft or archived webinars. Archive it first.' },
-        { status: 400 }
-      )
+      return badRequestResponse('Can only delete draft or archived webinars. Archive it first.')
     }
 
     // Delete the webinar (cascade will handle related records)
@@ -193,9 +179,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to delete webinar:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete webinar' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete webinar')
   }
 }

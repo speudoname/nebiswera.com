@@ -76,8 +76,8 @@ export function Step3AudioVideo({
       // Clear preview and proceed
       clearPreview()
       onComplete()
-    } catch (error: any) {
-      alert(error.message)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Upload failed')
       setIsUploading(false)
       setUploadProgress(0)
     }

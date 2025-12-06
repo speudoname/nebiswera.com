@@ -58,10 +58,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return badRequestResponse('You are already enrolled in this course')
     }
 
-    // For PAID courses, check if payment is complete (not yet implemented)
+    // PAID courses require payment integration (not yet implemented)
+    // When implementing, consider:
+    // 1. Payment provider integration (Stripe, BOG, etc.)
+    // 2. Payment verification before enrollment
+    // 3. Payment record creation linked to enrollment
+    // 4. Webhook handlers for async payment confirmation
+    // For now, PAID courses cannot be enrolled in directly
     if (course.accessType === 'PAID') {
-      // TODO: Implement payment verification
-      return badRequestResponse('Payment is required for this course')
+      return badRequestResponse(
+        'This course requires payment. Please contact support or wait for payment integration.'
+      )
     }
 
     // Calculate expiration date based on course settings

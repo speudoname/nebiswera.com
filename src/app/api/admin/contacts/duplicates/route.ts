@@ -1,28 +1,27 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { findAllDuplicates, findDuplicatesForImport } from '@/app/api/admin/contacts/lib/duplicate-detection'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
     const result = await findAllDuplicates()
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Failed to find duplicates:', error)
-    return NextResponse.json(
-      { error: 'Failed to find duplicates' },
-      { status: 500 }
-    )
+    logger.error('Failed to find duplicates:', error)
+    return errorResponse('Failed to find duplicates')
   }
 }
 
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -37,10 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!contacts || !Array.isArray(contacts)) {
-      return NextResponse.json(
-        { error: 'Contacts array is required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Contacts array is required')
     }
 
     const duplicateMap = await findDuplicatesForImport(contacts)
@@ -72,10 +68,7 @@ export async function POST(request: NextRequest) {
       duplicates: result,
     })
   } catch (error) {
-    console.error('Failed to check duplicates:', error)
-    return NextResponse.json(
-      { error: 'Failed to check duplicates' },
-      { status: 500 }
-    )
+    logger.error('Failed to check duplicates:', error)
+    return errorResponse('Failed to check duplicates')
   }
 }

@@ -8,14 +8,10 @@
 
 import { useMemo } from 'react'
 import type { ChatMessage } from './useAblyChat'
+import type { InteractionData } from '@/types'
 
-export interface InteractionData {
-  id: string
-  type: string
-  triggerTime: number
-  title: string
-  config: Record<string, unknown>
-}
+// Re-export for backwards compatibility
+export type { InteractionData } from '@/types'
 
 export type FeedItem =
   | { type: 'chat'; data: ChatMessage }

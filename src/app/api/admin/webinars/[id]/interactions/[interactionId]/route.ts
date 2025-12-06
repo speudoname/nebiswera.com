@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { WebinarInteractionType, WebinarInteractionPosition } from '@prisma/client'
 
@@ -12,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/interactions/[interactionId] - Get single interaction
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, interactionId } = await params
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!interaction) {
-      return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+      return notFoundResponse('Interaction not found')
     }
 
     return NextResponse.json({
@@ -60,17 +61,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch interaction:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch interaction' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch interaction')
   }
 }
 
 // PATCH /api/admin/webinars/[id]/interactions/[interactionId] - Update interaction
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, interactionId } = await params
@@ -85,7 +83,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+      return notFoundResponse('Interaction not found')
     }
 
     const body = await request.json()
@@ -120,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         'CONTACT_FORM',
       ]
       if (!validTypes.includes(type)) {
-        return NextResponse.json({ error: 'Invalid interaction type' }, { status: 400 })
+        return badRequestResponse('Invalid interaction type')
       }
     }
 
@@ -136,7 +134,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         'FULL_OVERLAY',
       ]
       if (!validPositions.includes(position)) {
-        return NextResponse.json({ error: 'Invalid position' }, { status: 400 })
+        return badRequestResponse('Invalid position')
       }
     }
 
@@ -179,17 +177,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to update interaction:', error)
-    return NextResponse.json(
-      { error: 'Failed to update interaction' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to update interaction')
   }
 }
 
 // DELETE /api/admin/webinars/[id]/interactions/[interactionId] - Delete interaction
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id, interactionId } = await params
@@ -204,7 +199,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+      return notFoundResponse('Interaction not found')
     }
 
     await prisma.webinarInteraction.delete({
@@ -214,9 +209,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to delete interaction:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete interaction' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete interaction')
   }
 }

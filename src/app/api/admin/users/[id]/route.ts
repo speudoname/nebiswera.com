@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 export async function GET(
@@ -8,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -27,7 +28,7 @@ export async function GET(
   })
 
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return notFoundResponse('User not found')
   }
 
   return NextResponse.json(user)
@@ -38,7 +39,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -51,7 +52,7 @@ export async function PATCH(
   })
 
   if (!existingUser) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return notFoundResponse('User not found')
   }
 
   // Check if email is being changed and if it's already taken
@@ -60,10 +61,7 @@ export async function PATCH(
       where: { email },
     })
     if (emailTaken) {
-      return NextResponse.json(
-        { error: 'Email is already taken' },
-        { status: 400 }
-      )
+      return badRequestResponse('Email is already taken')
     }
   }
 
@@ -98,17 +96,14 @@ export async function DELETE(
   const token = await getAuthToken(request)
 
   if (token?.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
 
   // Prevent self-deletion
   if (id === token.sub) {
-    return NextResponse.json(
-      { error: 'Cannot delete your own account' },
-      { status: 400 }
-    )
+    return badRequestResponse('Cannot delete your own account')
   }
 
   // Check if user exists
@@ -117,7 +112,7 @@ export async function DELETE(
   })
 
   if (!existingUser) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return notFoundResponse('User not found')
   }
 
   // Delete user and related data

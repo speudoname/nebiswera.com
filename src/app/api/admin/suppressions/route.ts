@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { syncSuppressions, getSuppressionDump } from '@/app/api/admin/lib/suppression-sync'
-import { logger } from '@/lib'
+import { unauthorizedResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 
 /**
@@ -9,7 +10,7 @@ import type { NextRequest } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -17,10 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(dump)
   } catch (error) {
     logger.error('Failed to get suppression stats:', error)
-    return NextResponse.json(
-      { error: 'Failed to get suppression stats' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to get suppression stats')
   }
 }
 
@@ -29,7 +27,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -37,9 +35,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error) {
     logger.error('Suppression sync failed:', error)
-    return NextResponse.json(
-      { error: 'Suppression sync failed' },
-      { status: 500 }
-    )
+    return errorResponse('Suppression sync failed')
   }
 }

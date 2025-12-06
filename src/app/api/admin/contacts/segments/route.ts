@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 import type { ContactStatus, Prisma } from '@prisma/client'
 
@@ -61,7 +63,7 @@ function buildWhereClause(filters: SegmentFilters): Prisma.ContactWhereInput {
 // GET - List all segments
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -85,18 +87,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(segmentsWithCounts)
   } catch (error) {
-    console.error('Failed to fetch segments:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch segments' },
-      { status: 500 }
-    )
+    logger.error('Failed to fetch segments:', error)
+    return errorResponse('Failed to fetch segments')
   }
 }
 
 // POST - Create a new segment
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -109,10 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!name?.trim()) {
-      return NextResponse.json(
-        { error: 'Segment name is required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Segment name is required')
     }
 
     // Check if segment name already exists
@@ -121,10 +117,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existing) {
-      return NextResponse.json(
-        { error: 'A segment with this name already exists' },
-        { status: 400 }
-      )
+      return badRequestResponse('A segment with this name already exists')
     }
 
     // Calculate initial contact count
@@ -143,10 +136,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(segment)
   } catch (error) {
-    console.error('Failed to create segment:', error)
-    return NextResponse.json(
-      { error: 'Failed to create segment' },
-      { status: 500 }
-    )
+    logger.error('Failed to create segment:', error)
+    return errorResponse('Failed to create segment')
   }
 }

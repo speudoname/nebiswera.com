@@ -62,8 +62,8 @@ export function EmailImageManager() {
       if (showLibrary) {
         loadLibrary()
       }
-    } catch (error: any) {
-      alert(`Upload failed: ${error.message}`)
+    } catch (error) {
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsUploading(false)
       if (fileInputRef.current) {

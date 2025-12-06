@@ -1,6 +1,6 @@
 // API endpoint for listing blog post images from Bunny Storage
 import { NextRequest, NextResponse } from 'next/server'
-import { listFromBunnyStorage } from '@/lib/bunny-storage'
+import { listFromBunnyStorage } from '@/lib/storage'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger, unauthorizedResponse, errorResponse } from '@/lib'
 

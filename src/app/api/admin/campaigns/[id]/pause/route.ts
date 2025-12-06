@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -11,7 +12,7 @@ interface RouteParams {
 // POST /api/admin/campaigns/[id]/pause - Pause sending campaign
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -23,15 +24,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Can only pause SENDING or SCHEDULED campaigns
     if (!['SENDING', 'SCHEDULED'].includes(campaign.status)) {
-      return NextResponse.json(
-        { error: `Cannot pause campaign in ${campaign.status} status` },
-        { status: 400 }
-      )
+      return badRequestResponse(`Cannot pause campaign in ${campaign.status} status`)
     }
 
     await prisma.campaign.update({
@@ -48,9 +46,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to pause campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to pause campaign' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to pause campaign')
   }
 }

@@ -1,30 +1,18 @@
-import { NextResponse } from 'next/server'
 import {
   processNotificationQueue,
   checkInactivityNotifications,
   checkExpirationNotifications,
 } from '@/app/api/courses/lib/notifications'
-import { unauthorizedResponse, successResponse, errorResponse, logger } from '@/lib'
+import { successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
+import { verifyCronSecret } from '@/lib/middleware/cron'
 
 // GET /api/cron/course-notifications - Process notification queue and check for inactivity/expiration
 // This endpoint should be called by a cron job every 5-15 minutes
 // Example: curl -H "Authorization: Bearer $CRON_SECRET" https://nebiswera.com/api/cron/course-notifications
 export async function GET(request: NextRequest) {
-  // Verify cron secret - fail closed if not configured
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret) {
-    logger.error('CRON_SECRET environment variable is not configured')
-    return NextResponse.json(
-      { error: 'Cron endpoint not configured' },
-      { status: 503 }
-    )
-  }
-
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return unauthorizedResponse()
-  }
+  const auth = verifyCronSecret(request)
+  if (!auth.success) return auth.response
 
   try {
     const startTime = Date.now()

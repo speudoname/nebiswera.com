@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { sendVerificationEmail } from '@/lib/email'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 
 export async function POST(request: Request) {
   // Rate limit: 3 requests per 5 minutes for email endpoints
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     const session = await auth()
 
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const user = await prisma.user.findUnique({
@@ -26,11 +27,11 @@ export async function POST(request: Request) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return notFoundResponse('User not found')
     }
 
     if (user.emailVerified) {
-      return NextResponse.json({ error: 'Email already verified' }, { status: 400 })
+      return badRequestResponse('Email already verified')
     }
 
     // Delete existing verification tokens
@@ -69,9 +70,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     logger.error('Resend verification error:', error)
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    )
+    return errorResponse('Something went wrong')
   }
 }

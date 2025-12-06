@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -22,7 +23,7 @@ interface RouteParams {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id: webinarId } = await params
@@ -35,26 +36,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const body = await request.json()
     const { csvContent, replaceExisting } = body
 
     if (!csvContent) {
-      return NextResponse.json(
-        { error: 'Missing csvContent field' },
-        { status: 400 }
-      )
+      return badRequestResponse('Missing csvContent field')
     }
 
     // Parse CSV
     const lines = csvContent.trim().split('\n')
     if (lines.length < 2) {
-      return NextResponse.json(
-        { error: 'CSV must have at least a header row and one data row' },
-        { status: 400 }
-      )
+      return badRequestResponse('CSV must have at least a header row and one data row')
     }
 
     // Validate header (case-insensitive)
@@ -65,10 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const isModeratorIndex = header.indexOf('isfrommoderator')
 
     if (timeIndex === -1 || senderNameIndex === -1 || messageIndex === -1) {
-      return NextResponse.json(
-        { error: 'CSV must have columns: time, senderName, message (optional: isFromModerator)' },
-        { status: 400 }
-      )
+      return badRequestResponse('CSV must have columns: time, senderName, message (optional: isFromModerator)')
     }
 
     // Parse data rows
@@ -94,10 +86,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
       // Validate
       if (isNaN(time) || !senderName || !message) {
-        return NextResponse.json(
-          { error: `Invalid data at row ${i + 1}: time must be a number, senderName and message are required` },
-          { status: 400 }
-        )
+        return badRequestResponse(`Invalid data at row ${i + 1}: time must be a number, senderName and message are required`)
       }
 
       messages.push({
@@ -109,10 +98,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     if (messages.length === 0) {
-      return NextResponse.json(
-        { error: 'No valid messages found in CSV' },
-        { status: 400 }
-      )
+      return badRequestResponse('No valid messages found in CSV')
     }
 
     // Delete existing simulated messages if replaceExisting is true
@@ -144,9 +130,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to import simulated messages:', error)
-    return NextResponse.json(
-      { error: 'Failed to import simulated messages' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to import simulated messages')
   }
 }

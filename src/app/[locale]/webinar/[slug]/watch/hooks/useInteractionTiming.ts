@@ -7,14 +7,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
-interface InteractionData {
-  id: string
-  type: string
-  triggerTime: number
-  title: string
-  config: Record<string, unknown>
-}
+import type { InteractionData } from '@/types'
 
 interface UseInteractionTimingParams {
   currentTime: number

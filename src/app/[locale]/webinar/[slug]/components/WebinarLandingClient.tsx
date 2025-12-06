@@ -2,7 +2,7 @@
 
 import { CheckCircle } from 'lucide-react'
 import { Card } from '@/components/ui'
-import { DynamicRegistrationForm } from './components/DynamicRegistrationForm'
+import { DynamicRegistrationForm } from './DynamicRegistrationForm'
 import {
   ImageRightTemplate,
   ImageLeftTemplate,
@@ -15,7 +15,7 @@ import {
   SplitDiagonalTemplate,
   type LandingPageConfig,
   type WebinarData,
-} from './templates'
+} from '../templates'
 
 interface WebinarLandingClientProps {
   webinar: {

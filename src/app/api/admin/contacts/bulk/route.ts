@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { logTagsAdded, logTagsRemoved, logStatusChanged } from '@/app/api/admin/contacts/lib/contact-activity'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 import type { ContactStatus, Prisma } from '@prisma/client'
 
@@ -53,7 +55,7 @@ function buildWhereClause(filters: BulkFilters): Prisma.ContactWhereInput {
 
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -77,10 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (contactIds.length === 0) {
-      return NextResponse.json(
-        { error: 'No contacts selected' },
-        { status: 400 }
-      )
+      return badRequestResponse('No contacts selected')
     }
 
     let affected = 0
@@ -88,10 +87,7 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case 'addTags':
         if (!tagIds || tagIds.length === 0) {
-          return NextResponse.json(
-            { error: 'No tags specified' },
-            { status: 400 }
-          )
+          return badRequestResponse('No tags specified')
         }
 
         // Get tag names for logging
@@ -117,10 +113,7 @@ export async function POST(request: NextRequest) {
 
       case 'removeTags':
         if (!tagIds || tagIds.length === 0) {
-          return NextResponse.json(
-            { error: 'No tags specified' },
-            { status: 400 }
-          )
+          return badRequestResponse('No tags specified')
         }
 
         // Get tag names for logging
@@ -147,10 +140,7 @@ export async function POST(request: NextRequest) {
 
       case 'changeStatus':
         if (!status) {
-          return NextResponse.json(
-            { error: 'No status specified' },
-            { status: 400 }
-          )
+          return badRequestResponse('No status specified')
         }
 
         // Get current statuses for logging
@@ -181,10 +171,7 @@ export async function POST(request: NextRequest) {
         break
 
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        )
+        return badRequestResponse('Invalid action')
     }
 
     return NextResponse.json({
@@ -193,10 +180,7 @@ export async function POST(request: NextRequest) {
       action,
     })
   } catch (error) {
-    console.error('Bulk operation failed:', error)
-    return NextResponse.json(
-      { error: 'Operation failed' },
-      { status: 500 }
-    )
+    logger.error('Bulk operation failed:', error)
+    return errorResponse('Operation failed')
   }
 }

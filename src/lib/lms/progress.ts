@@ -5,6 +5,7 @@
  */
 
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/logger';
 import type { CourseSettings } from './types';
 import { parseCourseSettings } from './types';
 import {
@@ -126,7 +127,7 @@ export async function updateEnrollmentProgress(enrollmentId: string): Promise<{
     try {
       await queueCourseCompleteNotifications(enrollmentId);
     } catch (error) {
-      console.error('Failed to queue course completion notifications:', error);
+      logger.error('Failed to queue course completion notifications:', error);
     }
 
     // Generate certificate if enabled
@@ -145,7 +146,7 @@ export async function updateEnrollmentProgress(enrollmentId: string): Promise<{
         }
       }
     } catch (error) {
-      console.error('Failed to generate certificate:', error);
+      logger.error('Failed to generate certificate:', error);
     }
   }
 
@@ -544,7 +545,7 @@ export async function completePartWithNotifications(
     try {
       await queueCourseStartNotifications(enrollmentId);
     } catch (error) {
-      console.error('Failed to queue course start notifications:', error);
+      logger.error('Failed to queue course start notifications:', error);
     }
   }
 
@@ -553,7 +554,7 @@ export async function completePartWithNotifications(
     try {
       await queueLessonCompleteNotifications(enrollmentId, options.lessonId, options.lessonTitle);
     } catch (error) {
-      console.error('Failed to queue lesson completion notifications:', error);
+      logger.error('Failed to queue lesson completion notifications:', error);
     }
   }
 
@@ -598,7 +599,7 @@ export async function completePartWithNotifications(
       }
     }
   } catch (error) {
-    console.error('Failed to track part completion analytics:', error);
+    logger.error('Failed to track part completion analytics:', error);
   }
 
   return { progressPercent, isCompleted, isFirstPart, wasJustCompleted };
@@ -672,7 +673,7 @@ export async function recordQuizResultWithNotifications(
       attemptsRemaining
     );
   } catch (error) {
-    console.error('Failed to queue quiz notifications:', error);
+    logger.error('Failed to queue quiz notifications:', error);
   }
 
   // Track quiz analytics
@@ -693,6 +694,6 @@ export async function recordQuizResultWithNotifications(
       );
     }
   } catch (error) {
-    console.error('Failed to track quiz analytics:', error);
+    logger.error('Failed to track quiz analytics:', error);
   }
 }

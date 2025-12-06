@@ -47,7 +47,10 @@
     "ctaRegular": "the Nebiswera theorem",
     "ctaAccentBold": "",
     "ctaSubtitle": "Are you ready to reclaim the power that has never been taken from anyone?",
-    "rating": "4.9 stars out of 500+ reviews"
+    "rating": "4.9 stars out of 500+ reviews",
+    "turnOnSound": "Turn on sound",
+    "muteVideo": "Mute video",
+    "unmuteVideo": "Unmute video"
   },
   "auth": {
     "login": {
@@ -193,6 +196,8 @@
     "authorNamesDescription": "Set your name in different languages for blog posts",
     "nameGeorgian": "Georgian Name",
     "nameEnglish": "English Name",
+    "nameGeorgianPlaceholder": "e.g. Giorgi Beridze",
+    "nameEnglishPlaceholder": "e.g. Giorgi Beridze",
     "myCourses": "My Courses",
     "browseCourses": "Browse Courses",
     "noCoursesYet": "You haven't enrolled in any courses yet.",

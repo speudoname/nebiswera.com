@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
-import { logger } from '@/lib'
+import { logger } from '@/lib/logger'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -17,11 +18,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { token, interactionId, response } = body
 
     if (!token) {
-      return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     if (!interactionId) {
-      return NextResponse.json({ error: 'Interaction ID required' }, { status: 400 })
+      return badRequestResponse('Interaction ID required')
     }
 
     // Find webinar
@@ -31,13 +32,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Validate access
     const validation = await validateAccessToken(webinar.id, token)
     if (!validation.valid || !validation.registration) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const registration = validation.registration
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!interaction) {
-      return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+      return notFoundResponse('Interaction not found')
     }
 
     // Track the interaction event
@@ -165,10 +166,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to submit interaction response:', error)
-    return NextResponse.json(
-      { error: 'Failed to submit response' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to submit response')
   }
 }
 
@@ -180,7 +178,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const interactionId = searchParams.get('interactionId')
 
   if (!token) {
-    return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -191,13 +189,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Validate access
     const validation = await validateAccessToken(webinar.id, token)
     if (!validation.valid) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     // Get poll results for a specific interaction
@@ -207,7 +205,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })
 
       if (!interaction) {
-        return NextResponse.json({ error: 'Interaction not found' }, { status: 404 })
+        return notFoundResponse('Interaction not found')
       }
 
       const responses = await prisma.webinarPollResponse.findMany({
@@ -278,9 +276,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ interactions })
   } catch (error) {
     logger.error('Failed to get interactions:', error)
-    return NextResponse.json(
-      { error: 'Failed to get interactions' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to get interactions')
   }
 }

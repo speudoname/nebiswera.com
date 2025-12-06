@@ -79,8 +79,8 @@ export default function LibraryPage() {
 
       // Refresh the list
       await loadContent()
-    } catch (error: any) {
-      alert(`Upload failed: ${error.message}`)
+    } catch (error) {
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setUploading(false)
       if (fileInputRef.current) {
@@ -110,8 +110,8 @@ export default function LibraryPage() {
         next.delete(key)
         return next
       })
-    } catch (error: any) {
-      alert(`Delete failed: ${error.message}`)
+    } catch (error) {
+      alert(`Delete failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setDeleting(null)
     }
@@ -137,8 +137,8 @@ export default function LibraryPage() {
       // Refresh the list
       await loadContent()
       setSelectedItems(new Set())
-    } catch (error: any) {
-      alert(`Delete failed: ${error.message}`)
+    } catch (error) {
+      alert(`Delete failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setDeleting(null)
     }

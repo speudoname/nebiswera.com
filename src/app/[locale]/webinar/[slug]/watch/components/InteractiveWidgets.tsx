@@ -2,14 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Zap, Check, X, Star, ThumbsUp, ThumbsDown, Download, ExternalLink } from 'lucide-react'
+import type { InteractionData } from '@/types'
 
-interface InteractionData {
-  id: string
-  type: string
-  triggerTime: number
-  title: string
-  config: Record<string, any>
-}
+/** Response payload for interaction events */
+type InteractionResponse = Record<string, unknown>
 
 interface InteractiveWidgetProps {
   interaction: InteractionData
@@ -17,7 +13,23 @@ interface InteractiveWidgetProps {
   accessToken: string
   registrationId: string
   onDismiss: (id: string) => void
-  onRespond: (id: string, response: any) => void
+  onRespond: (id: string, response: InteractionResponse) => void
+}
+
+/** Props for individual widget components */
+interface WidgetProps {
+  interaction: InteractionData
+  onDismiss: () => void
+}
+
+interface ResponseWidgetProps extends WidgetProps {
+  hasResponded: boolean
+  isSubmitting: boolean
+  onResponse: (response: InteractionResponse, eventType: string) => void
+}
+
+interface ClickableWidgetProps extends WidgetProps {
+  onResponse: (response: InteractionResponse, eventType: string) => void
 }
 
 export function InteractiveWidget({
@@ -51,7 +63,7 @@ export function InteractiveWidget({
     }
   }, [interaction.id, slug, accessToken])
 
-  const handleResponse = async (response: any, eventType: string) => {
+  const handleResponse = async (response: InteractionResponse, eventType: string) => {
     setIsSubmitting(true)
 
     try {
@@ -113,7 +125,6 @@ export function InteractiveWidget({
       return (
         <CTAWidget
           interaction={interaction}
-          hasResponded={hasResponded}
           onResponse={handleResponse}
           onDismiss={handleDismiss}
         />
@@ -170,7 +181,7 @@ function PollWidget({
   isSubmitting,
   onResponse,
   onDismiss,
-}: any) {
+}: ResponseWidgetProps) {
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const options = interaction.config.options || []
   const multipleChoice = interaction.config.multipleChoice || false
@@ -255,7 +266,7 @@ function PollWidget({
 }
 
 // CTA Widget
-function CTAWidget({ interaction, hasResponded, onResponse, onDismiss }: any) {
+function CTAWidget({ interaction, onResponse, onDismiss }: ClickableWidgetProps) {
   const buttonText = interaction.config.buttonText || 'Learn More'
   const buttonUrl = interaction.config.buttonUrl || '#'
   const openInNewTab = interaction.config.openInNewTab !== false
@@ -299,7 +310,7 @@ function CTAWidget({ interaction, hasResponded, onResponse, onDismiss }: any) {
 }
 
 // Feedback Widget (Star rating or emoji)
-function FeedbackWidget({ interaction, hasResponded, isSubmitting, onResponse, onDismiss }: any) {
+function FeedbackWidget({ interaction, hasResponded, isSubmitting, onResponse, onDismiss }: ResponseWidgetProps) {
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const feedbackType = interaction.config.feedbackType || 'stars' // 'stars' | 'thumbs' | 'emoji'
@@ -392,7 +403,7 @@ function FeedbackWidget({ interaction, hasResponded, isSubmitting, onResponse, o
 }
 
 // Question Widget (open-ended text)
-function QuestionWidget({ interaction, hasResponded, isSubmitting, onResponse, onDismiss }: any) {
+function QuestionWidget({ interaction, hasResponded, isSubmitting, onResponse, onDismiss }: ResponseWidgetProps) {
   const [textResponse, setTextResponse] = useState('')
 
   const handleSubmit = () => {
@@ -443,7 +454,7 @@ function QuestionWidget({ interaction, hasResponded, isSubmitting, onResponse, o
 }
 
 // Tip Widget (informational)
-function TipWidget({ interaction, onDismiss }: any) {
+function TipWidget({ interaction, onDismiss }: WidgetProps) {
   return (
     <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 shadow-sm">
       <div className="flex items-start gap-3">
@@ -467,7 +478,7 @@ function TipWidget({ interaction, onDismiss }: any) {
 }
 
 // Download Widget
-function DownloadWidget({ interaction, onResponse, onDismiss }: any) {
+function DownloadWidget({ interaction, onResponse, onDismiss }: ClickableWidgetProps) {
   const downloadUrl = interaction.config.downloadUrl || '#'
   const fileName = interaction.config.fileName || 'download'
 
@@ -510,7 +521,7 @@ function DownloadWidget({ interaction, onResponse, onDismiss }: any) {
 }
 
 // Generic fallback widget
-function GenericWidget({ interaction, onDismiss }: any) {
+function GenericWidget({ interaction, onDismiss }: WidgetProps) {
   return (
     <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 shadow-sm">
       <div className="flex items-start gap-3">

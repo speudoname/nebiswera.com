@@ -47,7 +47,10 @@
     "ctaRegular": "რომელიც შეცვლის შენს მომავალს?",
     "ctaAccentBold": "",
     "ctaSubtitle": "...რომ ცხადად გააცნობიერო - შენი ნების ძალა?",
-    "rating": "4.9 ვარსკვლავი 500+ შეფასებიდან"
+    "rating": "4.9 ვარსკვლავი 500+ შეფასებიდან",
+    "turnOnSound": "ხმის ჩართვა",
+    "muteVideo": "ხმის გათიშვა",
+    "unmuteVideo": "ხმის ჩართვა"
   },
   "auth": {
     "login": {
@@ -193,6 +196,8 @@
     "authorNamesDescription": "მიუთითეთ თქვენი სახელი სხვადასხვა ენაზე ბლოგის პოსტებისთვის",
     "nameGeorgian": "ქართული სახელი",
     "nameEnglish": "ინგლისური სახელი",
+    "nameGeorgianPlaceholder": "მაგ: გიორგი ბერიძე",
+    "nameEnglishPlaceholder": "მაგ: Giorgi Beridze",
     "myCourses": "ჩემი კურსები",
     "browseCourses": "კურსების ნახვა",
     "noCoursesYet": "ჯერ არცერთ კურსზე არ ხართ დარეგისტრირებული.",

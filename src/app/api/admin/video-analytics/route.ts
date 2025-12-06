@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import { checkRateLimit } from '@/lib/rate-limit'
 import {
   listBunnyVideos,
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse
 
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
   const rawLimit = parseInt(searchParams.get('limit') || '50')
 
   if (isNaN(rawPage) || isNaN(rawLimit)) {
-    return NextResponse.json({ error: 'Invalid pagination parameters' }, { status: 400 })
+    return badRequestResponse('Invalid pagination parameters')
   }
 
   const page = Math.max(1, Math.min(rawPage, 1000)) // Max 1000 pages
@@ -305,6 +306,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     logger.error('Failed to fetch video analytics:', error)
-    return NextResponse.json({ error: 'Failed to fetch video analytics' }, { status: 500 })
+    return errorResponse('Failed to fetch video analytics')
   }
 }

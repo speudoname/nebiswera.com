@@ -34,14 +34,14 @@ export function VideoTab({ data, onChange, webinarId, onSave }: VideoTabProps) {
     onChange('hlsUrl', videoData.hlsUrl)
     onChange('videoDuration', videoData.duration)
     onChange('thumbnailUrl', videoData.thumbnail)
-    onChange('videoStatus', 'ready')
+    onChange('videoStatus', 'READY')
 
     // Auto-save after video upload
     await onSave()
   }
 
   const hasVideo = !!data.hlsUrl
-  const isProcessing = data.videoStatus === 'processing'
+  const isProcessing = data.videoStatus === 'PROCESSING'
 
   return (
     <Card variant="raised" padding="lg">
@@ -52,18 +52,18 @@ export function VideoTab({ data, onChange, webinarId, onSave }: VideoTabProps) {
         <div className="mb-4">
           <span
             className={`px-3 py-1 rounded-full text-sm font-medium ${
-              data.videoStatus === 'ready'
+              data.videoStatus === 'READY'
                 ? 'bg-green-100 text-green-700'
-                : data.videoStatus === 'processing'
+                : data.videoStatus === 'PROCESSING'
                 ? 'bg-yellow-100 text-yellow-700'
-                : data.videoStatus === 'failed'
+                : data.videoStatus === 'FAILED'
                 ? 'bg-red-100 text-red-700'
                 : 'bg-gray-100 text-gray-700'
             }`}
           >
-            {data.videoStatus === 'ready' && 'Video Ready'}
-            {data.videoStatus === 'processing' && 'Processing...'}
-            {data.videoStatus === 'failed' && 'Processing Failed'}
+            {data.videoStatus === 'READY' && 'Video Ready'}
+            {data.videoStatus === 'PROCESSING' && 'Processing...'}
+            {data.videoStatus === 'FAILED' && 'Processing Failed'}
           </span>
         </div>
       )}

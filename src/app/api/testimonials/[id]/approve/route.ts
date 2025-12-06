@@ -1,17 +1,17 @@
 // Approve testimonial (admin only)
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/config'
+import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
+import { unauthorizedResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib'
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-
-    if (session?.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!(await isAdmin(request))) {
+      return unauthorizedResponse()
     }
 
     const { id } = await params
@@ -22,8 +22,8 @@ export async function PATCH(
     })
 
     return NextResponse.json({ success: true, testimonial })
-  } catch (error: any) {
-    console.error('Error approving testimonial:', error)
-    return NextResponse.json({ error: 'Failed to approve testimonial' }, { status: 500 })
+  } catch (error) {
+    logger.error('Error approving testimonial:', error)
+    return errorResponse('Failed to approve testimonial')
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { WebinarEventType } from '@prisma/client'
 
@@ -12,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/schedule - Get schedule configuration
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -50,17 +51,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch schedule config:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch schedule configuration' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch schedule configuration')
   }
 }
 
 // PUT /api/admin/webinars/[id]/schedule - Create or update schedule configuration
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -73,7 +71,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const body = await request.json()
@@ -104,19 +102,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       'ON_DEMAND_ONLY',
     ]
     if (!validEventTypes.includes(eventType)) {
-      return NextResponse.json({ error: 'Invalid event type' }, { status: 400 })
+      return badRequestResponse('Invalid event type')
     }
 
     // Validate required fields based on event type
     if (eventType !== 'ON_DEMAND_ONLY' && !startsAt) {
-      return NextResponse.json({ error: 'Start date is required' }, { status: 400 })
+      return badRequestResponse('Start date is required')
     }
 
     if (eventType === 'RECURRING' && (!recurringDays?.length || !recurringTimes?.length)) {
-      return NextResponse.json(
-        { error: 'Recurring schedule requires at least one day and one time' },
-        { status: 400 }
-      )
+      return badRequestResponse('Recurring schedule requires at least one day and one time')
     }
 
     // Prepare data
@@ -172,9 +167,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to save schedule config:', error)
-    return NextResponse.json(
-      { error: 'Failed to save schedule configuration' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to save schedule configuration')
   }
 }

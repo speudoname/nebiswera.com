@@ -4,7 +4,7 @@ import { Calendar, Clock, ArrowLeft, Share2, BookmarkPlus, User } from 'lucide-r
 import Link from 'next/link'
 import Image from 'next/image'
 import type { BlogPost } from '@prisma/client'
-import { formatDate } from '@/lib/utils/date-format'
+import { formatDate } from '@/lib/time-utils'
 import { sanitizeHtml } from '@/lib/sanitize'
 
 interface Props {

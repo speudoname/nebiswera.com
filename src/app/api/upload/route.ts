@@ -1,6 +1,6 @@
 // API endpoint for server-side file uploads to Bunny CDN
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToBunnyStorage, generateUniqueFilename } from '@/lib/bunny-storage'
+import { uploadToBunnyStorage, generateUniqueFilename } from '@/lib/storage'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { getAuthToken } from '@/lib/auth/utils'
 import { logger, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'

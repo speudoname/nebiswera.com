@@ -177,7 +177,7 @@ export function TransformationPromiseSection() {
                     className="absolute inset-0 w-full h-full object-cover"
                     fetchPriority="high"
                   />
-                  <HeroVideoPlayer locale={locale} />
+                  <HeroVideoPlayer />
                 </div>
               </div>
             </motion.div>

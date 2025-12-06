@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { RegistrationFieldConfig } from '@/app/api/webinars/lib/registration-fields'
 
@@ -12,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/registration-fields - Get registration fields config
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!config) {
-      return NextResponse.json({ error: 'Config not found' }, { status: 404 })
+      return notFoundResponse('Config not found')
     }
 
     // Convert DB format to API format
@@ -37,17 +38,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ config: fieldConfig })
   } catch (error) {
     logger.error('Failed to fetch registration fields config:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch registration fields config' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch registration fields config')
   }
 }
 
 // PUT /api/admin/webinars/[id]/registration-fields - Update registration fields config
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -84,9 +82,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ config: fieldConfig })
   } catch (error) {
     logger.error('Failed to save registration fields config:', error)
-    return NextResponse.json(
-      { error: 'Failed to save registration fields config' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to save registration fields config')
   }
 }

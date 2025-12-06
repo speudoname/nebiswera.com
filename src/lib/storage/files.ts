@@ -1,12 +1,38 @@
 /**
- * Bunny Storage Upload Utility
- * Handles image uploads to Bunny CDN Storage
+ * Bunny Storage File Service
+ * Handles file/image uploads to Bunny CDN Storage
+ *
+ * Note: For video streaming, use ./bunny.ts (Bunny Stream API)
  */
 
-const BUNNY_STORAGE_ZONE = process.env.BUNNY_STORAGE_ZONE_NAME!
-const BUNNY_STORAGE_PASSWORD = process.env.BUNNY_STORAGE_PASSWORD!
-const BUNNY_STORAGE_HOSTNAME = process.env.BUNNY_STORAGE_HOSTNAME!
-const BUNNY_CDN_URL = process.env.BUNNY_CDN_URL!
+import { logger } from '@/lib/logger'
+
+// Environment variables with runtime validation
+interface StorageConfig {
+  zone: string
+  password: string
+  hostname: string
+  cdnUrl: string
+}
+
+function getStorageConfig(): StorageConfig {
+  const zone = process.env.BUNNY_STORAGE_ZONE_NAME
+  const password = process.env.BUNNY_STORAGE_PASSWORD
+  const hostname = process.env.BUNNY_STORAGE_HOSTNAME
+  const cdnUrl = process.env.BUNNY_CDN_URL
+
+  const missing: string[] = []
+  if (!zone) missing.push('BUNNY_STORAGE_ZONE_NAME')
+  if (!password) missing.push('BUNNY_STORAGE_PASSWORD')
+  if (!hostname) missing.push('BUNNY_STORAGE_HOSTNAME')
+  if (!cdnUrl) missing.push('BUNNY_CDN_URL')
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required Bunny Storage env vars: ${missing.join(', ')}`)
+  }
+
+  return { zone, password, hostname, cdnUrl }
+}
 
 /**
  * Upload a file to Bunny Storage
@@ -18,15 +44,17 @@ export async function uploadToBunnyStorage(
   file: Buffer | Blob,
   path: string
 ): Promise<string> {
+  const config = getStorageConfig()
+
   // Ensure path doesn't start with /
   const cleanPath = path.startsWith('/') ? path.slice(1) : path
 
-  const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanPath}`
+  const url = `https://${config.hostname}/${config.zone}/${cleanPath}`
 
   const response = await fetch(url, {
     method: 'PUT',
     headers: {
-      AccessKey: BUNNY_STORAGE_PASSWORD,
+      AccessKey: config.password,
       'Content-Type': getContentType(cleanPath),
     },
     body: file as BodyInit,
@@ -38,7 +66,7 @@ export async function uploadToBunnyStorage(
   }
 
   // Return the public CDN URL
-  return `${BUNNY_CDN_URL}/${cleanPath}`
+  return `${config.cdnUrl}/${cleanPath}`
 }
 
 /**
@@ -46,13 +74,15 @@ export async function uploadToBunnyStorage(
  * @param path - Path in storage (e.g., 'testimonials/profile-photos/abc123.jpg')
  */
 export async function deleteFromBunnyStorage(path: string): Promise<void> {
+  const config = getStorageConfig()
+
   const cleanPath = path.startsWith('/') ? path.slice(1) : path
-  const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanPath}`
+  const url = `https://${config.hostname}/${config.zone}/${cleanPath}`
 
   const response = await fetch(url, {
     method: 'DELETE',
     headers: {
-      AccessKey: BUNNY_STORAGE_PASSWORD,
+      AccessKey: config.password,
     },
   })
 
@@ -206,13 +236,15 @@ export async function listFromBunnyStorage(folder: string): Promise<Array<{
   size: number
   lastModified: string
 }>> {
+  const config = getStorageConfig()
+
   const cleanFolder = folder.startsWith('/') ? folder.slice(1) : folder
-  const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanFolder}/`
+  const url = `https://${config.hostname}/${config.zone}/${cleanFolder}/`
 
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      AccessKey: BUNNY_STORAGE_PASSWORD,
+      AccessKey: config.password,
     },
   })
 
@@ -233,7 +265,7 @@ export async function listFromBunnyStorage(folder: string): Promise<Array<{
     .filter(item => !item.IsDirectory && item.Length > 0)
     .map(item => ({
       path: `${cleanFolder}/${item.ObjectName}`,
-      url: `${BUNNY_CDN_URL}/${cleanFolder}/${item.ObjectName}`,
+      url: `${config.cdnUrl}/${cleanFolder}/${item.ObjectName}`,
       name: item.ObjectName,
       size: item.Length,
       lastModified: item.LastChanged,
@@ -257,6 +289,8 @@ export async function listFromBunnyStorageRecursive(folder: string): Promise<Arr
   lastModified: string
   folder: string
 }>> {
+  validateStorageConfig()
+
   const cleanFolder = folder.startsWith('/') ? folder.slice(1) : folder
   const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanFolder}/`
 
@@ -307,7 +341,7 @@ export async function listFromBunnyStorageRecursive(folder: string): Promise<Arr
 
     return files
   } catch (error) {
-    console.error(`Failed to list from Bunny Storage folder ${folder}:`, error)
+    logger.error(`Failed to list from Bunny Storage folder ${folder}:`, error)
     return []
   }
 }
@@ -373,7 +407,7 @@ export async function listAllBunnyContent(): Promise<{
         const files = await listFromBunnyStorageRecursive(path)
         return { files, source }
       } catch (error) {
-        console.error(`Failed to list from ${path}:`, error)
+        logger.error(`Failed to list from ${path}:`, error)
         return { files: [], source }
       }
     })

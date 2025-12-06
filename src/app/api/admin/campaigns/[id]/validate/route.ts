@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { getSettings } from '@/lib/settings'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -18,7 +19,7 @@ interface ValidationResult {
 // POST /api/admin/campaigns/[id]/validate - Validate campaign before sending
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     const result = await validateCampaign(campaign)
@@ -37,10 +38,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(result)
   } catch (error) {
     logger.error('Failed to validate campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to validate campaign' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to validate campaign')
   }
 }
 

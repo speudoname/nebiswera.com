@@ -3,14 +3,7 @@
 import { useState } from 'react'
 import { X, Download, ExternalLink, ThumbsUp, ThumbsDown, Meh } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-
-interface InteractionData {
-  id: string
-  type: string
-  triggerTime: number
-  title: string
-  config: Record<string, unknown>
-}
+import type { InteractionData } from '@/types'
 
 interface InteractionOverlayProps {
   interactions: InteractionData[]

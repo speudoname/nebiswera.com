@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { logger } from '@/lib'
+import { logger } from '@/lib/logger'
+import { badRequestResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const token = searchParams.get('token')
 
   if (!token) {
-    return NextResponse.json({ error: 'Access token required' }, { status: 400 })
+    return badRequestResponse('Access token required')
   }
 
   try {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!registration) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 404 })
+      return notFoundResponse('Invalid access token')
     }
 
     return NextResponse.json({
@@ -49,9 +50,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch thank you page data:', error)
-    return NextResponse.json(
-      { error: 'Failed to load registration details' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to load registration details')
   }
 }

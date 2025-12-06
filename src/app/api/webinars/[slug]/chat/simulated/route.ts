@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { validateAccessToken } from '@/app/api/webinars/lib/registration'
-import { logger } from '@/lib'
+import { logger } from '@/lib/logger'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const toTime = parseInt(searchParams.get('to') || '0')
 
   if (!token) {
-    return NextResponse.json({ error: 'Access token required' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   if (fromTime >= toTime) {
@@ -32,13 +33,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Validate access
     const validation = await validateAccessToken(webinar.id, token)
     if (!validation.valid) {
-      return NextResponse.json({ error: 'Invalid access token' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     // Get simulated messages for this time range
@@ -73,9 +74,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to get simulated messages:', error)
-    return NextResponse.json(
-      { error: 'Failed to get messages' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to get messages')
   }
 }

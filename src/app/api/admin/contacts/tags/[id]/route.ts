@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 
 export async function PATCH(
@@ -8,7 +10,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -23,7 +25,7 @@ export async function PATCH(
     })
 
     if (!existingTag) {
-      return NextResponse.json({ error: 'Tag not found' }, { status: 404 })
+      return notFoundResponse('Tag not found')
     }
 
     // Check if name is being changed and already exists
@@ -32,10 +34,7 @@ export async function PATCH(
         where: { name },
       })
       if (nameExists) {
-        return NextResponse.json(
-          { error: 'A tag with this name already exists' },
-          { status: 400 }
-        )
+        return badRequestResponse('A tag with this name already exists')
       }
     }
 
@@ -50,11 +49,8 @@ export async function PATCH(
 
     return NextResponse.json(tag)
   } catch (error) {
-    console.error('Failed to update tag:', error)
-    return NextResponse.json(
-      { error: 'Failed to update tag' },
-      { status: 500 }
-    )
+    logger.error('Failed to update tag:', error)
+    return errorResponse('Failed to update tag')
   }
 }
 
@@ -63,7 +59,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -74,7 +70,7 @@ export async function DELETE(
     })
 
     if (!tag) {
-      return NextResponse.json({ error: 'Tag not found' }, { status: 404 })
+      return notFoundResponse('Tag not found')
     }
 
     await prisma.tag.delete({
@@ -83,10 +79,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete tag:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete tag' },
-      { status: 500 }
-    )
+    logger.error('Failed to delete tag:', error)
+    return errorResponse('Failed to delete tag')
   }
 }

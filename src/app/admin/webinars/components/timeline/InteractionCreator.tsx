@@ -2,43 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { X, Plus, Trash2, Clock, Settings } from 'lucide-react'
-
-type InteractionType =
-  | 'POLL'
-  | 'QUESTION'
-  | 'CTA'
-  | 'DOWNLOAD'
-  | 'FEEDBACK'
-  | 'TIP'
-  | 'SPECIAL_OFFER'
-  | 'PAUSE'
-  | 'QUIZ'
-  | 'CONTACT_FORM'
-
-type Position = 'TOP_LEFT' | 'TOP_RIGHT' | 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'CENTER' | 'SIDEBAR' | 'FULL_OVERLAY'
-
-interface InteractionData {
-  id?: string
-  type: InteractionType
-  triggerTime: number
-  title: string
-  description?: string
-  config: any
-  pauseVideo: boolean
-  required: boolean
-  showOnReplay: boolean
-  dismissable: boolean
-  position: Position
-  enabled: boolean
-  duration?: number
-}
+import type { InteractionDataFull, InteractionType, InteractionPosition } from '@/types'
 
 interface InteractionCreatorProps {
   webinarId: string
   isOpen: boolean
   onClose: () => void
-  onSave: (data: InteractionData) => Promise<void>
-  initialData?: Partial<InteractionData>
+  onSave: (data: InteractionDataFull) => Promise<void>
+  initialData?: Partial<InteractionDataFull>
   triggerTime: number
 }
 
@@ -56,7 +27,7 @@ export function InteractionCreator({
   const [description, setDescription] = useState(initialData?.description || '')
   const [time, setTime] = useState(initialData?.triggerTime ?? triggerTime)
   const [duration, setDuration] = useState<number | undefined>(initialData?.duration)
-  const [position, setPosition] = useState<Position>(initialData?.position || 'BOTTOM_RIGHT')
+  const [position, setPosition] = useState<InteractionPosition>(initialData?.position || 'BOTTOM_RIGHT')
   const [pauseVideo, setPauseVideo] = useState(initialData?.pauseVideo ?? false)
   const [required, setRequired] = useState(initialData?.required ?? false)
   const [showOnReplay, setShowOnReplay] = useState(initialData?.showOnReplay ?? true)
@@ -264,7 +235,7 @@ export function InteractionCreator({
               <label className="block text-sm font-semibold mb-2">Position</label>
               <select
                 value={position}
-                onChange={(e) => setPosition(e.target.value as Position)}
+                onChange={(e) => setPosition(e.target.value as InteractionPosition)}
                 className="w-full p-3 rounded-lg bg-neu-light shadow-neu-inset focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="BOTTOM_RIGHT">Bottom Right</option>

@@ -115,8 +115,8 @@ export function Step1BasicInfo({ onComplete }: Step1BasicInfoProps) {
         rating,
         testimonialId,
       })
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
       setIsSubmitting(false)
     }
   }

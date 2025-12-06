@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -11,7 +12,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/chat/simulated - List all simulated messages
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -36,17 +37,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch simulated messages:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch simulated messages' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch simulated messages')
   }
 }
 
 // POST /api/admin/webinars/[id]/chat/simulated - Create simulated message
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -57,10 +55,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Validate required fields
     if (!senderName || !message || appearsAt === undefined) {
-      return NextResponse.json(
-        { error: 'Missing required fields: senderName, message, appearsAt' },
-        { status: 400 }
-      )
+      return badRequestResponse('Missing required fields: senderName, message, appearsAt')
     }
 
     // Verify webinar exists
@@ -70,7 +65,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const chatMessage = await prisma.webinarChatMessage.create({
@@ -95,9 +90,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }, { status: 201 })
   } catch (error) {
     logger.error('Failed to create simulated message:', error)
-    return NextResponse.json(
-      { error: 'Failed to create simulated message' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to create simulated message')
   }
 }

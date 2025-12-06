@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
-import type { Prisma } from '@prisma/client'
+import type { Prisma, ContactStatus } from '@prisma/client'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -20,7 +22,7 @@ interface TargetCriteria {
 // POST /api/admin/campaigns/[id]/prepare - Generate recipient list
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -31,15 +33,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Only prepare DRAFT campaigns
     if (campaign.status !== 'DRAFT') {
-      return NextResponse.json(
-        { error: 'Can only prepare draft campaigns' },
-        { status: 400 }
-      )
+      return badRequestResponse('Can only prepare draft campaigns')
     }
 
     // Delete any existing recipients (in case of re-prepare)
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     // Build the contact query based on target type
-    const where = buildContactQuery(campaign.targetType, campaign.targetCriteria as TargetCriteria | null)
+    const where = await buildContactQuery(campaign.targetType, campaign.targetCriteria as TargetCriteria | null)
 
     // Fetch eligible contacts
     const contacts = await prisma.contact.findMany({
@@ -100,18 +99,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: `Prepared ${contacts.length} recipients`,
     })
   } catch (error) {
-    console.error('Failed to prepare campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to prepare campaign' },
-      { status: 500 }
-    )
+    logger.error('Failed to prepare campaign:', error)
+    return errorResponse('Failed to prepare campaign')
   }
 }
 
-function buildContactQuery(
+interface SegmentFilters {
+  status?: ContactStatus | ContactStatus[]
+  source?: string | string[]
+  tags?: string[]
+  createdAfter?: string
+  createdBefore?: string
+  webinarRegistered?: string // webinar ID
+  webinarAttended?: string   // webinar ID
+}
+
+async function buildContactQuery(
   targetType: string,
   targetCriteria: TargetCriteria | null
-): Prisma.ContactWhereInput {
+): Promise<Prisma.ContactWhereInput> {
   // Base filter: only contacts who can receive marketing
   const baseWhere: Prisma.ContactWhereInput = {
     marketingStatus: 'SUBSCRIBED',
@@ -130,9 +136,74 @@ function buildContactQuery(
 
     case 'SEGMENT':
       if (targetCriteria?.segmentId) {
-        // We need to fetch the segment and apply its filters
-        // For now, return base - we'll enhance this
-        return baseWhere
+        // Fetch the segment and apply its filters
+        const segment = await prisma.segment.findUnique({
+          where: { id: targetCriteria.segmentId },
+        })
+
+        if (segment && segment.filters) {
+          const filters = segment.filters as SegmentFilters
+          const segmentWhere: Prisma.ContactWhereInput = { ...baseWhere }
+
+          // Apply status filter
+          if (filters.status) {
+            if (Array.isArray(filters.status)) {
+              segmentWhere.status = { in: filters.status }
+            } else {
+              segmentWhere.status = filters.status
+            }
+          }
+
+          // Apply source filter
+          if (filters.source) {
+            if (Array.isArray(filters.source)) {
+              segmentWhere.source = { in: filters.source }
+            } else {
+              segmentWhere.source = filters.source
+            }
+          }
+
+          // Apply tag filter
+          if (filters.tags && filters.tags.length > 0) {
+            segmentWhere.tags = {
+              some: {
+                tagId: { in: filters.tags },
+              },
+            }
+          }
+
+          // Apply date filters
+          if (filters.createdAfter) {
+            segmentWhere.createdAt = {
+              ...(segmentWhere.createdAt as Prisma.DateTimeFilter || {}),
+              gte: new Date(filters.createdAfter),
+            }
+          }
+          if (filters.createdBefore) {
+            segmentWhere.createdAt = {
+              ...(segmentWhere.createdAt as Prisma.DateTimeFilter || {}),
+              lte: new Date(filters.createdBefore),
+            }
+          }
+
+          // Apply webinar registration filter
+          if (filters.webinarRegistered) {
+            segmentWhere.customFields = {
+              path: ['webinarStats', 'webinars', filters.webinarRegistered, 'registered'],
+              equals: true,
+            }
+          }
+
+          // Apply webinar attendance filter
+          if (filters.webinarAttended) {
+            segmentWhere.customFields = {
+              path: ['webinarStats', 'webinars', filters.webinarAttended, 'attended'],
+              equals: true,
+            }
+          }
+
+          return segmentWhere
+        }
       }
       return baseWhere
 
@@ -173,7 +244,7 @@ function buildContactQuery(
 // GET /api/admin/campaigns/[id]/prepare - Get recipient count preview
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -188,21 +259,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Build query and count
-    const where = buildContactQuery(campaign.targetType, campaign.targetCriteria as TargetCriteria | null)
+    const where = await buildContactQuery(campaign.targetType, campaign.targetCriteria as TargetCriteria | null)
     const count = await prisma.contact.count({ where })
 
     return NextResponse.json({
       estimatedRecipients: count,
     })
   } catch (error) {
-    console.error('Failed to get recipient count:', error)
-    return NextResponse.json(
-      { error: 'Failed to get recipient count' },
-      { status: 500 }
-    )
+    logger.error('Failed to get recipient count:', error)
+    return errorResponse('Failed to get recipient count')
   }
 }

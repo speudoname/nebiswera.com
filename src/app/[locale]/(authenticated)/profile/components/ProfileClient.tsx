@@ -375,7 +375,7 @@ export function ProfileClient() {
               label={t('nameGeorgian')}
               value={formData.nameKa}
               onChange={(e) => setFormData({ ...formData, nameKa: e.target.value })}
-              placeholder="მაგ: გიორგი ბერიძე"
+              placeholder={t('nameGeorgianPlaceholder')}
             />
             <Input
               id="nameEn"
@@ -383,7 +383,7 @@ export function ProfileClient() {
               label={t('nameEnglish')}
               value={formData.nameEn}
               onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-              placeholder="e.g. Giorgi Beridze"
+              placeholder={t('nameEnglishPlaceholder')}
             />
             <div className="flex justify-end">
               <Button type="submit" loading={saving} loadingText={common('loading')}>

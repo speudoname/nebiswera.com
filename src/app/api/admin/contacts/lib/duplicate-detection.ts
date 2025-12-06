@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib'
 
 interface DuplicateMatch {
   id: string
@@ -57,9 +58,20 @@ export async function findDuplicatesForEmail(
   }
 
   if (normalized !== email.toLowerCase().trim()) {
+    // Only search within the same email domain for normalized matches
+    // This avoids loading ALL contacts into memory
+    const domain = email.toLowerCase().trim().split('@')[1]
+
+    // For Gmail/Googlemail, search both domains; otherwise just the same domain
+    const isGmailDomain = domain === 'gmail.com' || domain === 'googlemail.com'
+    const domainFilter = isGmailDomain
+      ? { OR: [{ email: { endsWith: '@gmail.com' } }, { email: { endsWith: '@googlemail.com' } }] }
+      : { email: { endsWith: `@${domain}` } }
+
     const normalizedMatches = await prisma.contact.findMany({
       where: {
         NOT: { email: email.toLowerCase().trim() },
+        ...domainFilter,
       },
       select: { id: true, email: true, firstName: true, lastName: true, phone: true },
     })
@@ -308,7 +320,7 @@ export async function mergeContacts(
 
     return { success: true }
   } catch (error) {
-    console.error('Merge failed:', error)
+    logger.error('Merge failed:', error)
     return { success: false, error: 'Merge operation failed' }
   }
 }

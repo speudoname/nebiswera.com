@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { EmailStatus } from '@prisma/client'
 import { logger } from '@/lib'
+import { unauthorizedResponse, errorResponse } from '@/lib/api-response'
+import crypto from 'crypto'
 
 // Postmark webhook events
 interface PostmarkDeliveryEvent {
@@ -50,6 +52,7 @@ type PostmarkEvent =
  * https://username:password@yourdomain.com/api/webhooks/postmark
  *
  * The credentials are sent in the Authorization header as "Basic base64(username:password)"
+ * Uses timing-safe comparison to prevent timing attacks
  */
 function verifyBasicAuth(request: Request): boolean {
   const webhookUsername = process.env.POSTMARK_WEBHOOK_USERNAME
@@ -71,7 +74,26 @@ function verifyBasicAuth(request: Request): boolean {
   const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8')
   const [username, password] = credentials.split(':')
 
-  return username === webhookUsername && password === webhookPassword
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    const usernameBuffer = Buffer.from(username || '')
+    const passwordBuffer = Buffer.from(password || '')
+    const expectedUsernameBuffer = Buffer.from(webhookUsername)
+    const expectedPasswordBuffer = Buffer.from(webhookPassword)
+
+    // Ensure buffers are same length before comparison
+    const usernameMatch =
+      usernameBuffer.length === expectedUsernameBuffer.length &&
+      crypto.timingSafeEqual(usernameBuffer, expectedUsernameBuffer)
+
+    const passwordMatch =
+      passwordBuffer.length === expectedPasswordBuffer.length &&
+      crypto.timingSafeEqual(passwordBuffer, expectedPasswordBuffer)
+
+    return usernameMatch && passwordMatch
+  } catch {
+    return false
+  }
 }
 
 export async function POST(request: Request) {
@@ -79,7 +101,7 @@ export async function POST(request: Request) {
     // Verify Basic HTTP Authentication
     if (!verifyBasicAuth(request)) {
       logger.warn('Invalid webhook authentication')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const event = (await request.json()) as PostmarkEvent
@@ -144,9 +166,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, processed: true })
   } catch (error) {
     logger.error('Postmark webhook error:', error)
-    return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
-    )
+    return errorResponse('Webhook processing failed')
   }
 }

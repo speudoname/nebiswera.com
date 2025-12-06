@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect, notFound } from 'next/navigation'
-import { WatchPageClient } from './WatchPageClient'
+import { WatchPageClient } from './components/WatchPageClient'
 
 // Prevent indexing of watch pages - these are private/token-gated content
 export const metadata: Metadata = {

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { getSettings } from '@/lib/settings'
 import { isValidEmail, unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
+import { EmailType, EmailCategory } from '@prisma/client'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -105,6 +106,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const result = await response.json()
+
+    // Log the test email
+    await prisma.emailLog.create({
+      data: {
+        messageId: result.MessageID,
+        to: email,
+        subject: subject,
+        type: EmailType.CAMPAIGN,
+        category: EmailCategory.MARKETING,
+        metadata: {
+          campaignId: campaign.id,
+          isTest: true,
+          fromName: campaign.fromName,
+          fromEmail: campaign.fromEmail,
+        },
+      },
+    })
 
     return successResponse({
       success: true,

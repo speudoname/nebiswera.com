@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import { EmailStatus, EmailType, EmailCategory, Prisma } from '@prisma/client'
 
@@ -10,7 +11,7 @@ const MARKETING_TYPES: EmailType[] = ['CAMPAIGN', 'NEWSLETTER', 'BROADCAST', 'AN
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)

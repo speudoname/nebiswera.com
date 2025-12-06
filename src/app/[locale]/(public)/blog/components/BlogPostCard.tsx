@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Calendar, Clock, ArrowRight } from 'lucide-react'
 import type { BlogPost } from '@prisma/client'
-import { formatDate } from '@/lib/utils/date-format'
+import { formatDate } from '@/lib/time-utils'
 
 interface Props {
   post: BlogPost

@@ -1,14 +1,15 @@
 // API endpoint for listing webinar media from Bunny Storage
 import { NextRequest, NextResponse } from 'next/server'
-import { listFromBunnyStorage } from '@/lib/bunny-storage'
+import { listFromBunnyStorage } from '@/lib/storage'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, errorResponse } from '@/lib/api-response'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
@@ -27,9 +28,6 @@ export async function GET(request: NextRequest) {
     }
 
     logger.error('Error listing webinar media:', error)
-    return NextResponse.json(
-      { error: 'Failed to list media' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to list media')
   }
 }

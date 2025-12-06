@@ -63,7 +63,7 @@ export function VideoPlayer({ src, hlsSrc, poster, className = '' }: VideoPlayer
         hls.loadSource(hlsSrc)
       })
 
-      hls.on(Hls.Events.ERROR, (_: any, data: any) => {
+      hls.on(Hls.Events.ERROR, (_: unknown, data: { fatal: boolean }) => {
         if (data.fatal) {
           console.error('HLS error, falling back to regular video:', data)
           hls.destroy()

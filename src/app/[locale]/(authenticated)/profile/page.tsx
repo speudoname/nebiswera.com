@@ -1,6 +1,6 @@
 import { generatePageMetadata } from '@/lib/metadata'
 import type { Metadata } from 'next'
-import { ProfileClient } from './ProfileClient'
+import { ProfileClient } from './components/ProfileClient'
 
 export async function generateMetadata({
   params,

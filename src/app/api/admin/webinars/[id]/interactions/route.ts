@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { WebinarInteractionType, WebinarInteractionPosition } from '@prisma/client'
 
@@ -12,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/interactions - List all interactions
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -42,17 +43,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch interactions:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch interactions' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch interactions')
   }
 }
 
 // POST /api/admin/webinars/[id]/interactions - Create a new interaction
 export async function POST(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const body = await request.json()
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'CONTACT_FORM',
     ]
     if (!validTypes.includes(type)) {
-      return NextResponse.json({ error: 'Invalid interaction type' }, { status: 400 })
+      return badRequestResponse('Invalid interaction type')
     }
 
     // Validate position
@@ -109,15 +107,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'FULL_OVERLAY',
     ]
     if (position && !validPositions.includes(position)) {
-      return NextResponse.json({ error: 'Invalid position' }, { status: 400 })
+      return badRequestResponse('Invalid position')
     }
 
     // Validate required fields
     if (!title || typeof triggerTime !== 'number') {
-      return NextResponse.json(
-        { error: 'Title and trigger time are required' },
-        { status: 400 }
-      )
+      return badRequestResponse('Title and trigger time are required')
     }
 
     const interaction = await prisma.webinarInteraction.create({
@@ -153,9 +148,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to create interaction:', error)
-    return NextResponse.json(
-      { error: 'Failed to create interaction' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to create interaction')
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { logger } from '@/lib'
+import { logger } from '@/lib/logger'
+import { notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type { RegistrationFieldConfig } from '@/app/api/webinars/lib/registration-fields'
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     if (webinar.status !== 'PUBLISHED') {
@@ -56,9 +57,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ config: fieldConfig })
   } catch (error) {
     logger.error('Failed to fetch registration fields config:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch registration fields config' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch registration fields config')
   }
 }

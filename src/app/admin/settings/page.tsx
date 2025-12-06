@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Input, Badge } from '@/components/ui'
-import { Mail, User, Link, Loader2, Megaphone, Eye, EyeOff } from 'lucide-react'
+import { Mail, User, Link, Loader2, Megaphone, Eye, EyeOff, Building2, Phone, Share2 } from 'lucide-react'
+
+interface SocialLinks {
+  facebook?: string
+  instagram?: string
+  linkedin?: string
+  twitter?: string
+  youtube?: string
+  tiktok?: string
+}
 
 interface Settings {
   // Transactional
@@ -17,6 +26,13 @@ interface Settings {
   marketingFromAddress: string | null
   marketingFromName: string
   hasMarketingToken: boolean
+  // Footer (CAN-SPAM)
+  companyName: string
+  companyNameKa: string
+  companyAddress: string
+  companyAddressKa: string
+  companyPhone: string | null
+  socialLinks: SocialLinks | null
 }
 
 export default function SettingsPage() {
@@ -37,6 +53,20 @@ export default function SettingsPage() {
     marketingStreamName: 'broadcast',
     marketingFromAddress: '',
     marketingFromName: 'ლევან ბახია (წერილები)',
+    // Footer (CAN-SPAM)
+    companyName: 'Solo Entrepreneur "Levan Bakhia"',
+    companyNameKa: 'მცირე მეწარმე "ლევან ბახია"',
+    companyAddress: 'Akhmeteli St. 10a, Tbilisi, Georgia 0177',
+    companyAddressKa: 'ახმეტელის ქუჩა 10ა, თბილისი, საქართველო 0177',
+    companyPhone: '',
+    socialLinks: {
+      facebook: '',
+      instagram: '',
+      linkedin: '',
+      youtube: '',
+      twitter: '',
+      tiktok: '',
+    } as SocialLinks,
   })
 
   useEffect(() => {
@@ -59,6 +89,20 @@ export default function SettingsPage() {
         marketingStreamName: data.marketingStreamName || 'broadcast',
         marketingFromAddress: data.marketingFromAddress || '',
         marketingFromName: data.marketingFromName || 'ლევან ბახია (წერილები)',
+        // Footer (CAN-SPAM)
+        companyName: data.companyName || 'Solo Entrepreneur "Levan Bakhia"',
+        companyNameKa: data.companyNameKa || 'მცირე მეწარმე "ლევან ბახია"',
+        companyAddress: data.companyAddress || 'Akhmeteli St. 10a, Tbilisi, Georgia 0177',
+        companyAddressKa: data.companyAddressKa || 'ახმეტელის ქუჩა 10ა, თბილისი, საქართველო 0177',
+        companyPhone: data.companyPhone || '',
+        socialLinks: {
+          facebook: data.socialLinks?.facebook || '',
+          instagram: data.socialLinks?.instagram || '',
+          linkedin: data.socialLinks?.linkedin || '',
+          youtube: data.socialLinks?.youtube || '',
+          twitter: data.socialLinks?.twitter || '',
+          tiktok: data.socialLinks?.tiktok || '',
+        },
       })
     } catch (error) {
       console.error('Failed to fetch settings:', error)
@@ -86,6 +130,19 @@ export default function SettingsPage() {
           ...formData,
           postmarkServerToken: data.postmarkServerToken || '',
           marketingServerToken: data.marketingServerToken || '',
+          companyName: data.companyName || '',
+          companyNameKa: data.companyNameKa || '',
+          companyAddress: data.companyAddress || '',
+          companyAddressKa: data.companyAddressKa || '',
+          companyPhone: data.companyPhone || '',
+          socialLinks: {
+            facebook: data.socialLinks?.facebook || '',
+            instagram: data.socialLinks?.instagram || '',
+            linkedin: data.socialLinks?.linkedin || '',
+            youtube: data.socialLinks?.youtube || '',
+            twitter: data.socialLinks?.twitter || '',
+            tiktok: data.socialLinks?.tiktok || '',
+          },
         })
         setMessage({ type: 'success', text: 'Settings saved successfully!' })
       } else {
@@ -316,6 +373,172 @@ export default function SettingsPage() {
               value={formData.marketingFromName}
               onChange={(e) => setFormData({ ...formData, marketingFromName: e.target.value })}
             />
+          </div>
+        </div>
+
+        {/* Campaign Footer Settings (CAN-SPAM) */}
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h3 className="no-margin flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-primary-600" />
+              Company Information (Email Footer)
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
+              Required for CAN-SPAM compliance. This info appears at the bottom of marketing emails.
+            </p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                id="companyName"
+                name="companyName"
+                type="text"
+                label="Company Name (English)"
+                placeholder="Solo Entrepreneur..."
+                value={formData.companyName}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+              />
+              <Input
+                id="companyNameKa"
+                name="companyNameKa"
+                type="text"
+                label="Company Name (Georgian)"
+                placeholder="მცირე მეწარმე..."
+                value={formData.companyNameKa}
+                onChange={(e) => setFormData({ ...formData, companyNameKa: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                id="companyAddress"
+                name="companyAddress"
+                type="text"
+                label="Address (English)"
+                placeholder="Akhmeteli St. 10a, Tbilisi, Georgia 0177"
+                value={formData.companyAddress}
+                onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
+              />
+              <Input
+                id="companyAddressKa"
+                name="companyAddressKa"
+                type="text"
+                label="Address (Georgian)"
+                placeholder="ახმეტელის ქუჩა 10ა, თბილისი..."
+                value={formData.companyAddressKa}
+                onChange={(e) => setFormData({ ...formData, companyAddressKa: e.target.value })}
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Phone className="h-4 w-4 text-text-secondary" />
+              <div className="flex-1">
+                <Input
+                  id="companyPhone"
+                  name="companyPhone"
+                  type="tel"
+                  label="Phone Number (optional)"
+                  placeholder="+995 xxx xxx xxx"
+                  value={formData.companyPhone}
+                  onChange={(e) => setFormData({ ...formData, companyPhone: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Social Links */}
+        <div className="bg-neu-light rounded-neu shadow-neu mb-6">
+          <div className="px-6 py-4 border-b border-neu-dark">
+            <h3 className="no-margin flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-primary-600" />
+              Social Links (Email Footer)
+            </h3>
+            <p className="text-body-sm text-muted mt-1 no-margin">
+              Optional social media links shown in campaign email footers.
+            </p>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                id="socialFacebook"
+                name="socialFacebook"
+                type="url"
+                label="Facebook"
+                placeholder="https://facebook.com/yourpage"
+                value={formData.socialLinks.facebook || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  socialLinks: { ...formData.socialLinks, facebook: e.target.value }
+                })}
+              />
+              <Input
+                id="socialInstagram"
+                name="socialInstagram"
+                type="url"
+                label="Instagram"
+                placeholder="https://instagram.com/yourprofile"
+                value={formData.socialLinks.instagram || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  socialLinks: { ...formData.socialLinks, instagram: e.target.value }
+                })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                id="socialLinkedIn"
+                name="socialLinkedIn"
+                type="url"
+                label="LinkedIn"
+                placeholder="https://linkedin.com/in/yourprofile"
+                value={formData.socialLinks.linkedin || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  socialLinks: { ...formData.socialLinks, linkedin: e.target.value }
+                })}
+              />
+              <Input
+                id="socialYouTube"
+                name="socialYouTube"
+                type="url"
+                label="YouTube"
+                placeholder="https://youtube.com/@yourchannel"
+                value={formData.socialLinks.youtube || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  socialLinks: { ...formData.socialLinks, youtube: e.target.value }
+                })}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                id="socialTwitter"
+                name="socialTwitter"
+                type="url"
+                label="Twitter / X"
+                placeholder="https://twitter.com/yourhandle"
+                value={formData.socialLinks.twitter || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  socialLinks: { ...formData.socialLinks, twitter: e.target.value }
+                })}
+              />
+              <Input
+                id="socialTikTok"
+                name="socialTikTok"
+                type="url"
+                label="TikTok"
+                placeholder="https://tiktok.com/@yourprofile"
+                value={formData.socialLinks.tiktok || ''}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  socialLinks: { ...formData.socialLinks, tiktok: e.target.value }
+                })}
+              />
+            </div>
           </div>
         </div>
 

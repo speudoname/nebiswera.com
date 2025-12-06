@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export type TestimonialType = 'TEXT' | 'AUDIO' | 'VIDEO'
 
@@ -28,7 +29,7 @@ export async function getRandomTestimonials(
   count: number,
   type?: TestimonialType
 ): Promise<TestimonialData[]> {
-  const where: any = { status: 'APPROVED' }
+  const where: Prisma.TestimonialWhereInput = { status: 'APPROVED' }
   if (type) {
     where.type = type
   }

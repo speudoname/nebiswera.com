@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import { prisma } from '@/lib/db'
 
 export const runtime = 'nodejs'
@@ -15,7 +16,7 @@ export async function GET(
 ) {
   try {
     if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const webinarId = params.id
@@ -27,7 +28,7 @@ export async function GET(
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     // Get all interactions for this webinar
@@ -246,9 +247,6 @@ export async function GET(
     })
   } catch (error) {
     logger.error('Failed to fetch interaction analytics:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch analytics')
   }
 }

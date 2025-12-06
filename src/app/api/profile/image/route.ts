@@ -1,6 +1,6 @@
 // API endpoint for uploading user profile images to Bunny Storage
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadToBunnyStorage, deleteFromBunnyStorage, generateUserProfileKey } from '@/lib/bunny-storage'
+import { uploadToBunnyStorage, deleteFromBunnyStorage, generateUserProfileKey } from '@/lib/storage'
 import { getAuthToken } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { logger, unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib'

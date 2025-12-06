@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 import type { ContactStatus, Prisma } from '@prisma/client'
 
@@ -64,7 +65,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -75,10 +76,7 @@ export async function GET(
     })
 
     if (!segment) {
-      return NextResponse.json(
-        { error: 'Segment not found' },
-        { status: 404 }
-      )
+      return notFoundResponse('Segment not found')
     }
 
     // Get current contact count
@@ -92,10 +90,7 @@ export async function GET(
     })
   } catch (error) {
     logger.error('Failed to fetch segment:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch segment' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch segment')
   }
 }
 
@@ -105,7 +100,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -119,10 +114,7 @@ export async function PATCH(
     })
 
     if (!existing) {
-      return NextResponse.json(
-        { error: 'Segment not found' },
-        { status: 404 }
-      )
+      return notFoundResponse('Segment not found')
     }
 
     // Check if name is taken by another segment
@@ -131,10 +123,7 @@ export async function PATCH(
         where: { name: name.trim() },
       })
       if (nameTaken) {
-        return NextResponse.json(
-          { error: 'A segment with this name already exists' },
-          { status: 400 }
-        )
+        return badRequestResponse('A segment with this name already exists')
       }
     }
 
@@ -157,10 +146,7 @@ export async function PATCH(
     return NextResponse.json(segment)
   } catch (error) {
     logger.error('Failed to update segment:', error)
-    return NextResponse.json(
-      { error: 'Failed to update segment' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to update segment')
   }
 }
 
@@ -170,7 +156,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -183,9 +169,6 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     logger.error('Failed to delete segment:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete segment' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete segment')
   }
 }

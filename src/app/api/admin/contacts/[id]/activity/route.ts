@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 
 export async function GET(
@@ -8,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -23,10 +25,7 @@ export async function GET(
     })
 
     if (!contact) {
-      return NextResponse.json(
-        { error: 'Contact not found' },
-        { status: 404 }
-      )
+      return notFoundResponse('Contact not found')
     }
 
     const [activities, total] = await Promise.all([
@@ -51,10 +50,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Failed to fetch activities:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch activities' },
-      { status: 500 }
-    )
+    logger.error('Failed to fetch activities:', error)
+    return errorResponse('Failed to fetch activities')
   }
 }

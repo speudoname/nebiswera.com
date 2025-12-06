@@ -1,14 +1,15 @@
 // API endpoint for listing all content (images + videos) from Bunny Storage
 import { NextRequest, NextResponse } from 'next/server'
-import { listAllBunnyContent } from '@/lib/bunny-storage'
+import { listAllBunnyContent } from '@/lib/storage'
 import { isAdmin } from '@/lib/auth/utils'
-import { logger } from '@/lib'
+import { unauthorizedResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -17,9 +18,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ images, videos })
   } catch (error: any) {
     logger.error('Error listing content library:', error)
-    return NextResponse.json(
-      { error: 'Failed to list content' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to list content')
   }
 }

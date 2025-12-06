@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const tags = await prisma.tag.findMany({
@@ -27,7 +29,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { name, color, description } = body
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+      return badRequestResponse('Name is required')
     }
 
     // Check if tag already exists
@@ -44,10 +46,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingTag) {
-      return NextResponse.json(
-        { error: 'A tag with this name already exists' },
-        { status: 400 }
-      )
+      return badRequestResponse('A tag with this name already exists')
     }
 
     const tag = await prisma.tag.create({
@@ -60,10 +59,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(tag)
   } catch (error) {
-    console.error('Failed to create tag:', error)
-    return NextResponse.json(
-      { error: 'Failed to create tag' },
-      { status: 500 }
-    )
+    logger.error('Failed to create tag:', error)
+    return errorResponse('Failed to create tag')
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import type {
   LandingPageTemplate,
@@ -20,7 +21,7 @@ interface RouteParams {
 // GET /api/admin/webinars/[id]/landing-page - Get landing page configuration
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -72,17 +73,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to fetch landing page config:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch landing page configuration' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to fetch landing page configuration')
   }
 }
 
 // PUT /api/admin/webinars/[id]/landing-page - Create or update landing page configuration
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -95,7 +93,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!webinar) {
-      return NextResponse.json({ error: 'Webinar not found' }, { status: 404 })
+      return notFoundResponse('Webinar not found')
     }
 
     const body = await request.json()
@@ -146,46 +144,46 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       'SPLIT_DIAGONAL',
     ]
     if (template && !validTemplates.includes(template)) {
-      return NextResponse.json({ error: 'Invalid template' }, { status: 400 })
+      return badRequestResponse('Invalid template')
     }
 
     const validButtonStyles: ButtonStyle[] = ['POPUP_FORM', 'INLINE_EMAIL', 'EXPAND_FORM']
     if (heroButtonStyle && !validButtonStyles.includes(heroButtonStyle)) {
-      return NextResponse.json({ error: 'Invalid hero button style' }, { status: 400 })
+      return badRequestResponse('Invalid hero button style')
     }
     if (section2ButtonStyle && !validButtonStyles.includes(section2ButtonStyle)) {
-      return NextResponse.json({ error: 'Invalid section 2 button style' }, { status: 400 })
+      return badRequestResponse('Invalid section 2 button style')
     }
 
     const validImagePlacements: ImagePlacement[] = ['LEFT', 'RIGHT', 'BACKGROUND', 'NONE']
     if (heroImagePlacement && !validImagePlacements.includes(heroImagePlacement)) {
-      return NextResponse.json({ error: 'Invalid image placement' }, { status: 400 })
+      return badRequestResponse('Invalid image placement')
     }
 
     const validPresenterShapes: PresenterImageShape[] = ['CIRCLE', 'SQUARE']
     if (presenterImageShape && !validPresenterShapes.includes(presenterImageShape)) {
-      return NextResponse.json({ error: 'Invalid presenter image shape' }, { status: 400 })
+      return badRequestResponse('Invalid presenter image shape')
     }
 
     const validLogoTypes: LogoType[] = ['TEXT', 'IMAGE']
     if (logoType && !validLogoTypes.includes(logoType)) {
-      return NextResponse.json({ error: 'Invalid logo type' }, { status: 400 })
+      return badRequestResponse('Invalid logo type')
     }
 
     const validHeroMediaTypes: HeroMediaType[] = ['IMAGE', 'VIDEO']
     if (heroMediaType && !validHeroMediaTypes.includes(heroMediaType)) {
-      return NextResponse.json({ error: 'Invalid hero media type' }, { status: 400 })
+      return badRequestResponse('Invalid hero media type')
     }
 
     const validContentAlignments: ContentAlignment[] = ['LEFT', 'CENTER', 'RIGHT']
     if (heroAlignment && !validContentAlignments.includes(heroAlignment)) {
-      return NextResponse.json({ error: 'Invalid hero alignment' }, { status: 400 })
+      return badRequestResponse('Invalid hero alignment')
     }
     if (section2Alignment && !validContentAlignments.includes(section2Alignment)) {
-      return NextResponse.json({ error: 'Invalid section 2 alignment' }, { status: 400 })
+      return badRequestResponse('Invalid section 2 alignment')
     }
     if (section2ImagePlacement && !validImagePlacements.includes(section2ImagePlacement)) {
-      return NextResponse.json({ error: 'Invalid section 2 image placement' }, { status: 400 })
+      return badRequestResponse('Invalid section 2 image placement')
     }
 
     // Prepare data
@@ -271,9 +269,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     logger.error('Failed to save landing page config:', error)
-    return NextResponse.json(
-      { error: 'Failed to save landing page configuration' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to save landing page configuration')
   }
 }

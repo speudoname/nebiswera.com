@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib'
+import { logger } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 import {
   getCourseTemplate,
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       bodyText: template.text,
     })
   } catch (error) {
-    console.error('Failed to fetch template:', error)
+    logger.error('Failed to fetch template:', error)
     return errorResponse('Failed to fetch template')
   }
 }

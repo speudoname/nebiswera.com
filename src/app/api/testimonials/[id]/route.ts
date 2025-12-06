@@ -1,7 +1,8 @@
-// API route for individual testimonial operations (admin only)
+// API route for individual testimonial operations
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/config'
+import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
+import { Prisma, VideoProcessingStatus } from '@prisma/client'
 import { logger, notFoundResponse, unauthorizedResponse, errorResponse } from '@/lib'
 
 // GET /api/testimonials/[id] - Get single testimonial
@@ -11,7 +12,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const session = await auth()
+    const token = await getAuthToken(request)
 
     const testimonial = await prisma.testimonial.findUnique({
       where: { id },
@@ -22,7 +23,7 @@ export async function GET(
     }
 
     // Non-admin users can only see approved testimonials
-    if (testimonial.status !== 'APPROVED' && session?.user?.role !== 'ADMIN') {
+    if (testimonial.status !== 'APPROVED' && token?.role !== 'ADMIN') {
       return notFoundResponse()
     }
 
@@ -39,9 +40,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-
-    if (session?.user?.role !== 'ADMIN') {
+    if (!(await isAdmin(request))) {
       return unauthorizedResponse()
     }
 
@@ -79,7 +78,7 @@ export async function PATCH(
     const body = await request.json()
 
     // Allow partial updates for any field
-    const updateData: any = {}
+    const updateData: Prisma.TestimonialUpdateInput = {}
 
     if (body.profilePhoto !== undefined) updateData.profilePhoto = body.profilePhoto
     if (body.images !== undefined) updateData.images = body.images
@@ -88,7 +87,7 @@ export async function PATCH(
       updateData.videoUrl = body.videoUrl
       // Bunny handles transcoding automatically - video is processing/ready
       if (body.videoUrl) {
-        updateData.videoStatus = 'ready'
+        updateData.videoStatus = VideoProcessingStatus.READY
       }
     }
     if (body.videoThumbnail !== undefined) updateData.videoThumbnail = body.videoThumbnail
@@ -112,9 +111,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth()
-
-    if (session?.user?.role !== 'ADMIN') {
+    if (!(await isAdmin(request))) {
       return unauthorizedResponse()
     }
 

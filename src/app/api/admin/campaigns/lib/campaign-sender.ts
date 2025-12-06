@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { getSettings } from '@/lib/settings'
+import { getSettings, generateCampaignFooter, type AppSettings } from '@/lib/settings'
 import { logger } from '@/lib'
 
 const BATCH_SIZE = 500 // Postmark limit
@@ -122,7 +122,8 @@ export async function processCampaign(campaignId: string): Promise<{
       campaign,
       recipients,
       settings.marketingServerToken,
-      settings.marketingStreamName
+      settings.marketingStreamName,
+      settings
     )
 
     totalSent += result.sent
@@ -168,6 +169,7 @@ async function sendBatch(
     subject: string
     htmlContent: string
     textContent: string
+    previewText?: string | null
     fromName: string
     fromEmail: string
     replyTo: string | null
@@ -178,14 +180,44 @@ async function sendBatch(
     variables: unknown
   }>,
   serverToken: string,
-  messageStream: string
+  messageStream: string,
+  settings: AppSettings
 ): Promise<SendBatchResult> {
+  // Generate footer for CAN-SPAM compliance (default to Georgian locale)
+  const footer = generateCampaignFooter(settings, 'ka')
+
   // Prepare messages
   const messages: PostmarkMessage[] = recipients.map((recipient) => {
     const variables = (recipient.variables as Variables) || {}
-    const personalizedHtml = replaceVariables(campaign.htmlContent, variables)
-    const personalizedText = replaceVariables(campaign.textContent, variables)
+    let personalizedHtml = replaceVariables(campaign.htmlContent, variables)
+    let personalizedText = replaceVariables(campaign.textContent, variables)
     const personalizedSubject = replaceVariables(campaign.subject, variables)
+
+    // Inject previewText as hidden div at the start of the email (for inbox preview)
+    if (campaign.previewText) {
+      const previewHtml = `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${escapeHtml(campaign.previewText)}</div>`
+      // Insert after <body> tag or at the start
+      if (personalizedHtml.includes('<body')) {
+        personalizedHtml = personalizedHtml.replace(/(<body[^>]*>)/i, `$1${previewHtml}`)
+      } else {
+        personalizedHtml = previewHtml + personalizedHtml
+      }
+    }
+
+    // Inject footer before </body> tag or at the end
+    // Only inject if unsubscribe link is not already present
+    const hasUnsubscribeLink = personalizedHtml.includes('{{{ pm:unsubscribe }}}') ||
+                               personalizedHtml.includes('pm:unsubscribe')
+
+    if (!hasUnsubscribeLink) {
+      // Add our compliant footer with unsubscribe link
+      if (personalizedHtml.toLowerCase().includes('</body>')) {
+        personalizedHtml = personalizedHtml.replace(/<\/body>/i, `${footer.html}</body>`)
+      } else {
+        personalizedHtml = personalizedHtml + footer.html
+      }
+      personalizedText = personalizedText + footer.text
+    }
 
     return {
       From: `${campaign.fromName} <${campaign.fromEmail}>`,
@@ -429,23 +461,6 @@ function replaceVariables(content: string, variables: Variables): string {
 }
 
 /**
- * Update contact suppression status
- */
-async function updateContactSuppression(
-  email: string,
-  reason: 'HARD_BOUNCE' | 'SPAM_COMPLAINT' | 'MANUAL_SUPPRESSION'
-): Promise<void> {
-  await prisma.contact.updateMany({
-    where: { email },
-    data: {
-      marketingStatus: 'SUPPRESSED',
-      suppressionReason: reason,
-      suppressedAt: new Date(),
-    },
-  })
-}
-
-/**
  * Process a single batch of a campaign (for use in cron jobs)
  * Returns true if there are more recipients to process
  */
@@ -493,7 +508,8 @@ export async function processCampaignBatch(campaignId: string): Promise<{
     campaign,
     recipients,
     settings.marketingServerToken,
-    settings.marketingStreamName
+    settings.marketingStreamName,
+    settings
   )
 
   // Update campaign stats

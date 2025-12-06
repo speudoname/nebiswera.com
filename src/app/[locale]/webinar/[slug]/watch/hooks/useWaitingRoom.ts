@@ -11,7 +11,7 @@ import { TIMING, minutesToMs } from '@/lib/webinar/constants'
 
 interface UseWaitingRoomParams {
   sessionStartsAt?: Date
-  playbackMode: 'simulated_live' | 'on_demand' | 'replay'
+  playbackMode: 'simulated_live' | 'replay'
 }
 
 interface UseWaitingRoomResult {

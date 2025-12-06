@@ -23,7 +23,7 @@ export type AccessState =
 
 interface AllowedState {
   status: 'ALLOWED'
-  playbackMode: 'simulated_live' | 'on_demand' | 'replay'
+  playbackMode: 'simulated_live' | 'replay'
   allowSeeking: boolean
   startPosition: number
   sessionType: string
@@ -59,6 +59,9 @@ interface DisabledState {
 
 /**
  * Calculate start position based on session type and timing
+ *
+ * - SCHEDULED, JUST_IN_TIME, ON_DEMAND: Simulated live - position based on elapsed time from session start
+ * - REPLAY: Resume from last watched position (user can seek freely)
  */
 function calculateStartPosition(
   sessionType: string,
@@ -67,19 +70,20 @@ function calculateStartPosition(
   videoDurationMinutes: number
 ): number {
   switch (sessionType) {
-    case 'ON_DEMAND':
     case 'REPLAY':
-      // Resume from last position
+      // Replay: Resume from last watched position
       return registration.maxVideoPosition > 0 ? registration.maxVideoPosition : 0
 
     case 'SCHEDULED':
     case 'JUST_IN_TIME':
-      // Calculate position based on elapsed time since session start
+    case 'ON_DEMAND':
+      // Simulated live: Calculate position based on elapsed time since session start
+      // ON_DEMAND is just like scheduled but with 0 waiting time
       if (session) {
         const now = new Date()
         const elapsed = Math.floor((now.getTime() - session.scheduledAt.getTime()) / 1000)
         const videoDurationSeconds = videoDurationMinutes * 60
-        // Cap at video duration
+        // Cap at video duration - 1 to avoid seeking past end
         return Math.max(0, Math.min(elapsed, videoDurationSeconds - 1))
       }
       return 0
@@ -205,13 +209,14 @@ export function determineAccessState(
   }
 
   // ===========================================
-  // 2. Handle ON_DEMAND access
+  // 2. Handle ON_DEMAND access (simulated live with 0 wait time)
   // ===========================================
   if (registration.sessionType === 'ON_DEMAND') {
+    // ON_DEMAND is simulated live - no seeking, position based on session start
     return {
       status: 'ALLOWED',
-      playbackMode: 'on_demand',
-      allowSeeking: true,
+      playbackMode: 'simulated_live',
+      allowSeeking: false,
       startPosition: calculateStartPosition(
         registration.sessionType,
         session,
@@ -289,15 +294,17 @@ export function determineAccessState(
 
 /**
  * Helper to get playback mode string from session type
+ *
+ * - SCHEDULED, JUST_IN_TIME, ON_DEMAND: simulated_live (no seeking, time-based position)
+ * - REPLAY: replay (full seeking controls)
  */
-export function getPlaybackMode(sessionType: string): 'simulated_live' | 'on_demand' | 'replay' {
+export function getPlaybackMode(sessionType: string): 'simulated_live' | 'replay' {
   switch (sessionType) {
-    case 'ON_DEMAND':
-      return 'on_demand'
     case 'REPLAY':
       return 'replay'
     case 'SCHEDULED':
     case 'JUST_IN_TIME':
+    case 'ON_DEMAND':
     default:
       return 'simulated_live'
   }
@@ -305,7 +312,8 @@ export function getPlaybackMode(sessionType: string): 'simulated_live' | 'on_dem
 
 /**
  * Helper to determine if seeking should be allowed
+ * Only REPLAY allows seeking - all other modes are simulated live
  */
 export function shouldAllowSeeking(sessionType: string): boolean {
-  return sessionType === 'ON_DEMAND' || sessionType === 'REPLAY'
+  return sessionType === 'REPLAY'
 }

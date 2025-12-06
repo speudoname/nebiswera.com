@@ -31,7 +31,7 @@ interface WebinarAccessData {
     presenterName?: string
   }
   playback: {
-    mode: 'simulated_live' | 'on_demand' | 'replay'
+    mode: 'simulated_live' | 'replay'
     allowSeeking: boolean
     startPosition: number
     lastPosition: number

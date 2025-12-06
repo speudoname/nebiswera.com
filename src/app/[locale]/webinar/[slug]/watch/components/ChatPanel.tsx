@@ -17,7 +17,7 @@ interface ChatPanelProps {
   accessToken: string
   slug: string
   currentVideoTime: number
-  playbackMode: 'simulated_live' | 'on_demand' | 'replay'
+  playbackMode: 'simulated_live' | 'replay'
   /** All triggered interactions (active + answered) */
   interactions: (InteractionData | AnsweredInteraction)[]
   onInteractionDismiss: (id: string) => void

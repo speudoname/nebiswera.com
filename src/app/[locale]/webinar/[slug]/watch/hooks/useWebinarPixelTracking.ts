@@ -17,7 +17,7 @@ interface UseWebinarPixelTrackingParams {
   webinarId: string
   webinarTitle: string
   showWaitingRoom: boolean
-  playbackMode: 'simulated_live' | 'on_demand' | 'replay'
+  playbackMode: 'simulated_live' | 'replay'
   sessionType: string
   progress: number
   videoEnded: boolean

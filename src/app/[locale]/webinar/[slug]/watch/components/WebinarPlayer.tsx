@@ -7,7 +7,7 @@ import { formatTime } from '@/lib'
 
 interface WebinarPlayerProps {
   hlsUrl: string
-  playbackMode: 'simulated_live' | 'on_demand' | 'replay'
+  playbackMode: 'simulated_live' | 'replay'
   allowSeeking: boolean
   startPosition: number
   duration?: number

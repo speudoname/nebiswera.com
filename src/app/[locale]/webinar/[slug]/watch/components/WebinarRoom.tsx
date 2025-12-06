@@ -33,7 +33,7 @@ interface AccessData {
 }
 
 interface PlaybackData {
-  mode: 'simulated_live' | 'on_demand' | 'replay'
+  mode: 'simulated_live' | 'replay'
   allowSeeking: boolean
   startPosition: number
   lastPosition: number

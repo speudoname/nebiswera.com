@@ -699,7 +699,7 @@ export function BlogPostEditor({ post }: BlogPostEditorProps) {
                   'Page Title'}
               </p>
               <p className="text-green-700 text-sm">
-                nebiswera.ge/blog/
+                nebiswera.com/blog/
                 {activeLanguage === 'ka' ? formData.slugKa : formData.slugEn || 'post-url'}
               </p>
               <p className="text-gray-600 text-sm mt-1">

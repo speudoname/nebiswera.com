@@ -4,6 +4,33 @@ import { useCallback, useEffect, useState } from 'react'
 import type { PixelEventName, PageType, PixelEventParams, UserData } from '@/lib/pixel/types'
 import { generateEventId } from '@/lib/pixel/utils'
 
+/**
+ * Check if tracking consent has been given
+ * Returns true if:
+ * - cookie_consent cookie is "accepted", "true", or "1"
+ * - No cookie_consent cookie exists (no consent mechanism = assume OK)
+ * Returns false if:
+ * - cookie_consent cookie exists with any other value (user denied)
+ */
+function hasTrackingConsent(): boolean {
+  if (typeof document === 'undefined') return false
+
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=')
+    acc[key] = value
+    return acc
+  }, {} as Record<string, string>)
+
+  const consent = cookies['cookie_consent']
+
+  // No consent mechanism in place - assume tracking is OK
+  if (consent === undefined) return true
+
+  // Explicit consent given
+  const acceptedValues = ['accepted', 'true', '1', 'all']
+  return acceptedValues.includes(consent.toLowerCase())
+}
+
 // Extend Window interface for fbq
 declare global {
   interface Window {
@@ -36,6 +63,26 @@ export function usePixel(options: UsePixelOptions = {}) {
   const { pageType = 'other', enabled = true } = options
   const [isReady, setIsReady] = useState(false)
   const [pixelId, setPixelId] = useState<string | null>(null)
+  const [hasConsent, setHasConsent] = useState(false)
+
+  // Check for tracking consent
+  useEffect(() => {
+    setHasConsent(hasTrackingConsent())
+
+    // Re-check consent when cookies change (e.g., user accepts/rejects cookie banner)
+    const checkConsent = () => setHasConsent(hasTrackingConsent())
+
+    // Listen for storage events (some consent managers use this)
+    window.addEventListener('storage', checkConsent)
+
+    // Also check periodically in case consent cookie is set by external script
+    const interval = setInterval(checkConsent, 2000)
+
+    return () => {
+      window.removeEventListener('storage', checkConsent)
+      clearInterval(interval)
+    }
+  }, [])
 
   // Check if pixel is loaded
   useEffect(() => {
@@ -102,6 +149,12 @@ export function usePixel(options: UsePixelOptions = {}) {
     async ({ eventName, params, userData, eventId }: TrackEventOptions) => {
       if (!enabled) return
 
+      // Check for user consent before tracking
+      if (!hasConsent) {
+        console.debug('[Pixel] Tracking skipped - no user consent')
+        return
+      }
+
       const finalEventId = eventId || generateEventId(eventName)
       const { fbp, fbc } = getCookies()
 
@@ -164,7 +217,7 @@ export function usePixel(options: UsePixelOptions = {}) {
         console.error('[Pixel] Server tracking error:', error)
       }
     },
-    [enabled, isReady, pageType, getCookies]
+    [enabled, isReady, hasConsent, pageType, getCookies]
   )
 
   // Track PageView
@@ -202,6 +255,7 @@ export function usePixel(options: UsePixelOptions = {}) {
   return {
     isReady,
     pixelId,
+    hasConsent,
     trackEvent,
     trackPageView,
     trackViewContent,

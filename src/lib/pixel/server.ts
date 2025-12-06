@@ -20,6 +20,61 @@ import type {
 
 const FACEBOOK_API_VERSION = 'v18.0'
 const FACEBOOK_API_BASE_URL = 'https://graph.facebook.com'
+const MAX_RETRIES = 3
+const INITIAL_RETRY_DELAY = 1000 // 1 second
+
+/**
+ * Sleep helper for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Fetch with exponential backoff retry logic
+ * Retries on network errors and 5xx server errors
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries: number = MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options)
+
+      // Don't retry on client errors (4xx) - these are permanent failures
+      if (response.status >= 400 && response.status < 500) {
+        return response
+      }
+
+      // Retry on server errors (5xx)
+      if (response.status >= 500) {
+        if (attempt < maxRetries) {
+          const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt)
+          console.warn(`[Pixel] Server error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`)
+          await sleep(delay)
+          continue
+        }
+      }
+
+      return response
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+
+      // Network error - retry with exponential backoff
+      if (attempt < maxRetries) {
+        const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt)
+        console.warn(`[Pixel] Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries}):`, lastError.message)
+        await sleep(delay)
+      }
+    }
+  }
+
+  throw lastError || new Error('Max retries exceeded')
+}
 
 interface TrackServerEventParams {
   eventName: PixelEventName
@@ -104,7 +159,7 @@ export async function trackServerEvent({
     // Send to Facebook
     const apiUrl = `${FACEBOOK_API_BASE_URL}/${FACEBOOK_API_VERSION}/${config.fbPixelId}/events`
 
-    const response = await fetch(apiUrl, {
+    const response = await fetchWithRetry(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

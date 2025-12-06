@@ -50,13 +50,13 @@ export function useWebinarAnalytics({
         sessionType,
       }
 
-      // Track session join
+      // Track session join (ATTENDANCE event type)
       fetch(`/api/webinars/${slug}/analytics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token: accessToken,
-          eventType: 'SESSION_JOINED',
+          eventType: 'ATTENDANCE',
           metadata,
         }),
       }).catch((error) => {
@@ -83,10 +83,10 @@ export function useWebinarAnalytics({
         completed: videoEnded,
       }
 
-      // Use sendBeacon for reliability on page unload
+      // Use sendBeacon for reliability on page unload (LEFT_EARLY event type)
       const data = {
         token: accessToken,
-        eventType: 'SESSION_EXITED',
+        eventType: 'LEFT_EARLY',
         metadata: exitMetadata,
       }
 

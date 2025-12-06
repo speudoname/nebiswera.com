@@ -3,9 +3,9 @@
 ## Overview
 
 Integrate UBill SMS API for:
-1. **Transactional SMS** - Webinar reminders, course notifications, registration confirmations
+1. **Transactional SMS** - Configurable notifications for webinars, courses, auth (not hardcoded)
 2. **Campaign SMS** - Scheduled bulk marketing messages
-3. **Automation Triggers** - Event-based SMS (webinar starting soon, etc.)
+3. **Unified Notification System** - Same notification rules for email AND SMS
 
 ---
 
@@ -15,21 +15,24 @@ Integrate UBill SMS API for:
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/sendXml?key={apiKey}` | POST | Send SMS (XML body) |
+| `/sendXml?key={apiKey}` | POST | Send SMS (XML body, supports multiple numbers) |
 | `/report/{smsID}` | GET | Check delivery status |
 | `/balance?key={apiKey}` | GET | Check remaining credits |
-| `/brands?key={apiKey}` | GET | List available brand IDs (sender names) |
 
-**Note:** Need to verify the brands endpoint exists - if not, we'll store brand IDs manually in settings.
+**Key Features:**
+- Multiple numbers in one request: `<numbers>995111111,995222222,995333333</numbers>`
+- No known rate limits
+- Returns `smsID` for tracking delivery status
+- Delivery report returns array of statuses per number
 
 ---
 
 ## Database Schema Changes
 
-### 1. Add SMS Marketing Status to Contact
+### 1. Add SMS Fields to Contact Model
 
 ```prisma
-// Add to Contact model
+// Add to existing Contact model in crm schema
 smsMarketingStatus  SmsMarketingStatus @default(SUBSCRIBED)
 smsUnsubscribedAt   DateTime?
 lastSmsReceivedAt   DateTime?
@@ -44,7 +47,127 @@ enum SmsMarketingStatus {
 }
 ```
 
-### 2. SMS Campaign Model
+### 2. Unified Notification Rule Model
+
+Replaces hardcoded notifications. Works for webinars, courses, and global settings.
+
+```prisma
+model NotificationRule {
+  id              String   @id @default(cuid())
+
+  // What this rule belongs to
+  entityType      NotificationEntityType  // WEBINAR, COURSE, GLOBAL
+  entityId        String?                 // webinarId, courseId, or null for GLOBAL
+
+  // Trigger event
+  trigger         NotificationTrigger
+
+  // Email notification
+  emailEnabled    Boolean  @default(false)
+  emailTemplateId String?  // Reference to email template
+
+  // SMS notification
+  smsEnabled      Boolean  @default(false)
+  smsTemplateId   String?  // Reference to SmsTemplate
+
+  // Ordering (if multiple rules for same trigger)
+  sortOrder       Int      @default(0)
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  smsTemplate     SmsTemplate? @relation(fields: [smsTemplateId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([trigger])
+  @@schema("crm")
+  @@map("notification_rules")
+}
+
+enum NotificationEntityType {
+  WEBINAR   // Per-webinar notifications
+  COURSE    // Per-course notifications
+  GLOBAL    // System-wide (auth, account)
+
+  @@schema("crm")
+}
+
+enum NotificationTrigger {
+  // Webinar triggers
+  WEBINAR_REGISTRATION
+  WEBINAR_BEFORE_24H
+  WEBINAR_BEFORE_1H
+  WEBINAR_BEFORE_30M
+  WEBINAR_BEFORE_15M
+  WEBINAR_STARTED
+  WEBINAR_ENDED
+  WEBINAR_MISSED
+  WEBINAR_REPLAY_AVAILABLE
+
+  // Course triggers
+  COURSE_ENROLLMENT
+  COURSE_LESSON_COMPLETED
+  COURSE_MODULE_COMPLETED
+  COURSE_COMPLETED
+  COURSE_CERTIFICATE_READY
+  COURSE_INACTIVE_7_DAYS
+  COURSE_INACTIVE_30_DAYS
+
+  // Global/Auth triggers
+  USER_SIGNUP
+  USER_PASSWORD_RESET
+  USER_EMAIL_VERIFICATION
+
+  @@schema("crm")
+}
+```
+
+### 3. SMS Template Model
+
+```prisma
+model SmsTemplate {
+  id          String   @id @default(cuid())
+  name        String                    // Display name
+  slug        String   @unique          // e.g., "webinar-reminder-15min"
+
+  // Content with variable support: {{firstName}}, {{webinarTitle}}, etc.
+  messageKa   String   @db.Text         // Georgian message
+  messageEn   String   @db.Text         // English message
+
+  // Categorization
+  category    SmsTemplateCategory
+
+  // Metadata
+  description String?                   // Admin notes
+  isDefault   Boolean  @default(false)  // System default (can edit, can't delete)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  notificationRules NotificationRule[]
+
+  @@index([category])
+  @@index([isActive])
+  @@schema("crm")
+  @@map("sms_templates")
+}
+
+enum SmsTemplateCategory {
+  WEBINAR       // Webinar-related templates
+  COURSE        // Course-related templates
+  AUTH          // Authentication (password reset, etc.)
+  MARKETING     // Campaign templates
+  TRANSACTIONAL // General transactional
+
+  @@schema("crm")
+}
+```
+
+### 4. SMS Campaign Model
 
 ```prisma
 model SmsCampaign {
@@ -52,17 +175,17 @@ model SmsCampaign {
   name            String            // Internal reference name
 
   // Content
-  message         String            @db.Text // SMS text content
+  message         String            @db.Text // SMS text (can include {{variables}})
 
   // Sender
-  brandId         Int               // UBill brand ID (sender name)
+  brandId         Int               // UBill brand ID
 
   // Status
   status          SmsCampaignStatus @default(DRAFT)
 
-  // Targeting (same as email campaigns)
+  // Targeting (reuse existing TargetType enum from email campaigns)
   targetType      TargetType
-  targetCriteria  Json?
+  targetCriteria  Json?             // {tagIds: [], segmentId: "", filters: {}}
 
   // Scheduling
   scheduledAt     DateTime?
@@ -70,7 +193,7 @@ model SmsCampaign {
   sendingStartedAt DateTime?
   completedAt     DateTime?
 
-  // Stats
+  // Stats (denormalized for quick display)
   totalRecipients   Int   @default(0)
   sentCount         Int   @default(0)
   deliveredCount    Int   @default(0)
@@ -81,10 +204,12 @@ model SmsCampaign {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Relations
   recipients      SmsCampaignRecipient[]
 
   @@index([status])
   @@index([scheduledAt])
+  @@index([createdAt])
   @@schema("crm")
   @@map("sms_campaigns")
 }
@@ -101,27 +226,29 @@ enum SmsCampaignStatus {
 }
 ```
 
-### 3. SMS Campaign Recipients (Queue)
+### 5. SMS Campaign Recipients
 
 ```prisma
 model SmsCampaignRecipient {
   id              String              @id @default(cuid())
   campaignId      String
-  campaign        SmsCampaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   contactId       String
-  contact         Contact             @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  phone           String              // Phone number at time of queueing
+  phone           String              // Snapshot at queue time
 
   // Personalization
-  variables       Json?               // {firstName, etc.}
-  finalMessage    String?             // Rendered message with variables
+  variables       Json?               // {firstName, lastName, ...}
+  finalMessage    String?             // Rendered message
 
-  // Status
+  // Status tracking
   status          SmsRecipientStatus  @default(PENDING)
-  ubillSmsId      String?             // UBill's smsID for tracking
+  ubillSmsId      String?
   sentAt          DateTime?
   deliveredAt     DateTime?
   error           String?
+
+  // Relations
+  campaign        SmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact         Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@unique([campaignId, contactId])
   @@index([campaignId, status])
@@ -131,17 +258,17 @@ model SmsCampaignRecipient {
 }
 
 enum SmsRecipientStatus {
-  PENDING         // Queued
-  SENT            // Sent to UBill
-  DELIVERED       // Delivery confirmed
-  FAILED          // Send failed
-  SKIPPED         // Invalid number, unsubscribed, etc.
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  SKIPPED
 
   @@schema("crm")
 }
 ```
 
-### 4. SMS Log (All SMS - Transactional & Campaign)
+### 6. SMS Log (All SMS History)
 
 ```prisma
 model SmsLog {
@@ -149,27 +276,27 @@ model SmsLog {
 
   // Recipient
   phone           String
-  contactId       String?     // May be null for non-contact recipients
+  contactId       String?
 
   // Content
   message         String      @db.Text
   brandId         Int
 
-  // Type
-  type            SmsType     // TRANSACTIONAL or CAMPAIGN
+  // Classification
+  type            SmsType
 
-  // Reference (what triggered this SMS)
-  referenceType   String?     // "webinar_reminder", "course_notification", "campaign"
-  referenceId     String?     // ID of the webinar, course, or campaign
+  // What triggered this SMS
+  referenceType   String?     // "notification_rule", "campaign", "manual"
+  referenceId     String?     // ID of the rule, campaign, etc.
 
-  // UBill response
+  // UBill tracking
   ubillSmsId      String?
   status          SmsStatus   @default(PENDING)
-  statusUpdatedAt DateTime?
+  statusCheckedAt DateTime?
   error           String?
 
-  // Cost tracking
-  segments        Int         @default(1) // SMS segment count (for long messages)
+  // Cost
+  segments        Int         @default(1)
 
   createdAt       DateTime    @default(now())
 
@@ -177,85 +304,89 @@ model SmsLog {
   @@index([contactId])
   @@index([ubillSmsId])
   @@index([type, createdAt])
-  @@index([referenceType, referenceId])
+  @@index([status])
   @@schema("crm")
   @@map("sms_logs")
 }
 
 enum SmsType {
-  TRANSACTIONAL   // Webinar reminders, confirmations
-  CAMPAIGN        // Marketing campaigns
+  TRANSACTIONAL
+  CAMPAIGN
 
   @@schema("crm")
 }
 
 enum SmsStatus {
-  PENDING         // Not yet sent to UBill
-  SENT            // Sent to UBill (statusID: 0)
-  DELIVERED       // Received by recipient (statusID: 1)
-  FAILED          // Not delivered (statusID: 2)
-  AWAITING        // Awaiting status (statusID: 3)
-  ERROR           // API error (statusID: 4)
+  PENDING       // Queued, not sent yet
+  SENT          // Sent to UBill (statusID: 0)
+  DELIVERED     // Confirmed delivered (statusID: 1)
+  FAILED        // Not delivered (statusID: 2)
+  AWAITING      // Awaiting carrier confirmation (statusID: 3)
+  ERROR         // API error (statusID: 4)
 
   @@schema("crm")
 }
 ```
 
-### 5. SMS Templates
+### 7. SMS Settings
 
 ```prisma
-model SmsTemplate {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique  // e.g., "webinar-reminder-15min"
-
-  // Content (supports variables like {{firstName}})
-  messageKa   String   @db.Text
-  messageEn   String   @db.Text
-
-  // Type
-  category    String   // "webinar", "course", "marketing", "transactional"
-
-  // Metadata
-  description String?
-  isActive    Boolean  @default(true)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@schema("crm")
-  @@map("sms_templates")
-}
-```
-
-### 6. Settings Addition
-
-```prisma
-// Add to existing Settings model or create SmsSettings
 model SmsSettings {
-  id            String   @id @default(cuid())
+  id                  String   @id @default(cuid())
 
-  // UBill credentials
-  apiKey        String   // Encrypted
-  defaultBrandId Int?
+  // UBill API
+  apiKey              String   // Store encrypted
+  defaultBrandId      Int?
 
-  // Available brands (cached from API or manual)
-  brands        Json?    // [{id: 1, name: "Nebiswera"}, ...]
+  // Brand list (manually configured)
+  brands              Json?    // [{id: 1, name: "Nebiswera"}, {id: 2, name: "Other"}]
 
-  // Defaults
-  unsubscribeFooterKa String @default("გააუქმე მესიჯები - https://nebiswera.com/nosms")
-  unsubscribeFooterEn String @default("Unsubscribe - https://nebiswera.com/nosms")
+  // Unsubscribe footer (appended to campaign SMS only)
+  unsubscribeFooterKa String   @default("გააუქმე: nebiswera.com/nosms")
+  unsubscribeFooterEn String   @default("Unsubscribe: nebiswera.com/nosms")
 
-  // Limits
-  dailySendLimit      Int    @default(10000)
-  batchSize           Int    @default(100)  // Numbers per API call
+  // Limits (optional safety limits)
+  dailySendLimit      Int?     // null = unlimited
 
-  updatedAt     DateTime @updatedAt
+  updatedAt           DateTime @updatedAt
 
   @@schema("crm")
   @@map("sms_settings")
 }
 ```
+
+---
+
+## Default SMS Templates
+
+Pre-created templates (editable but not deletable):
+
+### Webinar Templates
+
+| Slug | Name | Georgian Message |
+|------|------|------------------|
+| `webinar-registration` | Registration Confirmation | `მადლობა რეგისტრაციისთვის! "{{webinarTitle}}" - {{date}}, {{time}}. ლინკი: {{link}}` |
+| `webinar-reminder-24h` | 24 Hour Reminder | `{{firstName}}, შეხსენება: "{{webinarTitle}}" ხვალ {{time}}-ზე. ლინკი: {{link}}` |
+| `webinar-reminder-1h` | 1 Hour Reminder | `{{firstName}}, "{{webinarTitle}}" იწყება 1 საათში! ლინკი: {{link}}` |
+| `webinar-reminder-15m` | 15 Minute Reminder | `{{firstName}}, "{{webinarTitle}}" იწყება 15 წუთში! შემოგვიერთდი: {{link}}` |
+| `webinar-started` | Webinar Started | `{{firstName}}, "{{webinarTitle}}" დაიწყო! შემოდი ახლავე: {{link}}` |
+| `webinar-replay` | Replay Available | `{{firstName}}, "{{webinarTitle}}" ჩანაწერი ხელმისაწვდომია: {{link}}` |
+
+### Course Templates
+
+| Slug | Name | Georgian Message |
+|------|------|------------------|
+| `course-enrollment` | Course Welcome | `კეთილი იყოს მობრძანება! "{{courseTitle}}" კურსი დაგელოდებათ: {{link}}` |
+| `course-completed` | Course Completion | `გილოცავთ, {{firstName}}! თქვენ წარმატებით დაასრულეთ "{{courseTitle}}"!` |
+| `course-certificate` | Certificate Ready | `{{firstName}}, თქვენი სერტიფიკატი მზადაა! ჩამოტვირთეთ: {{link}}` |
+| `course-inactive` | Inactivity Reminder | `{{firstName}}, გაგვენატრე! გააგრძელე "{{courseTitle}}" აქ: {{link}}` |
+
+### Auth Templates
+
+| Slug | Name | Georgian Message |
+|------|------|------------------|
+| `auth-password-reset` | Password Reset | `თქვენი პაროლის აღდგენის კოდი: {{code}}. ვადა: 10 წუთი.` |
+| `auth-verification` | Email Verification | `თქვენი ვერიფიკაციის კოდი: {{code}}. ვადა: 30 წუთი.` |
 
 ---
 
@@ -267,291 +398,355 @@ model SmsSettings {
 src/
 ├── lib/
 │   └── sms/
-│       ├── index.ts           # Main exports
-│       ├── ubill-client.ts    # UBill API client
-│       ├── queue.ts           # Batch queue processor
-│       ├── templates.ts       # Template rendering
-│       └── utils.ts           # Phone validation, etc.
+│       ├── index.ts              # Main exports
+│       ├── ubill-client.ts       # UBill API client
+│       ├── send.ts               # Send SMS functions
+│       ├── templates.ts          # Template rendering
+│       └── utils.ts              # Phone validation, helpers
 │
 ├── app/
 │   ├── api/
-│   │   ├── sms/
-│   │   │   ├── send/route.ts           # Internal: send single SMS
-│   │   │   ├── send-batch/route.ts     # Internal: send batch SMS
-│   │   │   └── status/[id]/route.ts    # Check delivery status
-│   │   │
 │   │   └── admin/
 │   │       └── sms/
-│   │           ├── campaigns/route.ts        # CRUD campaigns
-│   │           ├── campaigns/[id]/route.ts   # Single campaign
-│   │           ├── campaigns/[id]/send/route.ts  # Trigger send
-│   │           ├── templates/route.ts        # Manage templates
-│   │           ├── balance/route.ts          # Get SMS balance
-│   │           ├── brands/route.ts           # Get available brands
-│   │           └── settings/route.ts         # SMS settings
+│   │           ├── settings/route.ts         # SMS settings CRUD
+│   │           ├── balance/route.ts          # Get UBill balance
+│   │           ├── templates/route.ts        # Template CRUD
+│   │           ├── templates/[id]/route.ts
+│   │           ├── campaigns/route.ts        # Campaign CRUD
+│   │           ├── campaigns/[id]/route.ts
+│   │           ├── campaigns/[id]/send/route.ts
+│   │           ├── send-test/route.ts        # Send test SMS
+│   │           └── logs/route.ts             # SMS logs
+│   │
+│   ├── api/
+│   │   └── cron/
+│   │       ├── process-sms-queue/route.ts    # Process pending SMS
+│   │       └── check-sms-status/route.ts     # Poll delivery status
 │   │
 │   ├── admin/
 │   │   └── sms/
-│   │       ├── page.tsx              # SMS dashboard
+│   │       ├── page.tsx                      # Dashboard
 │   │       ├── campaigns/
-│   │       │   ├── page.tsx          # Campaign list
-│   │       │   ├── new/page.tsx      # Create campaign
-│   │       │   └── [id]/page.tsx     # Edit/view campaign
-│   │       ├── templates/page.tsx    # Template management
-│   │       └── settings/page.tsx     # SMS settings
+│   │       │   ├── page.tsx                  # List campaigns
+│   │       │   ├── new/page.tsx              # Create campaign
+│   │       │   └── [id]/page.tsx             # View/edit campaign
+│   │       ├── templates/page.tsx            # Manage templates
+│   │       └── settings/page.tsx             # SMS settings
 │   │
-│   ├── nosms/
-│   │   └── page.tsx              # SMS unsubscribe page
+│   ├── admin/
+│   │   └── settings/
+│   │       └── notifications/page.tsx        # Global notification rules (auth, etc.)
 │   │
-│   └── [locale]/
-│       └── nosms/
-│           └── page.tsx          # Localized unsubscribe
-│
-├── cron/ (or api/cron/)
-│   ├── process-sms-campaigns/route.ts   # Process scheduled campaigns
-│   └── check-sms-status/route.ts        # Poll delivery status
+│   └── nosms/
+│       └── page.tsx                          # SMS unsubscribe page
 ```
 
 ---
 
-## Queue Management Strategy
+## How Notifications Work
 
-### The Problem
-When 500 users need SMS 15 minutes before a webinar, we can't:
-- Send 500 individual API calls (too slow, rate limits)
-- Block the process waiting for all sends
+### 1. Webinar Notification Configuration
 
-### The Solution: Batched Queue Processing
+**Admin → Webinars → [Webinar] → Notifications**
 
-#### 1. Queue Recipients First
+Each webinar has its own notification rules:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Notifications for "Psychology Webinar"                 │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  On Registration                      [Edit] [Delete]   │
+│  ├─ ☑ Email: Welcome Email                             │
+│  └─ ☑ SMS: Registration Confirmation                   │
+│                                                         │
+│  1 Hour Before                        [Edit] [Delete]   │
+│  ├─ ☑ Email: 1 Hour Reminder                           │
+│  └─ ☑ SMS: 1 Hour Reminder                             │
+│                                                         │
+│  15 Minutes Before                    [Edit] [Delete]   │
+│  ├─ ☑ Email: 15 Min Reminder                           │
+│  └─ ☑ SMS: 15 Minute Reminder                          │
+│                                                         │
+│                              [+ Add Notification Rule]  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 2. Course Notification Configuration
+
+**Admin → Courses → [Course] → Notifications**
+
+Same pattern as webinars.
+
+### 3. Global Notification Settings
+
+**Admin → Settings → Notifications**
+
+System-wide notifications (auth, account):
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Global Notification Settings                           │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  User Sign Up                                           │
+│  ├─ ☑ Email: Welcome Email                             │
+│  └─ ☐ SMS: (disabled)                                  │
+│                                                         │
+│  Password Reset Request                                 │
+│  ├─ ☑ Email: Password Reset Email                      │
+│  └─ ☑ SMS: Password Reset Code                         │
+│                                                         │
+│  Email Verification                                     │
+│  ├─ ☑ Email: Verification Email                        │
+│  └─ ☐ SMS: (disabled)                                  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 4. How It Executes
+
+When a trigger event happens:
+
 ```typescript
-// When notification triggers (e.g., 15 min before webinar)
-async function queueWebinarReminders(webinarId: string, sessionId: string) {
-  const registrations = await getRegistrationsWithPhone(sessionId)
-
-  // Bulk insert into SMS queue
-  await prisma.smsLog.createMany({
-    data: registrations.map(r => ({
-      phone: r.contact.phone,
-      contactId: r.contactId,
-      message: renderTemplate('webinar-reminder-15min', { name: r.firstName, ... }),
-      brandId: defaultBrandId,
-      type: 'TRANSACTIONAL',
-      referenceType: 'webinar_reminder',
-      referenceId: sessionId,
-      status: 'PENDING'
-    }))
+// Example: User registers for webinar
+async function onWebinarRegistration(webinarId: string, contactId: string) {
+  // 1. Find notification rules for this webinar + trigger
+  const rules = await prisma.notificationRule.findMany({
+    where: {
+      entityType: 'WEBINAR',
+      entityId: webinarId,
+      trigger: 'WEBINAR_REGISTRATION',
+      isActive: true
+    },
+    include: { smsTemplate: true }
   })
 
-  // Trigger batch processor
-  await triggerBatchProcessor()
+  // 2. Execute each rule
+  for (const rule of rules) {
+    // Send email if enabled
+    if (rule.emailEnabled && rule.emailTemplateId) {
+      await sendEmail(rule.emailTemplateId, contactId, variables)
+    }
+
+    // Send SMS if enabled
+    if (rule.smsEnabled && rule.smsTemplateId) {
+      await queueSms(rule.smsTemplateId, contactId, variables)
+    }
+  }
 }
 ```
 
-#### 2. Batch Processor
+---
+
+## Queue & Batch Processing
+
+### Strategy: Queue First, Send in Batches
+
+Since UBill supports multiple numbers in one API call with no known limit:
+
 ```typescript
-// Process in batches of 50-100 numbers per API call
+// 1. When 500 users need SMS (e.g., webinar reminder)
+async function queueWebinarReminder(sessionId: string) {
+  const registrations = await getRegistrations(sessionId)
+
+  // Bulk insert all 500 as PENDING
+  await prisma.smsLog.createMany({
+    data: registrations.map(r => ({
+      phone: r.phone,
+      contactId: r.contactId,
+      message: renderTemplate(template, variables),
+      brandId: settings.defaultBrandId,
+      type: 'TRANSACTIONAL',
+      referenceType: 'notification_rule',
+      referenceId: ruleId,
+      status: 'PENDING'
+    }))
+  })
+}
+
+// 2. Cron job processes queue (runs every minute)
 async function processSmsQueue() {
-  const pendingSms = await prisma.smsLog.findMany({
+  // Get all pending SMS, grouped by message + brandId
+  const pending = await prisma.smsLog.findMany({
     where: { status: 'PENDING' },
-    take: 100,  // Batch size
     orderBy: { createdAt: 'asc' }
   })
 
-  if (pendingSms.length === 0) return
+  // Group by identical message (for batch sending)
+  const batches = groupBy(pending, sms => `${sms.brandId}:${sms.message}`)
 
-  // Group by brandId and message (same message = batch)
-  const batches = groupByBrandAndMessage(pendingSms)
+  for (const [key, batch] of Object.entries(batches)) {
+    const phones = batch.map(s => s.phone)
 
-  for (const batch of batches) {
-    // UBill may support multiple numbers in one call
-    // If not, we process sequentially but quickly
-    const result = await ubillClient.sendBatch(batch)
+    // Send all phones with same message in ONE API call
+    const result = await ubillClient.send({
+      brandId: batch[0].brandId,
+      numbers: phones,  // Could be 500 numbers!
+      message: batch[0].message
+    })
 
-    // Update status in bulk
+    // Update all as SENT
     await prisma.smsLog.updateMany({
       where: { id: { in: batch.map(s => s.id) } },
       data: {
         status: 'SENT',
-        ubillSmsId: result.smsID,
-        sentAt: new Date()
+        ubillSmsId: result.smsID
       }
     })
   }
 }
 ```
 
-#### 3. API Call Optimization
-```typescript
-// If UBill supports multiple numbers in <numbers> field:
-const xmlBody = `
-<?xml version="1.0" encoding="UTF-8"?>
-<request>
-  <brandID>${brandId}</brandID>
-  <numbers>${phoneNumbers.join(',')}</numbers>  <!-- Multiple! -->
-  <text>${message}</text>
-  <stopList>true</stopList>
-</request>
-`
-// One API call for 100 recipients with same message!
-```
-
-#### 4. Cron Job for Processing
-```
-# Every minute, process pending SMS queue
-*/1 * * * * curl -X POST https://nebiswera.com/api/cron/process-sms-queue
-```
-
 ---
 
-## Unsubscribe Flow
+## Unsubscribe System
 
-### 1. Footer on All Campaign SMS
+### Campaign SMS Footer
+
+Automatically appended to all CAMPAIGN SMS (not transactional):
+
 ```typescript
-function appendUnsubscribeFooter(message: string, locale: string): string {
-  const footer = locale === 'ka'
-    ? '\n\nგააუქმე: nebiswera.com/nosms'
-    : '\n\nUnsubscribe: nebiswera.com/nosms'
-  return message + footer
+function prepareCampaignMessage(message: string, locale: string): string {
+  const footer = settings[`unsubscribeFooter${locale === 'ka' ? 'Ka' : 'En'}`]
+  return `${message}\n\n${footer}`
 }
 ```
 
-### 2. Unsubscribe Page (`/nosms`)
-- User enters phone number
-- We look up contact by phone
-- Mark as `smsMarketingStatus: UNSUBSCRIBED`
-- Show confirmation
+### Unsubscribe Page (`/nosms`)
 
-### 3. Checking Before Send
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│           SMS გამოწერის გაუქმება                        │
+│                                                         │
+│  შეიყვანეთ თქვენი ტელეფონის ნომერი:                    │
+│                                                         │
+│  [  5XX XXX XXX  ]                                      │
+│                                                         │
+│  [    გაუქმება    ]                                     │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+
+After submission:
+
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  ✓ გამოწერა გაუქმებულია                                │
+│                                                         │
+│  თქვენ აღარ მიიღებთ სარეკლამო SMS შეტყობინებებს.       │
+│  სერვისული შეტყობინებები (რეგისტრაციის დადასტურება,    │
+│  შეხსენებები) კვლავ მოგივათ.                           │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Checking Before Send
+
 ```typescript
-async function canSendSms(contactId: string): Promise<boolean> {
+async function canSendMarketingSms(contactId: string): Promise<boolean> {
   const contact = await prisma.contact.findUnique({
     where: { id: contactId },
-    select: {
-      phone: true,
-      smsMarketingStatus: true,
-      status: true
-    }
+    select: { phone: true, smsMarketingStatus: true, status: true }
   })
 
-  if (!contact?.phone) return false
-  if (contact.status !== 'ACTIVE') return false
-  if (contact.smsMarketingStatus !== 'SUBSCRIBED') return false
-
-  return true
+  return (
+    contact?.phone &&
+    contact.status === 'ACTIVE' &&
+    contact.smsMarketingStatus === 'SUBSCRIBED'
+  )
 }
 ```
 
 ---
 
-## Integration Points
+## Admin UI Pages
 
-### 1. Webinar Notifications
-Location: `src/app/api/cron/webinar-notifications/route.ts`
-
-Add SMS alongside existing email notifications:
-```typescript
-// After sending email notification
-if (config.smsEnabled && registration.contact.phone) {
-  await queueSms({
-    phone: registration.contact.phone,
-    contactId: registration.contactId,
-    templateSlug: `webinar-reminder-${config.minutesBefore}min`,
-    variables: { firstName, webinarTitle, startTime },
-    referenceType: 'webinar_reminder',
-    referenceId: session.id
-  })
-}
-```
-
-### 2. Course Notifications
-Location: `src/app/api/cron/course-notifications/route.ts`
-
-Similar pattern for course enrollment confirmations.
-
-### 3. Webinar Registration Confirmation
-Location: `src/app/api/webinars/[slug]/register/route.ts`
-
-Send immediate SMS confirmation after registration.
-
----
-
-## Admin UI Features
-
-### SMS Dashboard (`/admin/sms`)
-- SMS balance display (from UBill API)
+### 1. SMS Dashboard (`/admin/sms`)
+- UBill balance
+- Today's stats (sent, delivered, failed)
 - Recent SMS log
-- Quick stats: sent today, delivered rate, failed rate
+- Quick links to campaigns, templates
 
-### Campaigns (`/admin/sms/campaigns`)
-- List all SMS campaigns
-- Create new campaign
-  - Select brand ID (sender)
-  - Write message (character counter, segment calculator)
-  - Select target (all contacts, tag, segment)
-  - Preview with personalization
-  - Schedule or send immediately
-- View campaign stats
+### 2. Campaigns (`/admin/sms/campaigns`)
+- List all campaigns with stats
+- Create/edit campaign
+- Schedule or send immediately
+- View delivery report
 
-### Templates (`/admin/sms/templates`)
-- Create/edit SMS templates
+### 3. Templates (`/admin/sms/templates`)
+- List all templates by category
+- Create custom templates
+- Edit existing (including defaults)
 - Preview with sample data
-- Variables reference ({{firstName}}, {{webinarTitle}}, etc.)
+- Character/segment counter
 
-### Settings (`/admin/sms/settings`)
-- UBill API key configuration
-- Default brand ID selection
-- Fetch/refresh brand list
-- Configure unsubscribe footer text
-- Set daily limits
+### 4. Settings (`/admin/sms/settings`)
+- UBill API key
+- Brand IDs (add/remove)
+- Default brand selection
+- Unsubscribe footer text
+- Daily limit (optional)
 
 ---
 
-## Implementation Order
+## Implementation Phases
 
 ### Phase 1: Foundation
-1. Add database models (migrate schema)
-2. Create UBill API client (`src/lib/sms/ubill-client.ts`)
-3. Create basic settings UI
+1. Add database models (schema migration)
+2. Create UBill API client
+3. SMS settings page (API key, brands)
 4. Test single SMS send
 
-### Phase 2: Transactional SMS
-5. Create SMS templates system
-6. Integrate with webinar notifications
-7. Add SMS queue processor
-8. Create unsubscribe page (`/nosms`)
+### Phase 2: Templates & Notifications
+5. Create SmsTemplate model + seed defaults
+6. Template management UI
+7. Create NotificationRule model
+8. Update webinar notification UI (add SMS option)
+9. Update course notification UI (add SMS option)
+10. Global notification settings page
 
-### Phase 3: Campaigns
-9. Create SMS campaign admin UI
-10. Implement campaign targeting
-11. Add batch send processor
-12. Create delivery status polling
+### Phase 3: Sending & Queue
+11. SMS queue processor (cron job)
+12. Integrate with webinar notification cron
+13. Integrate with course notification cron
+14. Delivery status polling
 
-### Phase 4: Polish
-13. Add SMS balance display
-14. Analytics and reporting
-15. A/B testing (optional)
+### Phase 4: Campaigns
+15. SMS campaign CRUD
+16. Campaign send/schedule
+17. Campaign targeting (tags, segments)
+18. Campaign stats/reporting
+
+### Phase 5: Unsubscribe & Polish
+19. Unsubscribe page (`/nosms`)
+20. SMS logs viewer
+21. Dashboard with stats
+22. Balance alerts (optional)
 
 ---
 
-## Questions to Resolve
+## Available Template Variables
 
-1. **Multiple numbers per API call?** - Need to test if `<numbers>995xxx,995yyy</numbers>` works
-
-2. **Rate limits?** - What's the max SMS/second UBill allows?
-
-3. **Brand list API** - Does `/brands` endpoint exist, or do we configure manually?
-
-4. **Georgian character count** - Georgian uses more segments (70 chars/segment vs 160 for Latin)
-
-5. **Delivery status polling** - How often should we check? Is there a webhook option?
+| Variable | Description | Available In |
+|----------|-------------|--------------|
+| `{{firstName}}` | Contact's first name | All |
+| `{{lastName}}` | Contact's last name | All |
+| `{{email}}` | Contact's email | All |
+| `{{phone}}` | Contact's phone | All |
+| `{{webinarTitle}}` | Webinar name | Webinar templates |
+| `{{courseTitle}}` | Course name | Course templates |
+| `{{date}}` | Formatted date | Webinar, Course |
+| `{{time}}` | Formatted time | Webinar |
+| `{{link}}` | Relevant URL | All |
+| `{{code}}` | Verification/reset code | Auth templates |
 
 ---
 
 ## Security Considerations
 
-1. **API Key Storage** - Store encrypted in database, never expose to frontend
-2. **Phone Validation** - Validate Georgian format (995XXXXXXXXX)
-3. **Rate Limiting** - Prevent abuse of send endpoints
-4. **Unsubscribe Security** - Consider phone verification before unsubscribe
-5. **Admin Only** - All SMS APIs require admin authentication
+1. **API Key** - Encrypted storage, never exposed to frontend
+2. **Phone Validation** - Validate Georgian format (995XXXXXXXXX or 5XXXXXXXX)
+3. **Admin Only** - All SMS admin APIs require authentication
+4. **Rate Limiting** - Optional daily limit to prevent accidental mass sends
+5. **Unsubscribe** - Immediate effect, cannot be bypassed for campaigns

@@ -9,6 +9,8 @@ import { formatDate } from '@/lib/time-utils'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { usePixel } from '@/hooks/usePixel'
 import { useViewContentTracker } from '@/hooks/useViewContentTracker'
+import { useBlogContentTracking } from '@/hooks/useBlogContentTracking'
+import { useAnalytics } from '@/providers/AnalyticsProvider'
 
 interface Props {
   post: BlogPost
@@ -18,6 +20,15 @@ interface Props {
 export function BlogPostContent({ post, locale }: Props) {
   const isKa = locale === 'ka'
   const title = isKa ? post.titleKa : post.titleEn
+
+  // Analytics event tracking
+  const { trackEvent } = useAnalytics()
+
+  // Track link clicks within blog content
+  useBlogContentTracking({
+    contentSelector: '.prose',
+    blogPostId: post.id,
+  })
 
   // Facebook Pixel tracking
   const { trackPageView } = usePixel({ pageType: 'blog' })
@@ -49,6 +60,16 @@ export function BlogPostContent({ post, locale }: Props) {
   const excerpt = isKa ? post.excerptKa : post.excerptEn
 
   const handleShare = async () => {
+    // Track share event
+    trackEvent('SHARE', {
+      elementText: 'Share Button',
+      targetUrl: window.location.href,
+      metadata: {
+        blogPostId: post.id,
+        method: typeof navigator !== 'undefined' && 'share' in navigator ? 'native' : 'clipboard',
+      },
+    })
+
     if (navigator.share) {
       try {
         await navigator.share({

@@ -23,7 +23,10 @@ import {
   Percent,
   Layers,
   Languages,
+  ExternalLink,
+  ChevronRight,
 } from 'lucide-react'
+import { BlogPostDetailModal } from './BlogPostDetailModal'
 
 interface AnalyticsData {
   overview: {
@@ -287,6 +290,7 @@ export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(30)
   const [activeTab, setActiveTab] = useState<'overview' | 'blog'>('overview')
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
 
   const fetchData = async () => {
     setLoading(true)
@@ -724,7 +728,7 @@ export default function AnalyticsDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900">Blog Post Performance</h3>
-              <p className="text-sm text-gray-500 mt-1">Showing analytics for the selected time period</p>
+              <p className="text-sm text-gray-500 mt-1">Click a row for detailed analytics</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -732,6 +736,9 @@ export default function AnalyticsDashboard() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                       Post
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      URL
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                       All-time
@@ -743,26 +750,37 @@ export default function AnalyticsDashboard() {
                       Avg. Time
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Scroll
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                       Engaged
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
                       Bounced
                     </th>
+                    <th className="px-6 py-3 w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {blogData.posts.map((post) => (
-                    <tr key={post.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={post.id}
+                      onClick={() => setSelectedPostId(post.id)}
+                      className="hover:bg-primary-50 transition-colors cursor-pointer group"
+                    >
                       <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 truncate max-w-xs">
-                            {post.titleKa || post.titleEn}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">/{post.slugKa || post.slugEn}</p>
-                        </div>
+                        <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                          {post.titleKa || post.titleEn}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <a
+                          href={`/blog/${post.slugKa || post.slugEn}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 hover:underline"
+                        >
+                          /blog/{post.slugKa || post.slugEn}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className="text-sm font-semibold text-gray-900">
@@ -776,9 +794,6 @@ export default function AnalyticsDashboard() {
                       </td>
                       <td className="px-6 py-4 text-right text-sm text-gray-500">
                         {formatDuration(post.avgDuration)}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm text-gray-500">
-                        {post.avgScrollDepth}%
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`text-sm font-medium ${
@@ -796,11 +811,14 @@ export default function AnalyticsDashboard() {
                           {post.bounceRate}%
                         </span>
                       </td>
+                      <td className="px-6 py-4">
+                        <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-primary-600 transition-colors" />
+                      </td>
                     </tr>
                   ))}
                   {blogData.posts.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                         No blog posts yet
                       </td>
                     </tr>
@@ -810,6 +828,15 @@ export default function AnalyticsDashboard() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Blog Post Detail Modal */}
+      {selectedPostId && (
+        <BlogPostDetailModal
+          postId={selectedPostId}
+          days={days}
+          onClose={() => setSelectedPostId(null)}
+        />
       )}
     </div>
   )

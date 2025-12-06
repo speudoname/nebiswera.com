@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { SessionProvider } from '@/providers/SessionProvider'
 import { Inter, Noto_Sans_Georgian } from 'next/font/google'
-import { Home, Users, Mail, Settings, Undo2, LogOut, Heart, Contact2, Send, Video, FolderOpen, FileText, GraduationCap, PlaySquare, BarChart3, Activity } from 'lucide-react'
+import { Home, Users, Mail, Settings, Undo2, LogOut, Heart, Contact2, Send, Video, FolderOpen, FileText, GraduationCap, PlaySquare, BarChart3, Activity, MessageSquare } from 'lucide-react'
 
 const inter = Inter({
   subsets: ['latin', 'latin-ext'],
@@ -23,6 +23,7 @@ const navigation = [
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Contacts', href: '/admin/contacts', icon: Contact2 },
   { name: 'Campaigns', href: '/admin/campaigns', icon: Send },
+  { name: 'SMS', href: '/admin/sms', icon: MessageSquare },
   { name: 'Content Library', href: '/admin/library', icon: FolderOpen },
   { name: 'Courses', href: '/admin/courses', icon: GraduationCap },
   { name: 'Webinars', href: '/admin/webinars', icon: Video },

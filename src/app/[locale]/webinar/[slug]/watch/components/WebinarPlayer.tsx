@@ -86,6 +86,10 @@ export function WebinarPlayer({
         capLevelToPlayerSize: true,
         maxBufferLength: 30,
         maxMaxBufferLength: 60,
+        xhrSetup: (xhr) => {
+          // Ensure referrer is sent for Bunny.net CDN hotlink protection
+          xhr.withCredentials = false
+        },
       })
 
       hlsRef.current = hls
@@ -298,6 +302,7 @@ export function WebinarPlayer({
         controlsList={playbackMode === 'replay' ? undefined : 'nodownload nofullscreen noplaybackrate'}
         disablePictureInPicture={playbackMode !== 'replay'}
         playsInline
+        crossOrigin="anonymous"
         onLoadedData={handleLoadedData}
         onPlay={handlePlay}
         onPause={handlePause}

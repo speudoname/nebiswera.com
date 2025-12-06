@@ -420,12 +420,18 @@ model Contact {
   // Status
   status        ContactStatus @default(ACTIVE)
 
-  // Marketing preferences
+  // Marketing preferences (Email)
   marketingStatus   MarketingStatus    @default(SUBSCRIBED)
   unsubscribedAt    DateTime?
   unsubscribeReason String?
   suppressionReason SuppressionReason?
   suppressedAt      DateTime?
+
+  // Marketing preferences (SMS)
+  smsMarketingStatus  SmsMarketingStatus @default(SUBSCRIBED)
+  smsUnsubscribedAt   DateTime?
+  lastSmsReceivedAt   DateTime?
+  totalSmsReceived    Int @default(0)
 
   // Engagement tracking (for warmup prioritization)
   engagementTier      EngagementTier @default(NEW)
@@ -447,6 +453,7 @@ model Contact {
   tags               ContactTag[]
   activities         ContactActivity[]
   campaignRecipients CampaignRecipient[]
+  smsCampaignRecipients SmsCampaignRecipient[]
   webinarRegistrations WebinarRegistration[] @relation("ContactWebinarRegistrations")
 
   @@index([email])
@@ -454,6 +461,7 @@ model Contact {
   @@index([status])
   @@index([marketingStatus])
   @@index([email, marketingStatus]) // Composite index for filtered email lookups in campaigns
+  @@index([smsMarketingStatus])
   @@index([createdAt])
   @@index([engagementTier])
   @@index([lastOpenedAt])
@@ -754,6 +762,15 @@ enum MarketingStatus {
   @@schema("crm")
 }
 
+// SMS Marketing subscription status
+enum SmsMarketingStatus {
+  SUBSCRIBED      // Can receive marketing SMS
+  UNSUBSCRIBED    // Opted out via /nosms
+  INVALID_NUMBER  // Phone number invalid/unreachable
+
+  @@schema("crm")
+}
+
 // Reason for suppression
 enum SuppressionReason {
   HARD_BOUNCE
@@ -772,6 +789,298 @@ enum EngagementTier {
   NEW   // Never received email from us
 
   @@schema("crm")
+}
+
+// ===========================================
+// SMS System - UBill Integration
+// ===========================================
+
+// Unified notification rules for email + SMS
+model NotificationRule {
+  id              String   @id @default(cuid())
+
+  // What this rule belongs to
+  entityType      NotificationEntityType
+  entityId        String?  // webinarId, courseId, or null for GLOBAL
+
+  // Trigger event
+  trigger         NotificationTrigger
+
+  // Email notification
+  emailEnabled    Boolean  @default(false)
+  emailTemplateId String?
+
+  // SMS notification
+  smsEnabled      Boolean  @default(false)
+  smsTemplateId   String?
+
+  // Ordering (if multiple rules for same trigger)
+  sortOrder       Int      @default(0)
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  smsTemplate     SmsTemplate? @relation(fields: [smsTemplateId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([trigger])
+  @@schema("crm")
+  @@map("notification_rules")
+}
+
+enum NotificationEntityType {
+  WEBINAR   // Per-webinar notifications
+  COURSE    // Per-course notifications
+  GLOBAL    // System-wide (auth, account)
+
+  @@schema("crm")
+}
+
+enum NotificationTrigger {
+  // Webinar triggers
+  WEBINAR_REGISTRATION
+  WEBINAR_BEFORE_24H
+  WEBINAR_BEFORE_1H
+  WEBINAR_BEFORE_30M
+  WEBINAR_BEFORE_15M
+  WEBINAR_STARTED
+  WEBINAR_ENDED
+  WEBINAR_MISSED
+  WEBINAR_REPLAY_AVAILABLE
+
+  // Course triggers
+  COURSE_ENROLLMENT
+  COURSE_LESSON_COMPLETED
+  COURSE_MODULE_COMPLETED
+  COURSE_COMPLETED
+  COURSE_CERTIFICATE_READY
+  COURSE_INACTIVE_7_DAYS
+  COURSE_INACTIVE_30_DAYS
+
+  // Global/Auth triggers
+  USER_SIGNUP
+  USER_PASSWORD_RESET
+  USER_EMAIL_VERIFICATION
+
+  @@schema("crm")
+}
+
+// SMS Templates
+model SmsTemplate {
+  id          String   @id @default(cuid())
+  name        String   // Display name
+  slug        String   @unique // e.g., "webinar-reminder-15min"
+
+  // Content with variable support: {{firstName}}, {{webinarTitle}}, etc.
+  messageKa   String   @db.Text // Georgian message
+  messageEn   String   @db.Text // English message
+
+  // Categorization
+  category    SmsTemplateCategory
+
+  // Metadata
+  description String?  // Admin notes
+  isDefault   Boolean  @default(false) // System default (can edit, can't delete)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  notificationRules NotificationRule[]
+
+  @@index([category])
+  @@index([isActive])
+  @@schema("crm")
+  @@map("sms_templates")
+}
+
+enum SmsTemplateCategory {
+  WEBINAR       // Webinar-related templates
+  COURSE        // Course-related templates
+  AUTH          // Authentication (password reset, etc.)
+  MARKETING     // Campaign templates
+  TRANSACTIONAL // General transactional
+
+  @@schema("crm")
+}
+
+// SMS Campaign (bulk marketing)
+model SmsCampaign {
+  id              String            @id @default(cuid())
+  name            String            // Internal reference name
+
+  // Content
+  message         String            @db.Text // SMS text (can include {{variables}})
+
+  // Sender
+  brandId         Int               // UBill brand ID
+
+  // Status
+  status          SmsCampaignStatus @default(DRAFT)
+
+  // Targeting (reuse existing TargetType enum from email campaigns)
+  targetType      TargetType
+  targetCriteria  Json?             // {tagIds: [], segmentId: "", filters: {}}
+
+  // Scheduling
+  scheduledAt     DateTime?
+  scheduledTz     String            @default("Asia/Tbilisi")
+  sendingStartedAt DateTime?
+  completedAt     DateTime?
+
+  // Stats (denormalized for quick display)
+  totalRecipients   Int   @default(0)
+  sentCount         Int   @default(0)
+  deliveredCount    Int   @default(0)
+  failedCount       Int   @default(0)
+
+  // Metadata
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  recipients      SmsCampaignRecipient[]
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@schema("crm")
+  @@map("sms_campaigns")
+}
+
+enum SmsCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  PAUSED
+  COMPLETED
+  CANCELLED
+
+  @@schema("crm")
+}
+
+// SMS Campaign Recipients
+model SmsCampaignRecipient {
+  id              String              @id @default(cuid())
+  campaignId      String
+  contactId       String
+  phone           String              // Snapshot at queue time
+
+  // Personalization
+  variables       Json?               // {firstName, lastName, ...}
+  finalMessage    String?             // Rendered message
+
+  // Status tracking
+  status          SmsRecipientStatus  @default(PENDING)
+  ubillSmsId      String?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  error           String?
+
+  // Relations
+  campaign        SmsCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact         Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+  @@index([ubillSmsId])
+  @@schema("crm")
+  @@map("sms_campaign_recipients")
+}
+
+enum SmsRecipientStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  SKIPPED
+
+  @@schema("crm")
+}
+
+// SMS Log (All SMS History)
+model SmsLog {
+  id              String      @id @default(cuid())
+
+  // Recipient
+  phone           String
+  contactId       String?
+
+  // Content
+  message         String      @db.Text
+  brandId         Int
+
+  // Classification
+  type            SmsType
+
+  // What triggered this SMS
+  referenceType   String?     // "notification_rule", "campaign", "manual"
+  referenceId     String?     // ID of the rule, campaign, etc.
+
+  // UBill tracking
+  ubillSmsId      String?
+  status          SmsStatus   @default(PENDING)
+  statusCheckedAt DateTime?
+  error           String?
+
+  // Cost
+  segments        Int         @default(1)
+
+  createdAt       DateTime    @default(now())
+
+  @@index([phone])
+  @@index([contactId])
+  @@index([ubillSmsId])
+  @@index([type, createdAt])
+  @@index([status])
+  @@schema("crm")
+  @@map("sms_logs")
+}
+
+enum SmsType {
+  TRANSACTIONAL
+  CAMPAIGN
+
+  @@schema("crm")
+}
+
+enum SmsStatus {
+  PENDING       // Queued, not sent yet
+  SENT          // Sent to UBill (statusID: 0)
+  DELIVERED     // Confirmed delivered (statusID: 1)
+  FAILED        // Not delivered (statusID: 2)
+  AWAITING      // Awaiting carrier confirmation (statusID: 3)
+  ERROR         // API error (statusID: 4)
+
+  @@schema("crm")
+}
+
+// SMS Settings
+model SmsSettings {
+  id                  String   @id @default(cuid())
+
+  // UBill API
+  apiKey              String   // Store encrypted
+  defaultBrandId      Int?
+
+  // Brand list (manually configured)
+  brands              Json?    // [{id: 1, name: "Nebiswera"}, {id: 2, name: "Other"}]
+
+  // Unsubscribe footer (appended to campaign SMS only)
+  unsubscribeFooterKa String   @default("გააუქმე: nebiswera.com/nosms")
+  unsubscribeFooterEn String   @default("Unsubscribe: nebiswera.com/nosms")
+
+  // Limits (optional safety limits)
+  dailySendLimit      Int?     // null = unlimited
+
+  updatedAt           DateTime @updatedAt
+
+  @@schema("crm")
+  @@map("sms_settings")
 }
 
 // ===========================================

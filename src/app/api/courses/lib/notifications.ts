@@ -1,9 +1,10 @@
 // Course notification system
-// Handles queuing and sending course-related emails
+// Handles queuing and sending course-related notifications (email and SMS)
 // Uses locale-based templates from content/email-templates/courses/
 
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/email'
+import { sendTemplatedSms, sendSms, normalizePhoneNumber, isValidGeorgianPhone } from '@/lib/sms'
 import { logger } from '@/lib'
 import type { Prisma } from '@prisma/client'
 import type { CourseNotificationTrigger } from '@prisma/client'
@@ -626,9 +627,91 @@ export async function sendNotification(queueItem: {
       }
 
       return true
+    } else if (notification.channel === 'SMS') {
+      // Get user's phone number from contact
+      const contact = await prisma.contact.findUnique({
+        where: { email: recipientEmail },
+        select: { id: true, phone: true },
+      })
+
+      if (!contact?.phone) {
+        logger.log('No phone number for user:', recipientEmail)
+        await prisma.courseNotificationQueue.update({
+          where: { id: queueItem.id },
+          data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'No phone number' },
+        })
+        return true
+      }
+
+      const normalizedPhone = normalizePhoneNumber(contact.phone)
+      if (!normalizedPhone || !isValidGeorgianPhone(normalizedPhone)) {
+        logger.log('Invalid phone number:', contact.phone)
+        await prisma.courseNotificationQueue.update({
+          where: { id: queueItem.id },
+          data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'Invalid phone number' },
+        })
+        return true
+      }
+
+      // Send SMS using template slug if available, otherwise use bodyText
+      let smsResult
+      if (notification.smsTemplateSlug) {
+        // Use SMS template system
+        smsResult = await sendTemplatedSms({
+          phone: normalizedPhone,
+          templateSlug: notification.smsTemplateSlug,
+          variables: {
+            firstName: vars.firstName,
+            courseTitle: vars.courseTitle,
+            progressPercent: vars.progressPercent,
+            link: vars.continueUrl,
+          },
+          locale,
+          contactId: contact.id,
+          type: 'TRANSACTIONAL',
+          referenceType: 'course_notification',
+          referenceId: notification.id,
+        })
+      } else {
+        // Use inline message from notification
+        smsResult = await sendSms({
+          phone: normalizedPhone,
+          message: bodyText,
+          contactId: contact.id,
+          type: 'TRANSACTIONAL',
+          referenceType: 'course_notification',
+          referenceId: notification.id,
+        })
+      }
+
+      await prisma.courseNotificationLog.create({
+        data: {
+          configId: notification.id,
+          enrollmentId: enrollment.id,
+          channel: 'SMS',
+          status: smsResult.success ? 'SENT' : 'FAILED',
+          errorMessage: smsResult.error,
+        },
+      })
+
+      await prisma.courseNotificationQueue.update({
+        where: { id: queueItem.id },
+        data: {
+          status: smsResult.success ? 'SENT' : 'FAILED',
+          processedAt: new Date(),
+          lastError: smsResult.error,
+        },
+      })
+
+      // Execute actions if SMS was sent successfully
+      if (smsResult.success && notification.actions) {
+        await executeActions(notification.actions as unknown as NotificationAction[], recipientEmail)
+      }
+
+      return smsResult.success
     }
 
-    // SMS channel not yet implemented - only EMAIL is supported
+    // Unknown channel
     logger.log('Unsupported notification channel:', notification.channel)
     await prisma.courseNotificationQueue.update({
       where: { id: queueItem.id },

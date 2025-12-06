@@ -1797,6 +1797,10 @@ model WebinarNotification {
   // null = custom notification with inline content
   templateKey     String?             // e.g., "registration-confirmation", "reminder-24h"
 
+  // SMS template reference (for SMS channel notifications)
+  // Points to SmsTemplate.slug in crm schema
+  smsTemplateSlug String?             // e.g., "webinar-reminder-15m", "webinar-registration"
+
   // Conditions (JSON for AFTER_END triggers)
   // Examples:
   // { "attended": false }
@@ -2534,6 +2538,10 @@ model CourseNotificationConfig {
   // null = custom notification with inline content
   templateKey     String?   // e.g., "enrollment-welcome", "course-completed"
 
+  // SMS template reference (for SMS channel notifications)
+  // Points to SmsTemplate.slug in crm schema
+  smsTemplateSlug String?   // e.g., "course-enrollment", "course-completed"
+
   // Conditions (JSON for conditional sending)
   // Examples:
   // { "progressPercent": { "eq": 0 } } - Not started
@@ -2601,7 +2609,7 @@ enum CourseNotificationTrigger {
 
 enum LmsNotificationChannel {
   EMAIL
-  // SMS - future support
+  SMS
 
   @@schema("lms")
 }

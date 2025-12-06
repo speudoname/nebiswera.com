@@ -1,9 +1,10 @@
 // Webinar notification system
-// Handles queuing and sending webinar-related emails
+// Handles queuing and sending webinar-related notifications (email and SMS)
 // Uses locale-based templates from content/email-templates/webinar/
 
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/email'
+import { sendTemplatedSms, sendSms, normalizePhoneNumber, isValidGeorgianPhone } from '@/lib/sms'
 import { logger } from '@/lib'
 import type { Prisma } from '@prisma/client'
 import type {
@@ -468,24 +469,84 @@ export async function sendNotification(
 
       return true
     } else if (notification.channel === 'SMS') {
-      logger.log('[SMS STUB] Would send SMS to:', registration.phone, 'Content:', bodyText)
+      // Validate phone number
+      const phone = registration.phone
+      if (!phone) {
+        logger.log('No phone number for registration:', registration.id)
+        await prisma.webinarNotificationQueue.update({
+          where: { id: queueItem.id },
+          data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'No phone number' },
+        })
+        return true
+      }
+
+      const normalizedPhone = normalizePhoneNumber(phone)
+      if (!normalizedPhone || !isValidGeorgianPhone(normalizedPhone)) {
+        logger.log('Invalid phone number:', phone)
+        await prisma.webinarNotificationQueue.update({
+          where: { id: queueItem.id },
+          data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'Invalid phone number' },
+        })
+        return true
+      }
+
+      // Send SMS using template slug if available, otherwise use bodyText
+      let smsResult
+      if (notification.smsTemplateSlug) {
+        // Use SMS template system
+        smsResult = await sendTemplatedSms({
+          phone: normalizedPhone,
+          templateSlug: notification.smsTemplateSlug,
+          variables: {
+            firstName: vars.firstName,
+            webinarTitle: vars.webinarTitle,
+            date: vars.sessionDate || '',
+            time: vars.sessionDate?.split(',').pop()?.trim() || '',
+            link: vars.watchUrl,
+          },
+          locale: locale as 'ka' | 'en',
+          contactId: registration.contactId || undefined,
+          type: 'TRANSACTIONAL',
+          referenceType: 'webinar_notification',
+          referenceId: notification.id,
+        })
+      } else {
+        // Use inline message from notification
+        smsResult = await sendSms({
+          phone: normalizedPhone,
+          message: bodyText,
+          contactId: registration.contactId || undefined,
+          type: 'TRANSACTIONAL',
+          referenceType: 'webinar_notification',
+          referenceId: notification.id,
+        })
+      }
 
       await prisma.webinarNotificationLog.create({
         data: {
           notificationId: notification.id,
           registrationId: registration.id,
           channel: 'SMS',
-          status: 'FAILED',
-          errorMessage: 'SMS not yet implemented',
+          status: smsResult.success ? 'SENT' : 'FAILED',
+          errorMessage: smsResult.error,
         },
       })
 
       await prisma.webinarNotificationQueue.update({
         where: { id: queueItem.id },
-        data: { status: 'SKIPPED', processedAt: new Date(), lastError: 'SMS not yet implemented' },
+        data: {
+          status: smsResult.success ? 'SENT' : 'FAILED',
+          processedAt: new Date(),
+          lastError: smsResult.error,
+        },
       })
 
-      return true
+      // Execute actions (e.g., tag contacts) if SMS was sent successfully
+      if (smsResult.success && notification.actions) {
+        await executeActions(notification.actions as unknown as NotificationAction[], registration)
+      }
+
+      return smsResult.success
     }
 
     return false

@@ -99,14 +99,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             hlsUrl: webinar.hlsUrl,
             duration: webinar.videoDuration,
             thumbnailUrl: webinar.thumbnailUrl,
-            chatEnabled: webinar.chatEnabled,
+            presenterName: webinar.presenterName,
           },
           playback: {
             mode: state.playbackMode,
             allowSeeking: state.allowSeeking,
             startPosition: state.startPosition,
+            lastPosition: registration.maxVideoPosition || 0,
           },
           interactions,
+          chat: {
+            enabled: webinar.chatEnabled,
+          },
+          endScreen: {
+            enabled: webinar.endScreenEnabled,
+            title: webinar.endScreenTitle,
+            message: webinar.endScreenMessage,
+            buttonText: webinar.endScreenButtonText,
+            buttonUrl: webinar.endScreenButtonUrl,
+            redirectUrl: webinar.endScreenRedirectUrl,
+            redirectDelay: webinar.endScreenRedirectDelay,
+          },
           session: session
             ? {
                 id: session.id,
@@ -166,14 +179,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 hlsUrl: webinar.hlsUrl,
                 duration: webinar.videoDuration,
                 thumbnailUrl: webinar.thumbnailUrl,
-                chatEnabled: webinar.chatEnabled,
+                presenterName: webinar.presenterName,
               },
               playback: {
                 mode: replayState.playbackMode,
                 allowSeeking: replayState.allowSeeking,
                 startPosition: replayState.startPosition,
+                lastPosition: registration.maxVideoPosition || 0,
               },
               interactions,
+              chat: {
+                enabled: webinar.chatEnabled,
+              },
+              endScreen: {
+                enabled: webinar.endScreenEnabled,
+                title: webinar.endScreenTitle,
+                message: webinar.endScreenMessage,
+                buttonText: webinar.endScreenButtonText,
+                buttonUrl: webinar.endScreenButtonUrl,
+                redirectUrl: webinar.endScreenRedirectUrl,
+                redirectDelay: webinar.endScreenRedirectDelay,
+              },
               session: session
                 ? {
                     id: session.id,

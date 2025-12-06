@@ -124,6 +124,10 @@ export function usePageAnalytics(options: UsePageAnalyticsOptions = {}) {
     const sessionId = getSessionId()
     const visitorId = getVisitorId()
 
+    // Capture URL immediately to ensure consistency
+    const currentUrl = window.location.href
+    const currentReferrer = document.referrer || null
+
     // Send initial page view
     const trackPageView = async () => {
       try {
@@ -133,11 +137,11 @@ export function usePageAnalytics(options: UsePageAnalyticsOptions = {}) {
           body: JSON.stringify({
             path: pathname,
             pageId: pageId || null,
-            referrer: document.referrer || null,
+            referrer: currentReferrer,
             sessionId,
             visitorId,
             userId: userId || null,
-            fullUrl: window.location.href,
+            fullUrl: currentUrl,
           }),
         })
 

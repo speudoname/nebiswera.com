@@ -168,8 +168,13 @@ export function WebinarRoom({
     videoEnded,
   })
 
-  // Interaction timing
-  const { activeInteractions, dismissInteraction } = useInteractionTiming({
+  // Interaction timing - tracks active, answered, and all triggered interactions
+  const {
+    activeInteractions,
+    allTriggeredInteractions,
+    dismissInteraction,
+    markAsAnswered,
+  } = useInteractionTiming({
     currentTime,
     interactions,
   })
@@ -191,7 +196,7 @@ export function WebinarRoom({
     }
   }, [webinar.duration, endScreen, updateProgress])
 
-  // Handle interaction response
+  // Handle interaction response - this submits to the API and tracks for pixel
   const handleInteractionResponse = useCallback(async (
     interactionId: string,
     response: unknown,
@@ -213,11 +218,16 @@ export function WebinarRoom({
           response,
         }),
       })
-      dismissInteraction(interactionId)
+      // Note: we no longer dismiss here - the interaction stays visible with results
     } catch (error) {
       console.error('Failed to submit interaction response:', error)
     }
-  }, [slug, accessToken, dismissInteraction, trackCTAClick])
+  }, [slug, accessToken, trackCTAClick])
+
+  // Handle marking interaction as answered (called from ChatPanel/InteractiveWidgets)
+  const handleInteractionAnswered = useCallback((interactionId: string, response: unknown) => {
+    markAsAnswered(interactionId, response)
+  }, [markAsAnswered])
 
   // Toggle fullscreen
   const toggleFullscreen = useCallback(() => {
@@ -308,32 +318,18 @@ export function WebinarRoom({
         {/* Tab content area */}
         <div className="flex-1 overflow-hidden bg-white">
           {mobileTab === 'video' ? (
-            // Video tab - show interactions
+            // Video tab - show webinar info when no active interactions
             <div className="h-full overflow-y-auto p-4">
-              {activeInteractions.length > 0 ? (
-                <div className="space-y-4">
-                  {activeInteractions.map((interaction) => (
-                    <MobileInteractionCard
-                      key={interaction.id}
-                      interaction={interaction}
-                      onDismiss={dismissInteraction}
-                      onRespond={handleInteractionResponse}
-                      registrationId={access.registrationId}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <Play className="w-12 h-12 mb-3 opacity-30" />
-                  <p className="text-sm">Watching: {webinar.title}</p>
-                  {webinar.presenterName && (
-                    <p className="text-xs text-gray-400 mt-1">with {webinar.presenterName}</p>
-                  )}
-                </div>
-              )}
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <Play className="w-12 h-12 mb-3 opacity-30" />
+                <p className="text-sm">Watching: {webinar.title}</p>
+                {webinar.presenterName && (
+                  <p className="text-xs text-gray-400 mt-1">with {webinar.presenterName}</p>
+                )}
+              </div>
             </div>
           ) : (
-            // Chat tab
+            // Chat tab - includes all triggered interactions with All/Widgets tabs
             <ChatPanel
               webinarId={webinar.id}
               registrationId={access.registrationId}
@@ -342,9 +338,10 @@ export function WebinarRoom({
               slug={slug}
               currentVideoTime={currentTime}
               playbackMode={playback.mode}
-              interactions={[]} // Don't show interactions in chat panel on mobile
+              interactions={allTriggeredInteractions}
               onInteractionDismiss={dismissInteraction}
               onInteractionRespond={handleInteractionResponse}
+              onInteractionAnswered={handleInteractionAnswered}
             />
           )}
         </div>
@@ -388,12 +385,13 @@ export function WebinarRoom({
             onVideoEnd={handleVideoEnd}
           />
 
-          {/* Interaction overlay on video in landscape */}
-          {activeInteractions.length > 0 && (
+          {/* Interaction overlay on video in landscape - only when chat is hidden */}
+          {activeInteractions.length > 0 && !showChatInLandscape && (
             <InteractionOverlay
               interactions={activeInteractions}
               onDismiss={dismissInteraction}
               onRespond={handleInteractionResponse}
+              onInteractionAnswered={handleInteractionAnswered}
               registrationId={access.registrationId}
             />
           )}
@@ -416,16 +414,7 @@ export function WebinarRoom({
         {/* Chat panel - slides in from right */}
         {chatEnabled && showChatInLandscape && (
           <div className="w-[300px] bg-white flex-shrink-0 animate-slide-in-right">
-            <div className="flex items-center justify-between p-2 border-b">
-              <span className="font-medium text-gray-900 text-sm">Chat</span>
-              <button
-                onClick={() => setShowChatInLandscape(false)}
-                className="p-1 rounded-full hover:bg-gray-100"
-              >
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-            <div className="h-[calc(100%-40px)]">
+            <div className="h-full">
               <ChatPanel
                 webinarId={webinar.id}
                 registrationId={access.registrationId}
@@ -434,9 +423,10 @@ export function WebinarRoom({
                 slug={slug}
                 currentVideoTime={currentTime}
                 playbackMode={playback.mode}
-                interactions={[]}
+                interactions={allTriggeredInteractions}
                 onInteractionDismiss={dismissInteraction}
                 onInteractionRespond={handleInteractionResponse}
+                onInteractionAnswered={handleInteractionAnswered}
               />
             </div>
           </div>
@@ -486,12 +476,13 @@ export function WebinarRoom({
           />
         </div>
 
-        {/* Interaction overlay */}
-        {activeInteractions.length > 0 && (
+        {/* Interaction overlay - only show in fullscreen mode when sidebar is hidden */}
+        {activeInteractions.length > 0 && isFullscreen && !showChatInLandscape && (
           <InteractionOverlay
             interactions={activeInteractions}
             onDismiss={dismissInteraction}
             onRespond={handleInteractionResponse}
+            onInteractionAnswered={handleInteractionAnswered}
             registrationId={access.registrationId}
           />
         )}
@@ -539,9 +530,10 @@ export function WebinarRoom({
             slug={slug}
             currentVideoTime={currentTime}
             playbackMode={playback.mode}
-            interactions={activeInteractions}
+            interactions={allTriggeredInteractions}
             onInteractionDismiss={dismissInteraction}
             onInteractionRespond={handleInteractionResponse}
+            onInteractionAnswered={handleInteractionAnswered}
           />
         </div>
       )}
@@ -549,16 +541,7 @@ export function WebinarRoom({
       {/* Fullscreen chat overlay - Toggleable */}
       {chatEnabled && isFullscreen && showChatInLandscape && (
         <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white/95 backdrop-blur-sm shadow-2xl z-20">
-          <div className="flex items-center justify-between p-3 border-b bg-white">
-            <span className="font-medium text-gray-900">Chat</span>
-            <button
-              onClick={() => setShowChatInLandscape(false)}
-              className="p-1 rounded-full hover:bg-gray-100"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-          <div className="h-[calc(100%-52px)]">
+          <div className="h-full">
             <ChatPanel
               webinarId={webinar.id}
               registrationId={access.registrationId}
@@ -567,9 +550,10 @@ export function WebinarRoom({
               slug={slug}
               currentVideoTime={currentTime}
               playbackMode={playback.mode}
-              interactions={activeInteractions}
+              interactions={allTriggeredInteractions}
               onInteractionDismiss={dismissInteraction}
               onInteractionRespond={handleInteractionResponse}
+              onInteractionAnswered={handleInteractionAnswered}
             />
           </div>
         </div>

@@ -1,8 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import type { PixelEventName, PageType, PixelEventParams, UserData } from '@/lib/pixel/types'
 import { generateEventId } from '@/lib/pixel/utils'
+
+// Module-level flags to prevent duplicate listeners across hook instances
+let consentListenerAdded = false
+let consentCheckInterval: ReturnType<typeof setInterval> | null = null
+let consentListeners: Set<(consent: boolean) => void> = new Set()
 
 /**
  * Check if tracking consent has been given
@@ -29,6 +34,35 @@ function hasTrackingConsent(): boolean {
   // Explicit consent given
   const acceptedValues = ['accepted', 'true', '1', 'all']
   return acceptedValues.includes(consent.toLowerCase())
+}
+
+/**
+ * Setup global consent listener (singleton pattern)
+ * Only one listener is added regardless of how many hook instances exist
+ */
+function setupConsentListener(callback: (consent: boolean) => void) {
+  consentListeners.add(callback)
+
+  if (!consentListenerAdded) {
+    consentListenerAdded = true
+
+    // Notify all listeners when consent changes
+    const notifyListeners = () => {
+      const consent = hasTrackingConsent()
+      consentListeners.forEach((cb) => cb(consent))
+    }
+
+    // Listen for storage events (some consent managers use this)
+    window.addEventListener('storage', notifyListeners)
+
+    // Check periodically (reduced from 2s to 10s to minimize overhead)
+    consentCheckInterval = setInterval(notifyListeners, 10000)
+  }
+
+  // Return cleanup function
+  return () => {
+    consentListeners.delete(callback)
+  }
 }
 
 // Extend Window interface for fbq
@@ -63,40 +97,42 @@ export function usePixel(options: UsePixelOptions = {}) {
   const { pageType = 'other', enabled = true } = options
   const [isReady, setIsReady] = useState(false)
   const [pixelId, setPixelId] = useState<string | null>(null)
-  const [hasConsent, setHasConsent] = useState(false)
+  const [hasConsent, setHasConsent] = useState(() => hasTrackingConsent())
 
-  // Check for tracking consent
+  // Track if component is mounted (for async operations)
+  const isMountedRef = useRef(true)
+
   useEffect(() => {
-    setHasConsent(hasTrackingConsent())
-
-    // Re-check consent when cookies change (e.g., user accepts/rejects cookie banner)
-    const checkConsent = () => setHasConsent(hasTrackingConsent())
-
-    // Listen for storage events (some consent managers use this)
-    window.addEventListener('storage', checkConsent)
-
-    // Also check periodically in case consent cookie is set by external script
-    const interval = setInterval(checkConsent, 2000)
-
+    isMountedRef.current = true
     return () => {
-      window.removeEventListener('storage', checkConsent)
-      clearInterval(interval)
+      isMountedRef.current = false
     }
+  }, [])
+
+  // Setup consent listener (singleton - only one global listener)
+  useEffect(() => {
+    const cleanup = setupConsentListener((consent) => {
+      if (isMountedRef.current) {
+        setHasConsent(consent)
+      }
+    })
+    return cleanup
   }, [])
 
   // Check if pixel is loaded
   useEffect(() => {
     if (typeof window !== 'undefined' && window.fbq) {
       setIsReady(true)
+      return
     }
 
-    // Listen for pixel load
+    // Listen for pixel load with 500ms interval (10 checks max over 5 seconds)
     const checkPixel = setInterval(() => {
       if (window.fbq) {
         setIsReady(true)
         clearInterval(checkPixel)
       }
-    }, 100)
+    }, 500)
 
     // Stop checking after 5 seconds
     const timeout = setTimeout(() => {
@@ -115,7 +151,7 @@ export function usePixel(options: UsePixelOptions = {}) {
       try {
         const res = await fetch('/api/pixel/track', { method: 'GET' })
         const data = await res.json()
-        if (data.pixelEnabled) {
+        if (data.pixelEnabled && isMountedRef.current) {
           setPixelId(data.pixelId)
         }
       } catch (error) {
@@ -149,14 +185,23 @@ export function usePixel(options: UsePixelOptions = {}) {
     async ({ eventName, params, userData, eventId }: TrackEventOptions) => {
       if (!enabled) return
 
-      // Check for user consent before tracking
-      if (!hasConsent) {
+      // Check for user consent before tracking (re-check at tracking time)
+      const currentConsent = hasTrackingConsent()
+      if (!currentConsent) {
         console.debug('[Pixel] Tracking skipped - no user consent')
         return
       }
 
       const finalEventId = eventId || generateEventId(eventName)
       const { fbp, fbc } = getCookies()
+
+      // Capture URL immediately to ensure browser and server events use the same URL
+      const currentPageUrl = window.location.href
+
+      // Debug log for event ID verification (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(`[Pixel] Tracking ${eventName} with eventId: ${finalEventId}`)
+      }
 
       // Client-side tracking
       if (isReady && window.fbq) {
@@ -197,27 +242,44 @@ export function usePixel(options: UsePixelOptions = {}) {
         }
       }
 
-      // Server-side tracking (Conversions API)
-      try {
-        await fetch('/api/pixel/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            eventName,
-            eventId: finalEventId,
-            pageType,
-            pageUrl: window.location.href,
-            params,
-            userData,
-            fbp,
-            fbc,
-          }),
-        })
-      } catch (error) {
-        console.error('[Pixel] Server tracking error:', error)
+      // Server-side tracking (Conversions API) with simple retry
+      const sendToServer = async (attempt: number = 1): Promise<void> => {
+        try {
+          const response = await fetch('/api/pixel/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              eventName,
+              eventId: finalEventId,
+              pageType,
+              pageUrl: currentPageUrl, // Use captured URL to ensure consistency with browser event
+              params,
+              userData,
+              fbp,
+              fbc,
+            }),
+          })
+
+          if (!response.ok && attempt < 2) {
+            // Retry once on failure
+            console.warn(`[Pixel] Server tracking failed (attempt ${attempt}), retrying...`)
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+            return sendToServer(attempt + 1)
+          }
+        } catch (error) {
+          if (attempt < 2) {
+            console.warn(`[Pixel] Server tracking error (attempt ${attempt}), retrying...`)
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+            return sendToServer(attempt + 1)
+          }
+          console.error('[Pixel] Server tracking failed after retry:', error)
+        }
       }
+
+      // Fire server tracking without blocking
+      sendToServer()
     },
-    [enabled, isReady, hasConsent, pageType, getCookies]
+    [enabled, isReady, pageType, getCookies]
   )
 
   // Track PageView
@@ -238,16 +300,16 @@ export function usePixel(options: UsePixelOptions = {}) {
 
   // Track Lead
   const trackLead = useCallback(
-    async (params?: PixelEventParams, userData?: UserData) => {
-      await trackEvent({ eventName: 'Lead', params, userData })
+    async (params?: PixelEventParams, userData?: UserData, eventId?: string) => {
+      await trackEvent({ eventName: 'Lead', params, userData, eventId })
     },
     [trackEvent]
   )
 
   // Track CompleteRegistration
   const trackCompleteRegistration = useCallback(
-    async (params?: PixelEventParams, userData?: UserData) => {
-      await trackEvent({ eventName: 'CompleteRegistration', params, userData })
+    async (params?: PixelEventParams, userData?: UserData, eventId?: string) => {
+      await trackEvent({ eventName: 'CompleteRegistration', params, userData, eventId })
     },
     [trackEvent]
   )

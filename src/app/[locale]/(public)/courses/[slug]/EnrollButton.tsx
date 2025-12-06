@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Play, ArrowRight, Loader2 } from 'lucide-react'
 import { usePixel } from '@/hooks/usePixel'
+import { generateEventId } from '@/lib/pixel/utils'
 
 interface EnrollButtonProps {
   courseId: string
@@ -113,16 +114,21 @@ export function EnrollButton({
         throw new Error(data.error || 'Failed to enroll')
       }
 
-      // Track CompleteRegistration for course enrollment
-      await trackCompleteRegistration({
-        content_name: courseTitle || 'Course Enrollment',
-        content_category: 'Course',
-        content_ids: [courseId],
-        content_type: 'course',
-        course_id: courseId,
-        course_name: courseTitle,
-        status: 'enrolled',
-      })
+      // Track CompleteRegistration for course enrollment with explicit eventId for deduplication
+      const eventId = generateEventId('CompleteRegistration')
+      await trackCompleteRegistration(
+        {
+          content_name: courseTitle || 'Course Enrollment',
+          content_category: 'Course',
+          content_ids: [courseId],
+          content_type: 'course',
+          course_id: courseId,
+          course_name: courseTitle,
+          status: 'enrolled',
+        },
+        undefined, // no user data (user is authenticated)
+        eventId
+      )
 
       // Redirect to the course player
       router.push(`/courses/${courseSlug}/learn`)

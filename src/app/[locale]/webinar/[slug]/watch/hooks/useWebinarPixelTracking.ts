@@ -63,7 +63,8 @@ export function useWebinarPixelTracking({
         ...baseParams,
       },
     })
-  }, [showWaitingRoom, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit trackEvent/baseParams to fire only when waiting room state changes
+  }, [showWaitingRoom, enabled])
 
   // Track WebinarEngaged at 50% progress
   useEffect(() => {
@@ -77,7 +78,8 @@ export function useWebinarPixelTracking({
         completion_percent: Math.round(progress),
       },
     })
-  }, [progress, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit trackEvent/baseParams to fire only on progress change
+  }, [progress, enabled])
 
   // Track WebinarCompleted when video ends
   useEffect(() => {
@@ -91,7 +93,8 @@ export function useWebinarPixelTracking({
         completion_percent: 100,
       },
     })
-  }, [videoEnded, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit trackEvent/baseParams to fire only when video ends
+  }, [videoEnded, enabled])
 
   // Function to track CTA clicks (called from InteractionOverlay)
   const trackCTAClick = useCallback(
@@ -108,7 +111,8 @@ export function useWebinarPixelTracking({
         },
       })
     },
-    [enabled, trackEvent, progress] // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit baseParams to avoid recreation on every render
+    [enabled, trackEvent, progress]
   )
 
   return {

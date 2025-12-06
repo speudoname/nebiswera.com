@@ -9,6 +9,7 @@ interface InteractionOverlayProps {
   interactions: InteractionData[]
   onDismiss: (id: string) => void
   onRespond: (id: string, response: unknown, interactionType?: string, interactionTitle?: string) => void
+  onInteractionAnswered?: (id: string, response: unknown) => void
   registrationId: string
 }
 
@@ -16,7 +17,14 @@ export function InteractionOverlay({
   interactions,
   onDismiss,
   onRespond,
+  onInteractionAnswered,
 }: InteractionOverlayProps) {
+  // Combined handler that calls both callbacks
+  const handleRespond = useCallback((id: string, response: unknown, type?: string, title?: string) => {
+    onRespond(id, response, type, title)
+    onInteractionAnswered?.(id, response)
+  }, [onRespond, onInteractionAnswered])
+
   return (
     <div className="absolute bottom-4 md:bottom-24 left-4 right-4 md:left-auto md:right-4 flex flex-col gap-4 max-w-full md:max-w-sm z-20">
       {interactions.map((interaction) => (
@@ -25,7 +33,7 @@ export function InteractionOverlay({
           interaction={interaction}
           interactionId={interaction.id}
           onDismiss={onDismiss}
-          onRespond={onRespond}
+          onRespond={handleRespond}
         />
       ))}
     </div>

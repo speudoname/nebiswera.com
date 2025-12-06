@@ -64,7 +64,8 @@ export function useCoursePixelTracking({
         lesson_name: currentPartTitle || undefined,
       },
     })
-  }, [currentPartId, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit trackEvent/baseParams to fire only on part change
+  }, [currentPartId, enabled])
 
   // Track LessonStarted when part changes
   useEffect(() => {
@@ -83,7 +84,8 @@ export function useCoursePixelTracking({
         completion_percent: progressPercent,
       },
     })
-  }, [currentPartId, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit trackEvent/baseParams to fire only on part change
+  }, [currentPartId, enabled])
 
   // Track CourseCompleted when progress reaches 100%
   useEffect(() => {
@@ -102,7 +104,8 @@ export function useCoursePixelTracking({
     }
 
     previousProgressRef.current = progressPercent
-  }, [progressPercent, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit trackEvent/baseParams to fire only on progress change
+  }, [progressPercent, enabled])
 
   // Function to track LessonCompleted (called when part is marked complete)
   const trackLessonCompleted = useCallback(
@@ -119,7 +122,8 @@ export function useCoursePixelTracking({
         },
       })
     },
-    [enabled, trackEvent, progressPercent] // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit baseParams to avoid recreation on every render
+    [enabled, trackEvent, progressPercent]
   )
 
   // Function to track QuizCompleted
@@ -138,7 +142,8 @@ export function useCoursePixelTracking({
         },
       })
     },
-    [enabled, trackEvent] // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally omit baseParams to avoid recreation on every render
+    [enabled, trackEvent]
   )
 
   return {

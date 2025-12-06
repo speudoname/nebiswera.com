@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, ArrowRight } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { usePixel } from '@/hooks/usePixel'
+import { generateEventId } from '@/lib/pixel/utils'
 import type { RegistrationFieldConfig, RegistrationFormData, CustomField } from '@/app/api/webinars/lib/registration-fields'
 
 interface Session {
@@ -128,7 +129,8 @@ export function DynamicRegistrationForm({ slug, locale, initialEmail }: DynamicR
         throw new Error(data.error || 'Registration failed')
       }
 
-      // Track CompleteRegistration event with user data
+      // Track CompleteRegistration event with user data and explicit eventId for deduplication
+      const eventId = generateEventId('CompleteRegistration')
       await trackCompleteRegistration(
         {
           content_name: 'Webinar Registration',
@@ -140,7 +142,8 @@ export function DynamicRegistrationForm({ slug, locale, initialEmail }: DynamicR
           firstName: payload.firstName || undefined,
           lastName: payload.lastName || undefined,
           phone: formData.phone || undefined,
-        }
+        },
+        eventId
       )
 
       // Redirect to thank you page

@@ -33,6 +33,8 @@ export function useViewContentTracker({
   const [scrollPercent, setScrollPercent] = useState(0)
   const [timeOnPage, setTimeOnPage] = useState(0)
   const startTimeRef = useRef<number>(Date.now())
+  // Use ref to prevent race condition (state + ref pattern)
+  const hasTrackedRef = useRef(false)
 
   // Get config for this page type
   const config = DEFAULT_VIEW_CONTENT_CONFIG[pageType]
@@ -61,7 +63,8 @@ export function useViewContentTracker({
 
   // Check if thresholds are met and track
   const checkAndTrack = useCallback(() => {
-    if (hasTracked || !enabled) return
+    // Use ref for immediate check to prevent race condition
+    if (hasTrackedRef.current || !enabled) return
 
     const scrollMet = scrollPercent >= scrollThreshold
     const timeMet = timeOnPage >= timeThreshold
@@ -83,6 +86,8 @@ export function useViewContentTracker({
     }
 
     if (shouldTrack) {
+      // Set ref immediately to prevent duplicate tracking
+      hasTrackedRef.current = true
       setHasTracked(true)
       trackViewContent({
         ...contentParams,
@@ -91,7 +96,6 @@ export function useViewContentTracker({
       })
     }
   }, [
-    hasTracked,
     enabled,
     scrollPercent,
     scrollThreshold,

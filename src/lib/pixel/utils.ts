@@ -9,6 +9,26 @@ import { createHash } from 'crypto'
 import type { UserData, HashedUserData } from './types'
 
 /**
+ * Generate a UUID that works in both browser and Node.js environments
+ */
+function getRandomUUID(): string {
+  // Browser environment
+  if (typeof window !== 'undefined' && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID()
+  }
+  // Node.js environment
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID()
+  }
+  // Fallback: generate a simple UUID-like string
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+/**
  * Generate SHA-256 hash of a string
  * Facebook requires lowercase hex-encoded SHA-256 hashes
  */
@@ -152,13 +172,14 @@ export function hashUserData(
 
 /**
  * Generate a unique event ID for deduplication
- * Format: timestamp-random-eventName
+ * Format: timestamp-uuid-eventName
+ * Uses crypto.randomUUID() for collision-resistant IDs
  * Client and server should use the SAME event ID for the same event
  */
 export function generateEventId(eventName: string): string {
   const timestamp = Date.now()
-  const random = Math.random().toString(36).substring(2, 10)
-  return `${timestamp}-${random}-${eventName}`
+  const uuid = getRandomUUID()
+  return `${timestamp}-${uuid}-${eventName}`
 }
 
 /**

@@ -9,6 +9,14 @@ import { Step2Content } from './Step2Content'
 import { Step3Audience } from './Step3Audience'
 import { Step4ReviewSchedule } from './Step4ReviewSchedule'
 
+/** Targeting criteria based on targetType */
+export interface TargetCriteria {
+  segmentId?: string
+  tagId?: string      // Single tag selection (UI)
+  tagIds?: string[]   // Multiple tag selection (API)
+  filters?: Record<string, unknown>
+}
+
 export interface CampaignData {
   id?: string
   name: string
@@ -19,9 +27,9 @@ export interface CampaignData {
   replyTo: string
   htmlContent: string
   textContent: string
-  designJson?: any  // Easy Email editor design JSON (MJML structure) for editing
+  designJson?: unknown  // Easy Email editor design JSON (MJML structure)
   targetType: 'ALL_CONTACTS' | 'SEGMENT' | 'TAG' | 'REGISTERED_USERS' | 'CUSTOM_FILTER'
-  targetCriteria: any
+  targetCriteria: TargetCriteria | null
   scheduledAt: string | null
   status?: string
 }

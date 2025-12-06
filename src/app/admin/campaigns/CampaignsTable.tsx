@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Button, Modal, Pagination } from '@/components/ui'
+import { WarmupBanner } from './components/WarmupBanner'
 import {
   AlertTriangle,
   Loader2,
@@ -192,6 +193,9 @@ export function CampaignsTable() {
 
   return (
     <div>
+      {/* Warmup Status Banner */}
+      <WarmupBanner />
+
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex gap-4 flex-1">

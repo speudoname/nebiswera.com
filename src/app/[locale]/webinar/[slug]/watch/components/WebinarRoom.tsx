@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { WebinarPlayer } from './WebinarPlayer'
 import { WaitingRoom } from './WaitingRoom'
 import { InteractionOverlay } from './InteractionOverlay'
@@ -108,6 +108,12 @@ export function WebinarRoom({
     interactions,
   })
 
+  // Memoize derived values to prevent unnecessary re-renders
+  const userName = useMemo(
+    () => access.firstName || access.email.split('@')[0],
+    [access.firstName, access.email]
+  )
+
   // Handle video end
   const handleVideoEnd = useCallback(() => {
     setVideoEnded(true)
@@ -120,7 +126,7 @@ export function WebinarRoom({
   }, [webinar.duration, endScreen, updateProgress])
 
   // Handle interaction response
-  const handleInteractionResponse = async (
+  const handleInteractionResponse = useCallback(async (
     interactionId: string,
     response: unknown
   ) => {
@@ -138,10 +144,10 @@ export function WebinarRoom({
     } catch (error) {
       console.error('Failed to submit interaction response:', error)
     }
-  }
+  }, [slug, accessToken, dismissInteraction])
 
   // Toggle fullscreen
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return
 
     if (!isFullscreen) {
@@ -151,7 +157,7 @@ export function WebinarRoom({
       document.exitFullscreen?.()
       setIsFullscreen(false)
     }
-  }
+  }, [isFullscreen])
 
   // Listen for fullscreen changes
   useEffect(() => {
@@ -228,7 +234,7 @@ export function WebinarRoom({
           <ChatPanel
             webinarId={webinar.id}
             registrationId={access.registrationId}
-            userName={access.firstName || access.email.split('@')[0]}
+            userName={userName}
             accessToken={accessToken}
             slug={slug}
             currentVideoTime={currentTime}
@@ -246,7 +252,7 @@ export function WebinarRoom({
           <ChatPanel
             webinarId={webinar.id}
             registrationId={access.registrationId}
-            userName={access.firstName || access.email.split('@')[0]}
+            userName={userName}
             accessToken={accessToken}
             slug={slug}
             currentVideoTime={currentTime}

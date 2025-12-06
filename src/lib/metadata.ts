@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { seoConfig, type PageKey } from '@/config/seo'
+import { logger } from '@/lib/logger'
 
 // Import SEO content
 import seoEn from '../../content/seo/en.json'
@@ -46,7 +47,7 @@ export function generatePageMetadata(
   const pageData = content.pages[pageKey as keyof typeof content.pages]
 
   if (!pageData) {
-    console.warn(`SEO: No metadata found for page "${pageKey}" in locale "${locale}"`)
+    logger.warn(`SEO: No metadata found for page "${pageKey}" in locale "${locale}"`)
     return {
       title: content.site.name,
       description: content.site.tagline,

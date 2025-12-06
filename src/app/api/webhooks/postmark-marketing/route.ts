@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { EmailStatus } from '@prisma/client'
 import { logger } from '@/lib'
 import { unauthorizedResponse, errorResponse } from '@/lib/api-response'
+import { recordContactOpen, recordContactClick } from '@/lib/warmup'
 import crypto from 'crypto'
 
 // Postmark webhook events
@@ -283,6 +284,11 @@ export async function POST(request: Request) {
             data: { openedCount: { increment: 1 } },
           })
         }
+
+        // Update contact engagement for warmup (first open only)
+        if (event.FirstOpen) {
+          await updateContactEngagement(event.Recipient, 'open')
+        }
         break
 
       case 'Click':
@@ -319,6 +325,9 @@ export async function POST(request: Request) {
               where: { id: campaignId },
               data: { clickedCount: { increment: 1 } },
             })
+
+            // Update contact engagement for warmup (first click only)
+            await updateContactEngagement(event.Recipient, 'click')
           }
 
           // Track per-link clicks
@@ -354,6 +363,31 @@ export async function POST(request: Request) {
   } catch (error) {
     logger.error('Marketing webhook error:', error)
     return errorResponse('Webhook processing failed')
+  }
+}
+
+/**
+ * Update contact engagement for warmup prioritization
+ */
+async function updateContactEngagement(
+  email: string,
+  type: 'open' | 'click'
+) {
+  try {
+    const contact = await prisma.contact.findFirst({
+      where: { email },
+    })
+
+    if (!contact) return
+
+    if (type === 'open') {
+      await recordContactOpen(contact.id)
+    } else {
+      await recordContactClick(contact.id)
+    }
+  } catch (error) {
+    // Don't fail the webhook for engagement tracking errors
+    logger.error('Contact engagement update error:', error)
   }
 }
 

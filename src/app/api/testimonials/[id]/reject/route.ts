@@ -16,6 +16,15 @@ export async function PATCH(
 
     const { id } = await params
 
+    // Check if testimonial exists
+    const existing = await prisma.testimonial.findUnique({
+      where: { id },
+    })
+
+    if (!existing) {
+      return errorResponse('Testimonial not found', 404)
+    }
+
     const testimonial = await prisma.testimonial.update({
       where: { id },
       data: { status: 'REJECTED' },

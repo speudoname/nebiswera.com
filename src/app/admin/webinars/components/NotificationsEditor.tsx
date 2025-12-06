@@ -40,7 +40,7 @@ interface NotificationAction {
   tagName?: string
 }
 
-interface Notification {
+export interface Notification {
   id: string
   templateKey: string | null  // If set, tracks which template it came from
   triggerType: string

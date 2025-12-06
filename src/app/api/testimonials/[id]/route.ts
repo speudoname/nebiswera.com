@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { Prisma, VideoProcessingStatus } from '@prisma/client'
-import { logger, notFoundResponse, unauthorizedResponse, errorResponse } from '@/lib'
+import { logger, notFoundResponse, unauthorizedResponse, errorResponse, badRequestResponse } from '@/lib'
+import { updateTestimonialSchema, patchTestimonialSchema, formatZodError } from '@/lib/validations'
 
 // GET /api/testimonials/[id] - Get single testimonial
 export async function GET(
@@ -45,19 +46,37 @@ export async function PUT(
     }
 
     const { id } = await params
+
+    // Check if testimonial exists
+    const existing = await prisma.testimonial.findUnique({
+      where: { id },
+    })
+
+    if (!existing) {
+      return notFoundResponse('Testimonial not found')
+    }
+
     const body = await request.json()
+
+    // Validate input
+    const parsed = updateTestimonialSchema.safeParse(body)
+    if (!parsed.success) {
+      return badRequestResponse(formatZodError(parsed.error))
+    }
+
+    const { name, email, text, rating, locale, status, type, tags } = parsed.data
 
     const testimonial = await prisma.testimonial.update({
       where: { id },
       data: {
-        name: body.name,
-        email: body.email,
-        text: body.text,
-        rating: body.rating,
-        locale: body.locale,
-        status: body.status,
-        type: body.type,
-        tags: body.tags || [],
+        name,
+        email,
+        text,
+        rating,
+        locale,
+        status,
+        type,
+        tags: tags || [],
       },
     })
 
@@ -75,23 +94,41 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
+
+    // Check if testimonial exists
+    const existing = await prisma.testimonial.findUnique({
+      where: { id },
+    })
+
+    if (!existing) {
+      return notFoundResponse('Testimonial not found')
+    }
+
     const body = await request.json()
 
-    // Allow partial updates for any field
+    // Validate input
+    const parsed = patchTestimonialSchema.safeParse(body)
+    if (!parsed.success) {
+      return badRequestResponse(formatZodError(parsed.error))
+    }
+
+    const { profilePhoto, images, audioUrl, videoUrl, videoThumbnail, type } = parsed.data
+
+    // Build partial update data
     const updateData: Prisma.TestimonialUpdateInput = {}
 
-    if (body.profilePhoto !== undefined) updateData.profilePhoto = body.profilePhoto
-    if (body.images !== undefined) updateData.images = body.images
-    if (body.audioUrl !== undefined) updateData.audioUrl = body.audioUrl
-    if (body.videoUrl !== undefined) {
-      updateData.videoUrl = body.videoUrl
+    if (profilePhoto !== undefined) updateData.profilePhoto = profilePhoto
+    if (images !== undefined) updateData.images = images
+    if (audioUrl !== undefined) updateData.audioUrl = audioUrl
+    if (videoUrl !== undefined) {
+      updateData.videoUrl = videoUrl
       // Bunny handles transcoding automatically - video is processing/ready
-      if (body.videoUrl) {
+      if (videoUrl) {
         updateData.videoStatus = VideoProcessingStatus.READY
       }
     }
-    if (body.videoThumbnail !== undefined) updateData.videoThumbnail = body.videoThumbnail
-    if (body.type !== undefined) updateData.type = body.type
+    if (videoThumbnail !== undefined) updateData.videoThumbnail = videoThumbnail
+    if (type !== undefined) updateData.type = type
 
     const testimonial = await prisma.testimonial.update({
       where: { id },
@@ -116,6 +153,15 @@ export async function DELETE(
     }
 
     const { id } = await params
+
+    // Check if testimonial exists
+    const existing = await prisma.testimonial.findUnique({
+      where: { id },
+    })
+
+    if (!existing) {
+      return notFoundResponse('Testimonial not found')
+    }
 
     await prisma.testimonial.delete({
       where: { id },

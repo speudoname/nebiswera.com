@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import { logger } from '@/lib/logger'
+import { updateTagSchema, formatZodError } from '@/lib/validations'
 import type { NextRequest } from 'next/server'
 
 export async function PATCH(
@@ -17,7 +18,14 @@ export async function PATCH(
 
   try {
     const body = await request.json()
-    const { name, color, description } = body
+
+    // Validate input
+    const parsed = updateTagSchema.safeParse(body)
+    if (!parsed.success) {
+      return badRequestResponse(formatZodError(parsed.error))
+    }
+
+    const { name, color, description } = parsed.data
 
     // Check if tag exists
     const existingTag = await prisma.tag.findUnique({

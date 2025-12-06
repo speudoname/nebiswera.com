@@ -90,7 +90,7 @@ export function ChatPanel({
   }, [currentVideoTime, playbackMode, slug, accessToken, setMessages])
 
   // Send message
-  const handleSend = async (message: string) => {
+  const handleSend = useCallback(async (message: string) => {
     const response = await fetch(`/api/webinars/${slug}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -103,7 +103,7 @@ export function ChatPanel({
     if (!response.ok) {
       throw new Error('Failed to send message')
     }
-  }
+  }, [slug, accessToken])
 
   return (
     <div className="flex flex-col h-full">

@@ -69,17 +69,14 @@ export function useAblyChat({
 
         // Handle connection state changes
         ably.connection.on('connected', () => {
-          console.log('Connected to Ably')
           setIsConnected(true)
         })
 
         ably.connection.on('disconnected', () => {
-          console.log('Disconnected from Ably')
           setIsConnected(false)
         })
 
-        ably.connection.on('failed', (error) => {
-          console.error('Ably connection failed:', error)
+        ably.connection.on('failed', () => {
           setIsConnected(false)
         })
 

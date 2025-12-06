@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { X, Download, ExternalLink, ThumbsUp, ThumbsDown, Meh } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import type { InteractionData } from '@/types'
@@ -20,11 +20,12 @@ export function InteractionOverlay({
   return (
     <div className="absolute bottom-4 md:bottom-24 left-4 right-4 md:left-auto md:right-4 flex flex-col gap-4 max-w-full md:max-w-sm z-20">
       {interactions.map((interaction) => (
-        <InteractionCard
+        <MemoizedInteractionCard
           key={interaction.id}
           interaction={interaction}
-          onDismiss={() => onDismiss(interaction.id)}
-          onRespond={(response) => onRespond(interaction.id, response)}
+          interactionId={interaction.id}
+          onDismiss={onDismiss}
+          onRespond={onRespond}
         />
       ))}
     </div>
@@ -33,13 +34,23 @@ export function InteractionOverlay({
 
 function InteractionCard({
   interaction,
+  interactionId,
   onDismiss,
   onRespond,
 }: {
   interaction: InteractionData
-  onDismiss: () => void
-  onRespond: (response: unknown) => void
+  interactionId: string
+  onDismiss: (id: string) => void
+  onRespond: (id: string, response: unknown) => void
 }) {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleDismiss = useCallback(() => {
+    onDismiss(interactionId)
+  }, [onDismiss, interactionId])
+
+  const handleRespond = useCallback((response: unknown) => {
+    onRespond(interactionId, response)
+  }, [onRespond, interactionId])
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [selectedOptions, setSelectedOptions] = useState<number[]>([])
   const [textResponse, setTextResponse] = useState('')
@@ -67,7 +78,7 @@ function InteractionCard({
 
     setIsSubmitting(true)
     try {
-      await onRespond({
+      await handleRespond({
         selectedOptions: selectedOption !== null ? [selectedOption] : [],
         type: interaction.type,
       })
@@ -119,7 +130,7 @@ function InteractionCard({
               onClick={() => {
                 if (config.buttonUrl) {
                   window.open(config.buttonUrl, '_blank')
-                  onRespond({ clicked: true })
+                  handleRespond({ clicked: true })
                 }
               }}
               className="w-full flex items-center justify-center gap-2"
@@ -141,7 +152,7 @@ function InteractionCard({
               onClick={() => {
                 if (config.downloadUrl) {
                   window.open(config.downloadUrl, '_blank')
-                  onRespond({ downloaded: true })
+                  handleRespond({ downloaded: true })
                 }
               }}
               className="w-full flex items-center justify-center gap-2"
@@ -166,7 +177,7 @@ function InteractionCard({
                   key={value}
                   onClick={() => {
                     setSelectedOption(value)
-                    onRespond({ rating: value })
+                    handleRespond({ rating: value })
                   }}
                   className={`flex flex-col items-center gap-1 p-3 rounded-lg transition-all ${
                     selectedOption === value
@@ -206,7 +217,7 @@ function InteractionCard({
               onClick={() => {
                 if (config.buttonUrl) {
                   window.open(config.buttonUrl, '_blank')
-                  onRespond({ clicked: true })
+                  handleRespond({ clicked: true })
                 }
               }}
               className="w-full"
@@ -232,7 +243,7 @@ function InteractionCard({
               onClick={async () => {
                 setIsSubmitting(true)
                 try {
-                  await onRespond({ textResponse })
+                  await handleRespond({ textResponse })
                 } finally {
                   setIsSubmitting(false)
                 }
@@ -260,7 +271,7 @@ function InteractionCard({
             )}
             {!config.autoResumeDuration && (
               <Button
-                onClick={() => onRespond({ resumed: true })}
+                onClick={() => handleRespond({ resumed: true })}
                 className="w-full"
               >
                 Resume Video
@@ -298,7 +309,7 @@ function InteractionCard({
                 setIsSubmitting(true)
                 try {
                   const isCorrect = config.correctAnswers?.includes(selectedOption!)
-                  await onRespond({
+                  await handleRespond({
                     selectedOptions: [selectedOption],
                     isCorrect,
                   })
@@ -357,7 +368,7 @@ function InteractionCard({
               onClick={async () => {
                 setIsSubmitting(true)
                 try {
-                  await onRespond({ formData })
+                  await handleRespond({ formData })
                 } finally {
                   setIsSubmitting(false)
                 }
@@ -384,7 +395,7 @@ function InteractionCard({
     <div className="bg-neu-base rounded-xl shadow-neu-lg p-4 animate-slide-in-right relative">
       {/* Dismiss button */}
       <button
-        onClick={onDismiss}
+        onClick={handleDismiss}
         className="absolute top-2 right-2 p-1 rounded-full hover:bg-neu-dark transition-colors"
       >
         <X className="w-4 h-4 text-text-secondary" />
@@ -394,3 +405,6 @@ function InteractionCard({
     </div>
   )
 }
+
+// Memoized version to prevent unnecessary re-renders when parent updates
+const MemoizedInteractionCard = memo(InteractionCard)

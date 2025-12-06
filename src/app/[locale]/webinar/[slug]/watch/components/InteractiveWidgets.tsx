@@ -208,27 +208,38 @@ function PollWidget({
         </div>
         <div className="flex-1">
           <div className="flex items-start justify-between mb-2">
-            <h4 className="text-sm font-semibold text-gray-900">{interaction.title}</h4>
-            <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
+            <h4 id={`poll-title-${interaction.id}`} className="text-sm font-semibold text-gray-900">{interaction.title}</h4>
+            <button
+              onClick={onDismiss}
+              className="text-gray-400 hover:text-gray-600"
+              aria-label="Dismiss poll"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
           {interaction.config.description && (
-            <p className="text-xs text-gray-600 mb-3">{interaction.config.description}</p>
+            <p id={`poll-desc-${interaction.id}`} className="text-xs text-gray-600 mb-3">{interaction.config.description}</p>
           )}
 
           {hasResponded ? (
-            <div className="flex items-center gap-2 text-green-600 text-sm">
-              <Check className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-green-600 text-sm" role="status" aria-live="polite">
+              <Check className="w-4 h-4" aria-hidden="true" />
               <span>Thank you for your response!</span>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              role={multipleChoice ? 'group' : 'radiogroup'}
+              aria-labelledby={`poll-title-${interaction.id}`}
+              aria-describedby={interaction.config.description ? `poll-desc-${interaction.id}` : undefined}
+            >
               {options.map((option: string, index: number) => (
                 <button
                   key={index}
                   onClick={() => handleOptionToggle(index)}
+                  role={multipleChoice ? 'checkbox' : 'radio'}
+                  aria-checked={selectedOptions.includes(index)}
                   className={`w-full text-left px-3 py-2 rounded-lg border transition-colors ${
                     selectedOptions.includes(index)
                       ? 'border-primary-500 bg-primary-50 text-primary-900'
@@ -236,11 +247,14 @@ function PollWidget({
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                      selectedOptions.includes(index)
-                        ? 'border-primary-500 bg-primary-500'
-                        : 'border-gray-400'
-                    }`}>
+                    <div
+                      className={`w-4 h-4 rounded border flex items-center justify-center ${
+                        selectedOptions.includes(index)
+                          ? 'border-primary-500 bg-primary-500'
+                          : 'border-gray-400'
+                      }`}
+                      aria-hidden="true"
+                    >
                       {selectedOptions.includes(index) && (
                         <Check className="w-3 h-3 text-white" />
                       )}
@@ -253,6 +267,7 @@ function PollWidget({
               <button
                 onClick={handleSubmit}
                 disabled={selectedOptions.length === 0 || isSubmitting}
+                aria-disabled={selectedOptions.length === 0 || isSubmitting}
                 className="w-full mt-3 px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isSubmitting ? 'Submitting...' : 'Submit'}
@@ -279,16 +294,20 @@ function CTAWidget({ interaction, onResponse, onDismiss }: ClickableWidgetProps)
   }
 
   return (
-    <div className="bg-gradient-to-r from-primary-50 to-purple-50 border-2 border-primary-200 rounded-lg p-4 shadow-sm">
+    <div className="bg-gradient-to-r from-primary-50 to-purple-50 border-2 border-primary-200 rounded-lg p-4 shadow-sm" role="dialog" aria-labelledby={`cta-title-${interaction.id}`}>
       <div className="flex items-start gap-3">
-        <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center flex-shrink-0" aria-hidden="true">
           <ExternalLink className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
           <div className="flex items-start justify-between mb-2">
-            <h4 className="text-sm font-semibold text-gray-900">{interaction.title}</h4>
-            <button onClick={onDismiss} className="text-gray-400 hover:text-gray-600">
-              <X className="w-4 h-4" />
+            <h4 id={`cta-title-${interaction.id}`} className="text-sm font-semibold text-gray-900">{interaction.title}</h4>
+            <button
+              onClick={onDismiss}
+              className="text-gray-400 hover:text-gray-600"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
 
@@ -299,9 +318,10 @@ function CTAWidget({ interaction, onResponse, onDismiss }: ClickableWidgetProps)
           <button
             onClick={handleClick}
             className="px-4 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors inline-flex items-center gap-2"
+            aria-label={openInNewTab ? `${buttonText} (opens in new tab)` : buttonText}
           >
             {buttonText}
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>

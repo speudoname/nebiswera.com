@@ -10,77 +10,18 @@ import {
   Save,
   Plus,
   Trash2,
-  Edit2,
-  ChevronUp,
-  ChevronDown,
   Settings,
   HelpCircle,
   CheckCircle,
   Circle,
   Square,
   CheckSquare,
-  Type,
-  FileText,
   Copy,
   Eye,
 } from 'lucide-react'
-
-type QuestionType =
-  | 'MULTIPLE_CHOICE_SINGLE'
-  | 'MULTIPLE_CHOICE_MULTIPLE'
-  | 'TRUE_FALSE'
-  | 'SHORT_ANSWER'
-  | 'ESSAY'
-
-interface QuizOption {
-  id: string
-  text: string
-  isCorrect: boolean
-}
-
-interface Question {
-  id: string
-  type: QuestionType
-  question: string
-  explanation: string | null
-  points: number
-  order: number
-  options: QuizOption[]
-  correctAnswer: string | null
-}
-
-interface Quiz {
-  id: string
-  title: string
-  description: string | null
-  passingScore: number
-  maxAttempts: number | null
-  cooldownMinutes: number | null
-  shuffleQuestions: boolean
-  shuffleOptions: boolean
-  showCorrectAnswers: boolean
-  questions: Question[]
-  course: {
-    id: string
-    title: string
-    slug: string
-  }
-  _count: {
-    attempts: number
-  }
-}
-
-const QUESTION_TYPES: { type: QuestionType; label: string; icon: typeof Circle; description: string }[] = [
-  { type: 'MULTIPLE_CHOICE_SINGLE', label: 'Multiple Choice (Single)', icon: Circle, description: 'One correct answer' },
-  { type: 'MULTIPLE_CHOICE_MULTIPLE', label: 'Multiple Choice (Multiple)', icon: CheckSquare, description: 'Multiple correct answers' },
-  { type: 'TRUE_FALSE', label: 'True/False', icon: CheckCircle, description: 'Binary choice' },
-  { type: 'SHORT_ANSWER', label: 'Short Answer', icon: Type, description: 'Text input, auto-graded' },
-  { type: 'ESSAY', label: 'Essay', icon: FileText, description: 'Long text, manual grading' },
-]
-
-function generateOptionId() {
-  return `opt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
-}
+import type { Quiz, Question, QuizOption, QuestionType } from './types'
+import { QUESTION_TYPES, generateOptionId } from './constants'
+import { QuestionCard } from './components'
 
 export default function QuizEditorPage() {
   const params = useParams()
@@ -899,116 +840,6 @@ export default function QuizEditorPage() {
           </div>
         </div>
       </Modal>
-    </div>
-  )
-}
-
-// Question Card Component
-function QuestionCard({
-  question,
-  index,
-  isFirst,
-  isLast,
-  onEdit,
-  onDelete,
-  onMoveUp,
-  onMoveDown,
-}: {
-  question: Question
-  index: number
-  isFirst: boolean
-  isLast: boolean
-  onEdit: () => void
-  onDelete: () => void
-  onMoveUp: () => void
-  onMoveDown: () => void
-}) {
-  const typeInfo = QUESTION_TYPES.find(qt => qt.type === question.type)
-  const Icon = typeInfo?.icon || HelpCircle
-
-  return (
-    <div className="bg-neu-light rounded-neu shadow-neu p-4">
-      <div className="flex items-start gap-4">
-        {/* Reorder buttons */}
-        <div className="flex flex-col gap-1">
-          <button
-            onClick={onMoveUp}
-            disabled={isFirst}
-            className="p-1 text-text-muted hover:text-primary-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onMoveDown}
-            disabled={isLast}
-            className="p-1 text-text-muted hover:text-primary-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Question number */}
-        <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary-100 text-primary-600 rounded-full font-medium">
-          {index + 1}
-        </div>
-
-        {/* Question content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className="w-4 h-4 text-text-muted" />
-            <span className="text-xs text-text-muted">{typeInfo?.label}</span>
-            <span className="text-xs px-2 py-0.5 bg-neu-base rounded">{question.points} pt{question.points !== 1 ? 's' : ''}</span>
-          </div>
-          <p className="text-text-primary">{question.question}</p>
-
-          {/* Show options for multiple choice */}
-          {['MULTIPLE_CHOICE_SINGLE', 'MULTIPLE_CHOICE_MULTIPLE', 'TRUE_FALSE'].includes(question.type) && (
-            <div className="mt-3 space-y-1">
-              {(question.options as QuizOption[]).map((opt) => (
-                <div
-                  key={opt.id}
-                  className={`flex items-center gap-2 text-sm ${
-                    opt.isCorrect ? 'text-green-600' : 'text-text-muted'
-                  }`}
-                >
-                  {opt.isCorrect ? <CheckCircle className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
-                  <span>{opt.text}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Show correct answer for short answer */}
-          {question.type === 'SHORT_ANSWER' && question.correctAnswer && (
-            <div className="mt-2 text-sm text-green-600">
-              Correct: {question.correctAnswer}
-            </div>
-          )}
-
-          {/* Show explanation if present */}
-          {question.explanation && (
-            <div className="mt-2 text-sm text-text-muted italic">
-              Explanation: {question.explanation}
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onEdit}
-            className="p-2 text-text-muted hover:text-primary-600 transition-colors"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-2 text-text-muted hover:text-red-600 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
     </div>
   )
 }

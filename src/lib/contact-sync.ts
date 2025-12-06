@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '@/lib/db'
-import { ActivityType, type Contact, type WebinarRegistration } from '@prisma/client'
+import { ActivityType, Prisma, type Contact, type WebinarRegistration } from '@prisma/client'
 import { logger } from '@/lib'
 
 interface WebinarRegistrationData {
@@ -21,7 +21,7 @@ interface WebinarRegistrationData {
   firstName?: string | null
   lastName?: string | null
   phone?: string | null
-  customFieldResponses?: any
+  customFieldResponses?: Prisma.InputJsonValue
   sessionType: string
   sessionId?: string | null
   timezone: string
@@ -29,6 +29,7 @@ interface WebinarRegistrationData {
 }
 
 interface WebinarStats {
+  [key: string]: unknown // Index signature for Prisma JsonValue compatibility
   totalRegistrations: number
   totalAttended: number
   totalCompleted: number
@@ -68,6 +69,27 @@ interface WebinarStats {
       >
     }
   >
+}
+
+// Type for contact's customFields JSON
+interface ContactCustomFields {
+  webinarStats?: WebinarStats
+  [key: string]: unknown
+}
+
+/**
+ * Get webinar stats from a contact, initializing if not present
+ */
+function getWebinarStats(contact: Contact): { customFields: ContactCustomFields; webinarStats: WebinarStats } {
+  const customFields = (contact.customFields as ContactCustomFields) || {}
+  const webinarStats: WebinarStats = customFields.webinarStats || {
+    totalRegistrations: 0,
+    totalAttended: 0,
+    totalCompleted: 0,
+    totalWatchTime: 0,
+    webinars: {},
+  }
+  return { customFields, webinarStats }
 }
 
 /**
@@ -154,14 +176,7 @@ export async function syncWebinarRegistrationToContact(
     })
   } else {
     // Update existing contact
-    const customFields = (contact.customFields as any) || {}
-    const webinarStats: WebinarStats = customFields.webinarStats || {
-      totalRegistrations: 0,
-      totalAttended: 0,
-      totalCompleted: 0,
-      totalWatchTime: 0,
-      webinars: {},
-    }
+    const { customFields, webinarStats } = getWebinarStats(contact)
 
     // Update webinar-specific stats
     if (!webinarStats.webinars[webinarId]) {
@@ -193,7 +208,7 @@ export async function syncWebinarRegistrationToContact(
         customFields: {
           ...customFields,
           webinarStats,
-        },
+        } as Prisma.InputJsonValue,
       },
     })
   }
@@ -241,14 +256,7 @@ export async function syncWebinarAttendance(
 
   if (!contact) return
 
-  const customFields = (contact.customFields as any) || {}
-  const webinarStats: WebinarStats = customFields.webinarStats || {
-    totalRegistrations: 0,
-    totalAttended: 0,
-    totalCompleted: 0,
-    totalWatchTime: 0,
-    webinars: {},
-  }
+  const { customFields, webinarStats } = getWebinarStats(contact)
 
   const webinarId = registration.webinarId
 
@@ -265,7 +273,7 @@ export async function syncWebinarAttendance(
         customFields: {
           ...customFields,
           webinarStats,
-        },
+        } as Prisma.InputJsonValue,
       },
     })
 
@@ -303,14 +311,7 @@ export async function syncWebinarCompletion(
 
   if (!contact) return
 
-  const customFields = (contact.customFields as any) || {}
-  const webinarStats: WebinarStats = customFields.webinarStats || {
-    totalRegistrations: 0,
-    totalAttended: 0,
-    totalCompleted: 0,
-    totalWatchTime: 0,
-    webinars: {},
-  }
+  const { customFields, webinarStats } = getWebinarStats(contact)
 
   const webinarId = registration.webinarId
 
@@ -333,7 +334,7 @@ export async function syncWebinarCompletion(
         customFields: {
           ...customFields,
           webinarStats,
-        },
+        } as Prisma.InputJsonValue,
       },
     })
 
@@ -370,14 +371,7 @@ export async function syncWebinarWatchTime(registration: WebinarRegistration): P
 
   if (!contact) return
 
-  const customFields = (contact.customFields as any) || {}
-  const webinarStats: WebinarStats = customFields.webinarStats || {
-    totalRegistrations: 0,
-    totalAttended: 0,
-    totalCompleted: 0,
-    totalWatchTime: 0,
-    webinars: {},
-  }
+  const { customFields, webinarStats } = getWebinarStats(contact)
 
   const webinarId = registration.webinarId
 
@@ -398,7 +392,7 @@ export async function syncWebinarWatchTime(registration: WebinarRegistration): P
           customFields: {
             ...customFields,
             webinarStats,
-          },
+          } as Prisma.InputJsonValue,
         },
       })
     }
@@ -610,14 +604,7 @@ export async function syncInteractionResponse(
 
   if (!contact) return
 
-  const customFields = (contact.customFields as any) || {}
-  const webinarStats: WebinarStats = customFields.webinarStats || {
-    totalRegistrations: 0,
-    totalAttended: 0,
-    totalCompleted: 0,
-    totalWatchTime: 0,
-    webinars: {},
-  }
+  const { customFields, webinarStats } = getWebinarStats(contact)
 
   const webinarId = registration.webinarId
 
@@ -643,7 +630,7 @@ export async function syncInteractionResponse(
         customFields: {
           ...customFields,
           webinarStats,
-        },
+        } as Prisma.InputJsonValue,
       },
     })
   }

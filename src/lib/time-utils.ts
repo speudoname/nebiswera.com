@@ -47,9 +47,10 @@ export function formatTime(seconds: number, options?: TimeFormatOptions): string
 }
 
 /**
- * Format duration in seconds to human readable (alias for formatTime)
+ * Format duration in seconds to human readable
  * @param seconds - Duration in seconds
  * @returns Formatted duration string (MM:SS or HH:MM:SS)
+ * @deprecated Use formatTime() instead - this is just an alias
  */
 export function formatDuration(seconds: number): string {
   return formatTime(seconds)
@@ -182,7 +183,8 @@ export function formatRelativeTime(date: Date | string, locale: string = 'en'): 
 }
 
 /**
- * Alias for formatRelativeTime (backwards compatibility)
+ * Format relative time in the past (e.g., "2 days ago")
+ * @deprecated Use formatRelativeTime() instead - this is just an alias for backwards compatibility
  */
 export function getRelativeTime(date: Date | string, locale: string = 'en'): string {
   return formatRelativeTime(date, locale)

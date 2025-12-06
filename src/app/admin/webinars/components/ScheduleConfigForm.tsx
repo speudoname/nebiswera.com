@@ -15,7 +15,7 @@ import {
   AdditionalOptionsSection,
 } from './schedule-sections'
 
-interface ScheduleConfig {
+export interface ScheduleConfig {
   id?: string
   eventType: 'RECURRING' | 'ONE_TIME' | 'SPECIFIC_DATES' | 'ON_DEMAND_ONLY'
   startsAt: string

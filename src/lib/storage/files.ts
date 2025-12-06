@@ -21,13 +21,12 @@ function getStorageConfig(): StorageConfig {
   const hostname = process.env.BUNNY_STORAGE_HOSTNAME
   const cdnUrl = process.env.BUNNY_CDN_URL
 
-  const missing: string[] = []
-  if (!zone) missing.push('BUNNY_STORAGE_ZONE_NAME')
-  if (!password) missing.push('BUNNY_STORAGE_PASSWORD')
-  if (!hostname) missing.push('BUNNY_STORAGE_HOSTNAME')
-  if (!cdnUrl) missing.push('BUNNY_CDN_URL')
-
-  if (missing.length > 0) {
+  if (!zone || !password || !hostname || !cdnUrl) {
+    const missing: string[] = []
+    if (!zone) missing.push('BUNNY_STORAGE_ZONE_NAME')
+    if (!password) missing.push('BUNNY_STORAGE_PASSWORD')
+    if (!hostname) missing.push('BUNNY_STORAGE_HOSTNAME')
+    if (!cdnUrl) missing.push('BUNNY_CDN_URL')
     throw new Error(`Missing required Bunny Storage env vars: ${missing.join(', ')}`)
   }
 
@@ -289,16 +288,16 @@ export async function listFromBunnyStorageRecursive(folder: string): Promise<Arr
   lastModified: string
   folder: string
 }>> {
-  validateStorageConfig()
+  const config = getStorageConfig()
 
   const cleanFolder = folder.startsWith('/') ? folder.slice(1) : folder
-  const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanFolder}/`
+  const url = `https://${config.hostname}/${config.zone}/${cleanFolder}/`
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
-        AccessKey: BUNNY_STORAGE_PASSWORD,
+        AccessKey: config.password,
       },
     })
 
@@ -330,7 +329,7 @@ export async function listFromBunnyStorageRecursive(folder: string): Promise<Arr
       } else if (item.Length > 0) {
         files.push({
           path: `${cleanFolder}/${item.ObjectName}`,
-          url: `${BUNNY_CDN_URL}/${cleanFolder}/${item.ObjectName}`,
+          url: `${config.cdnUrl}/${cleanFolder}/${item.ObjectName}`,
           name: item.ObjectName,
           size: item.Length,
           lastModified: item.LastChanged,

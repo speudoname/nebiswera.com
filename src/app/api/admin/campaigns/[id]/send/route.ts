@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
 import { logger } from '@/lib'
+import { DEFAULT_TIMEZONE } from '@/lib/constants'
 import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import type { NextRequest } from 'next/server'
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         data: {
           status: 'SCHEDULED',
           scheduledAt,
-          scheduledTz: schedule.timezone || 'Asia/Tbilisi',
+          scheduledTz: schedule.timezone || DEFAULT_TIMEZONE,
         },
       })
 

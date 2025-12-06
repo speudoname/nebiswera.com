@@ -18,48 +18,63 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const { id } = await params
 
   try {
-    const campaign = await prisma.campaign.findUnique({
-      where: { id },
-      select: { status: true, sentCount: true, totalRecipients: true },
+    // Use transaction to ensure atomic check-and-update
+    const result = await prisma.$transaction(async (tx) => {
+      const campaign = await tx.campaign.findUnique({
+        where: { id },
+        select: { status: true, sentCount: true, totalRecipients: true },
+      })
+
+      if (!campaign) {
+        return { error: 'not_found' } as const
+      }
+
+      // Cannot cancel completed campaigns
+      if (campaign.status === 'COMPLETED') {
+        return { error: 'completed' } as const
+      }
+
+      // Already cancelled
+      if (campaign.status === 'CANCELLED') {
+        return { error: 'already_cancelled' } as const
+      }
+
+      await tx.campaign.update({
+        where: { id },
+        data: { status: 'CANCELLED' },
+      })
+
+      // Mark all pending recipients as skipped
+      await tx.campaignRecipient.updateMany({
+        where: {
+          campaignId: id,
+          status: 'PENDING',
+        },
+        data: {
+          status: 'SKIPPED',
+          error: 'Campaign cancelled',
+        },
+      })
+
+      return { success: true, campaign } as const
     })
 
-    if (!campaign) {
-      return notFoundResponse('Campaign not found')
-    }
-
-    // Cannot cancel completed campaigns
-    if (campaign.status === 'COMPLETED') {
-      return badRequestResponse('Cannot cancel completed campaign')
-    }
-
-    // Already cancelled
-    if (campaign.status === 'CANCELLED') {
+    if ('error' in result) {
+      if (result.error === 'not_found') {
+        return notFoundResponse('Campaign not found')
+      }
+      if (result.error === 'completed') {
+        return badRequestResponse('Cannot cancel completed campaign')
+      }
       return badRequestResponse('Campaign already cancelled')
     }
-
-    await prisma.campaign.update({
-      where: { id },
-      data: { status: 'CANCELLED' },
-    })
-
-    // Mark all pending recipients as skipped
-    await prisma.campaignRecipient.updateMany({
-      where: {
-        campaignId: id,
-        status: 'PENDING',
-      },
-      data: {
-        status: 'SKIPPED',
-        error: 'Campaign cancelled',
-      },
-    })
 
     return NextResponse.json({
       success: true,
       status: 'CANCELLED',
-      sentCount: campaign.sentCount,
-      totalRecipients: campaign.totalRecipients,
-      message: `Campaign cancelled. ${campaign.sentCount} emails were already sent.`,
+      sentCount: result.campaign.sentCount,
+      totalRecipients: result.campaign.totalRecipients,
+      message: `Campaign cancelled. ${result.campaign.sentCount} emails were already sent.`,
     })
   } catch (error) {
     logger.error('Failed to cancel campaign:', error)

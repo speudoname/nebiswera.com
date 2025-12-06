@@ -3,7 +3,7 @@
 
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
-import { isValidEmail as validateEmail, logger } from '@/lib'
+import { isValidEmail, logger } from '@/lib'
 import type { WebinarSessionType } from '@prisma/client'
 import {
   queueRegistrationNotifications,
@@ -396,13 +396,6 @@ export async function markAsAttended(registrationId: string): Promise<void> {
       },
     },
   })
-}
-
-/**
- * Simple email validation (uses shared utility)
- */
-function isValidEmail(email: string): boolean {
-  return validateEmail(email)
 }
 
 /**

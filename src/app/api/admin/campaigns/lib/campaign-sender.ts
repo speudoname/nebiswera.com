@@ -1,6 +1,12 @@
 import { prisma } from '@/lib/db'
 import { getSettings, generateCampaignFooter, type AppSettings } from '@/lib/settings'
 import { logger } from '@/lib'
+import {
+  getWarmupConfig,
+  getRemainingToday,
+  recordSent,
+  recordContactEmailSent,
+} from '@/lib/warmup'
 
 const BATCH_SIZE = 500 // Postmark limit
 const BATCH_DELAY_MS = 1000 // 1 second between batches to avoid rate limits
@@ -463,50 +469,143 @@ function replaceVariables(content: string, variables: Variables): string {
 /**
  * Process a single batch of a campaign (for use in cron jobs)
  * Returns true if there are more recipients to process
+ * Respects warmup limits and engagement tier ordering
  */
 export async function processCampaignBatch(campaignId: string): Promise<{
   processed: boolean
   hasMore: boolean
   sent: number
   failed: number
+  warmupLimited: boolean
 }> {
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },
   })
 
   if (!campaign || campaign.status !== 'SENDING') {
-    return { processed: false, hasMore: false, sent: 0, failed: 0 }
+    return { processed: false, hasMore: false, sent: 0, failed: 0, warmupLimited: false }
   }
 
   const settings = await getSettings()
 
   if (!settings.marketingServerToken) {
-    return { processed: false, hasMore: false, sent: 0, failed: 0 }
+    return { processed: false, hasMore: false, sent: 0, failed: 0, warmupLimited: false }
   }
 
+  // Check warmup status and limits
+  const warmupConfig = await getWarmupConfig()
+  const warmupStatus = await getRemainingToday()
+
+  // If warmup is active and no remaining capacity, pause until tomorrow
+  if (warmupConfig.status === 'WARMING_UP' && warmupStatus.remaining <= 0) {
+    logger.info(`Campaign ${campaignId}: Daily warmup limit reached, will continue tomorrow`)
+    return {
+      processed: false,
+      hasMore: true,
+      sent: 0,
+      failed: 0,
+      warmupLimited: true,
+    }
+  }
+
+  // Determine batch size (respect warmup limits)
+  let batchSize = BATCH_SIZE
+  if (warmupConfig.status === 'WARMING_UP' && warmupStatus.remaining < BATCH_SIZE) {
+    batchSize = warmupStatus.remaining
+    logger.info(`Campaign ${campaignId}: Limiting batch to ${batchSize} (warmup limit)`)
+  }
+
+  // Fetch recipients ordered by engagement tier (HOT first, then NEW, WARM, COOL, COLD)
+  // Join with Contact to get engagement tier for sorting
   const recipients = await prisma.campaignRecipient.findMany({
     where: {
       campaignId,
       status: 'PENDING',
     },
-    take: BATCH_SIZE,
+    include: {
+      campaign: false,
+    },
+    take: batchSize,
   })
 
-  if (recipients.length === 0) {
-    // No more recipients - mark as completed
-    await prisma.campaign.update({
-      where: { id: campaignId },
-      data: {
-        status: 'COMPLETED',
-        completedAt: new Date(),
+  // If warmup is active, filter and order by engagement tier
+  let orderedRecipients = recipients
+  if (warmupConfig.status === 'WARMING_UP' && warmupStatus.allowedTiers.length > 0) {
+    // Get contacts with their tiers
+    const emails = recipients.map((r) => r.email)
+    const contacts = await prisma.contact.findMany({
+      where: { email: { in: emails } },
+      select: { email: true, engagementTier: true },
+    })
+
+    const contactTierMap = new Map(contacts.map((c) => [c.email, c.engagementTier]))
+
+    // Define tier priority (lower = better)
+    const tierPriority: Record<string, number> = {
+      HOT: 1,
+      NEW: 2,
+      WARM: 3,
+      COOL: 4,
+      COLD: 5,
+    }
+
+    // Filter to allowed tiers and sort by priority
+    orderedRecipients = recipients
+      .filter((r) => {
+        const tier = contactTierMap.get(r.email) || 'NEW'
+        return warmupStatus.allowedTiers.includes(tier)
+      })
+      .sort((a, b) => {
+        const tierA = contactTierMap.get(a.email) || 'NEW'
+        const tierB = contactTierMap.get(b.email) || 'NEW'
+        return (tierPriority[tierA] || 99) - (tierPriority[tierB] || 99)
+      })
+
+    // If some recipients were filtered out due to tier restrictions
+    if (orderedRecipients.length < recipients.length) {
+      logger.info(
+        `Campaign ${campaignId}: Filtered ${recipients.length - orderedRecipients.length} recipients (tier restrictions)`
+      )
+    }
+  }
+
+  if (orderedRecipients.length === 0) {
+    // Check if there are still pending recipients (just not eligible yet)
+    const remainingCount = await prisma.campaignRecipient.count({
+      where: {
+        campaignId,
+        status: 'PENDING',
       },
     })
-    return { processed: true, hasMore: false, sent: 0, failed: 0 }
+
+    if (remainingCount === 0) {
+      // No more recipients - mark as completed
+      await prisma.campaign.update({
+        where: { id: campaignId },
+        data: {
+          status: 'COMPLETED',
+          completedAt: new Date(),
+        },
+      })
+      return { processed: true, hasMore: false, sent: 0, failed: 0, warmupLimited: false }
+    } else {
+      // Recipients exist but not eligible for current warmup phase
+      logger.info(
+        `Campaign ${campaignId}: ${remainingCount} recipients waiting for higher warmup phase`
+      )
+      return {
+        processed: false,
+        hasMore: true,
+        sent: 0,
+        failed: 0,
+        warmupLimited: true,
+      }
+    }
   }
 
   const result = await sendBatch(
     campaign,
-    recipients,
+    orderedRecipients,
     settings.marketingServerToken,
     settings.marketingStreamName,
     settings
@@ -519,6 +618,25 @@ export async function processCampaignBatch(campaignId: string): Promise<{
       sentCount: { increment: result.sent },
     },
   })
+
+  // Update warmup sent counter
+  if (warmupConfig.status === 'WARMING_UP' && result.sent > 0) {
+    await recordSent(result.sent)
+  }
+
+  // Update contact email received tracking
+  if (result.sent > 0) {
+    const sentEmails = orderedRecipients.slice(0, result.sent).map((r) => r.email)
+    const sentContacts = await prisma.contact.findMany({
+      where: { email: { in: sentEmails } },
+      select: { id: true },
+    })
+
+    // Update in parallel (fire and forget for performance)
+    Promise.all(
+      sentContacts.map((c) => recordContactEmailSent(c.id).catch(() => {}))
+    ).catch(() => {})
+  }
 
   // Check if there are more recipients
   const remainingCount = await prisma.campaignRecipient.count({
@@ -533,6 +651,7 @@ export async function processCampaignBatch(campaignId: string): Promise<{
     hasMore: remainingCount > 0,
     sent: result.sent,
     failed: result.failed,
+    warmupLimited: false,
   }
 }
 
@@ -551,6 +670,7 @@ export async function getCampaignsToProcess(): Promise<
       },
     },
     select: { id: true, name: true, status: true },
+    orderBy: { scheduledAt: 'asc' },
   })
 
   // Update scheduled campaigns to SENDING
@@ -564,10 +684,25 @@ export async function getCampaignsToProcess(): Promise<
     })
   }
 
-  // Get all SENDING campaigns
+  // During warmup, process campaigns in FIFO order (oldest first)
+  // This ensures Campaign A completes before Campaign B starts
+  const warmupConfig = await getWarmupConfig()
+
+  if (warmupConfig.status === 'WARMING_UP') {
+    // Only return the OLDEST sending campaign (FIFO queue)
+    const oldest = await prisma.campaign.findFirst({
+      where: { status: 'SENDING' },
+      select: { id: true, name: true, status: true },
+      orderBy: { sendingStartedAt: 'asc' },
+    })
+    return oldest ? [oldest] : []
+  }
+
+  // When fully warmed, process all campaigns in parallel
   const sending = await prisma.campaign.findMany({
     where: { status: 'SENDING' },
     select: { id: true, name: true, status: true },
+    orderBy: { sendingStartedAt: 'asc' },
   })
 
   return sending

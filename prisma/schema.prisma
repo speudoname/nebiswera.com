@@ -389,6 +389,15 @@ model Contact {
   suppressionReason SuppressionReason?
   suppressedAt      DateTime?
 
+  // Engagement tracking (for warmup prioritization)
+  engagementTier      EngagementTier @default(NEW)
+  lastOpenedAt        DateTime?
+  lastClickedAt       DateTime?
+  lastEmailReceivedAt DateTime?
+  totalEmailsReceived Int            @default(0)
+  totalOpens          Int            @default(0)
+  totalClicks         Int            @default(0)
+
   // Metadata
   customFields  Json?         // Flexible key-value storage for future needs
   notes         String?       @db.Text
@@ -408,6 +417,9 @@ model Contact {
   @@index([marketingStatus])
   @@index([email, marketingStatus]) // Composite index for filtered email lookups in campaigns
   @@index([createdAt])
+  @@index([engagementTier])
+  @@index([lastOpenedAt])
+  @@index([lastClickedAt])
   @@schema("crm")
   @@map("contacts")
 }
@@ -711,6 +723,131 @@ enum SuppressionReason {
   MANUAL_SUPPRESSION
 
   @@schema("crm")
+}
+
+// Engagement tier for warmup prioritization
+enum EngagementTier {
+  HOT   // Opened/clicked in last 30 days
+  WARM  // Opened/clicked in last 60 days
+  COOL  // Opened/clicked in last 90 days
+  COLD  // No engagement in 90+ days
+  NEW   // Never received email from us
+
+  @@schema("crm")
+}
+
+// ===========================================
+// Email Warmup System
+// ===========================================
+
+enum WarmupStatus {
+  NOT_STARTED   // Never warmed up
+  WARMING_UP    // Currently in warmup phase
+  WARMED        // Fully warmed, normal sending
+  COOLING_DOWN  // No sends recently, may need partial warmup
+  COLD          // Inactive 30+ days, needs full warmup
+  PAUSED        // Manually paused by admin
+
+  @@schema("crm")
+}
+
+model WarmupConfig {
+  id                  String        @id @default(cuid())
+  serverId            String        @unique  // "marketing" or "transactional"
+  serverName          String        // "nbswera" or "nebiswera"
+
+  // Current Status
+  status              WarmupStatus  @default(NOT_STARTED)
+  currentDay          Int           @default(0)  // Day in warmup schedule (0 = not started)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  pausedAt            DateTime?
+  pauseReason         String?
+
+  // Daily Tracking
+  dailyLimit          Int           @default(50)
+  sentToday           Int           @default(0)
+  lastSendDate        DateTime?     @db.Date
+  lastResetAt         DateTime?
+
+  // Recent Metrics (rolling 7-day average)
+  recentOpenRate      Float?
+  recentBounceRate    Float?
+  recentSpamRate      Float?
+  recentClickRate     Float?
+
+  // Configuration
+  targetDailyVolume   Int           @default(10000)  // Goal after warmup
+  autoProgress        Boolean       @default(true)   // Auto-advance schedule based on metrics
+
+  // Cooldown tracking
+  lastActivityAt      DateTime?
+  consecutiveInactiveDays Int       @default(0)
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // Relations
+  logs                WarmupLog[]
+
+  @@schema("crm")
+  @@map("warmup_configs")
+}
+
+model WarmupSchedule {
+  id          String   @id @default(cuid())
+  day         Int      @unique  // Day number (1, 2, 3, ...)
+  dailyLimit  Int      // Max emails for this day
+  phase       String   // "foundation", "growth", "scaling", "maturation", "full"
+  description String?  // Human-readable description
+
+  // Engagement tier restrictions for this day
+  allowedTiers String[] // Array of allowed EngagementTier values
+
+  @@schema("crm")
+  @@map("warmup_schedules")
+}
+
+model WarmupLog {
+  id            String   @id @default(cuid())
+  configId      String
+  date          DateTime @db.Date
+  day           Int      // Which day in the schedule this was
+  phase         String   // Phase name
+
+  // Volume
+  dailyLimit    Int
+  sent          Int
+  delivered     Int      @default(0)
+
+  // Engagement metrics
+  opened        Int      @default(0)
+  clicked       Int      @default(0)
+  bounced       Int      @default(0)
+  complained    Int      @default(0)
+
+  // Calculated rates (stored for historical reference)
+  openRate      Float?
+  bounceRate    Float?
+  spamRate      Float?
+  clickRate     Float?
+
+  // Tier breakdown (how many sent to each tier)
+  tierBreakdown Json?    // { "HOT": 100, "WARM": 50, "NEW": 20, ... }
+
+  // Status
+  progressedToNextDay Boolean @default(false)
+  notes               String?
+
+  createdAt     DateTime @default(now())
+
+  config        WarmupConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, date])
+  @@index([configId])
+  @@index([date])
+  @@schema("crm")
+  @@map("warmup_logs")
 }
 
 // ===========================================

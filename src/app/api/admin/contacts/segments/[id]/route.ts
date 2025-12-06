@@ -1,63 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { buildContactWhereClause, type ContactFilters } from '@/app/api/admin/contacts/lib/contact-queries'
 import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib/api-response'
 import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
-import type { ContactStatus, Prisma } from '@prisma/client'
-
-interface SegmentFilters {
-  status?: ContactStatus | 'all'
-  source?: string
-  tagIds?: string[]
-  search?: string
-  createdAfter?: string
-  createdBefore?: string
-}
-
-function buildWhereClause(filters: SegmentFilters): Prisma.ContactWhereInput {
-  const where: Prisma.ContactWhereInput = {}
-
-  if (filters.status && filters.status !== 'all') {
-    where.status = filters.status
-  }
-
-  if (filters.source && filters.source !== 'all') {
-    where.source = filters.source
-  }
-
-  if (filters.tagIds && filters.tagIds.length > 0) {
-    where.tags = {
-      some: {
-        tagId: { in: filters.tagIds },
-      },
-    }
-  }
-
-  if (filters.search) {
-    where.OR = [
-      { email: { contains: filters.search, mode: 'insensitive' } },
-      { firstName: { contains: filters.search, mode: 'insensitive' } },
-      { lastName: { contains: filters.search, mode: 'insensitive' } },
-    ]
-  }
-
-  if (filters.createdAfter) {
-    where.createdAt = {
-      ...((where.createdAt as Prisma.DateTimeFilter) || {}),
-      gte: new Date(filters.createdAfter),
-    }
-  }
-
-  if (filters.createdBefore) {
-    where.createdAt = {
-      ...((where.createdAt as Prisma.DateTimeFilter) || {}),
-      lte: new Date(filters.createdBefore),
-    }
-  }
-
-  return where
-}
 
 // GET - Get segment by ID with contact count
 export async function GET(
@@ -80,8 +27,8 @@ export async function GET(
     }
 
     // Get current contact count
-    const filters = segment.filters as SegmentFilters
-    const where = buildWhereClause(filters)
+    const filters = segment.filters as ContactFilters
+    const where = buildContactWhereClause(filters)
     const contactCount = await prisma.contact.count({ where })
 
     return NextResponse.json({
@@ -130,7 +77,7 @@ export async function PATCH(
     // Calculate new contact count if filters changed
     let contactCount = existing.contactCount
     if (filters) {
-      const where = buildWhereClause(filters)
+      const where = buildContactWhereClause(filters)
       contactCount = await prisma.contact.count({ where })
     }
 

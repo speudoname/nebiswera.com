@@ -22,20 +22,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       orderBy: { createdAt: 'asc' },
     })
 
-    // Get tag names for each rule
-    const rulesWithTagNames = await Promise.all(
-      rules.map(async (rule) => {
-        const tags = await prisma.tag.findMany({
-          where: { id: { in: rule.tagIds } },
+    // Batch-fetch all tags at once to avoid N+1 queries
+    const allTagIds = Array.from(new Set(rules.flatMap((rule) => rule.tagIds)))
+    const allTags = allTagIds.length > 0
+      ? await prisma.tag.findMany({
+          where: { id: { in: allTagIds } },
           select: { id: true, name: true, color: true },
         })
+      : []
 
-        return {
-          ...rule,
-          tags,
-        }
-      })
-    )
+    // Create a map for quick lookup
+    const tagMap = new Map(allTags.map((tag) => [tag.id, tag]))
+
+    // Map tags to each rule
+    const rulesWithTagNames = rules.map((rule) => ({
+      ...rule,
+      tags: rule.tagIds.map((tagId) => tagMap.get(tagId)).filter(Boolean),
+    }))
 
     return NextResponse.json({ rules: rulesWithTagNames })
   } catch (error) {

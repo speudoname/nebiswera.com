@@ -6,7 +6,7 @@ import { WaitingRoom } from './WaitingRoom'
 import { InteractionOverlay } from './InteractionOverlay'
 import { ChatPanel } from './ChatPanel'
 import { EndScreen } from './EndScreen'
-import { Maximize2, Minimize2 } from 'lucide-react'
+import { Maximize2, Minimize2, MessageCircle, X } from 'lucide-react'
 import { useWaitingRoom } from '../hooks/useWaitingRoom'
 import { useWebinarAnalytics } from '../hooks/useWebinarAnalytics'
 import { useProgressTracking } from '../hooks/useProgressTracking'
@@ -75,6 +75,8 @@ export function WebinarRoom({
   const [videoEnded, setVideoEnded] = useState(false)
   const [showEndScreen, setShowEndScreen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [showChatInFullscreen, setShowChatInFullscreen] = useState(false)
+  const [showMobileChat, setShowMobileChat] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Waiting room management
@@ -204,10 +206,10 @@ export function WebinarRoom({
   return (
     <div
       ref={containerRef}
-      className="flex h-full bg-black"
+      className="flex flex-col lg:flex-row h-full bg-black"
     >
-      {/* Main video area - Left side */}
-      <div className="flex-1 relative flex flex-col">
+      {/* Main video area */}
+      <div className="flex-1 relative flex flex-col min-h-0">
         {/* Player */}
         <div className="flex-1 bg-black overflow-hidden">
           <WebinarPlayer
@@ -224,7 +226,7 @@ export function WebinarRoom({
           />
         </div>
 
-        {/* Interaction overlay - shows on top of video when not in fullscreen, or always if in fullscreen */}
+        {/* Interaction overlay */}
         {activeInteractions.length > 0 && (
           <InteractionOverlay
             interactions={activeInteractions}
@@ -234,22 +236,56 @@ export function WebinarRoom({
           />
         )}
 
-        {/* Fullscreen toggle button (bottom right corner of video) */}
-        <button
-          onClick={toggleFullscreen}
-          className="absolute bottom-4 right-4 p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors z-10"
-        >
-          {isFullscreen ? (
-            <Minimize2 className="w-5 h-5 text-white" />
-          ) : (
-            <Maximize2 className="w-5 h-5 text-white" />
+        {/* Video control buttons (bottom right) */}
+        <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
+          {/* Chat toggle button for fullscreen mode (desktop) */}
+          {chatEnabled && isFullscreen && (
+            <button
+              onClick={() => setShowChatInFullscreen(!showChatInFullscreen)}
+              className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+              title={showChatInFullscreen ? 'Hide chat' : 'Show chat'}
+            >
+              {showChatInFullscreen ? (
+                <X className="w-5 h-5 text-white" />
+              ) : (
+                <MessageCircle className="w-5 h-5 text-white" />
+              )}
+            </button>
           )}
-        </button>
+
+          {/* Fullscreen toggle - hidden on mobile */}
+          <button
+            onClick={toggleFullscreen}
+            className="hidden lg:block p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+            title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-5 h-5 text-white" />
+            ) : (
+              <Maximize2 className="w-5 h-5 text-white" />
+            )}
+          </button>
+        </div>
+
+        {/* Mobile chat toggle button (floating) */}
+        {chatEnabled && !isFullscreen && (
+          <button
+            onClick={() => setShowMobileChat(!showMobileChat)}
+            className="lg:hidden fixed bottom-4 right-4 p-4 rounded-full bg-primary-600 hover:bg-primary-700 shadow-lg transition-colors z-30"
+            title={showMobileChat ? 'Hide chat' : 'Show chat'}
+          >
+            {showMobileChat ? (
+              <X className="w-6 h-6 text-white" />
+            ) : (
+              <MessageCircle className="w-6 h-6 text-white" />
+            )}
+          </button>
+        )}
       </div>
 
-      {/* Chat panel - Right side, always visible on desktop, full height */}
+      {/* Desktop chat panel - Right side, hidden on mobile */}
       {chatEnabled && !isFullscreen && (
-        <div className="w-[400px] flex-shrink-0 bg-white h-full">
+        <div className="hidden lg:block w-[400px] flex-shrink-0 bg-white h-full">
           <ChatPanel
             webinarId={webinar.id}
             registrationId={access.registrationId}
@@ -265,21 +301,69 @@ export function WebinarRoom({
         </div>
       )}
 
-      {/* In fullscreen, show chat overlay on right side of video */}
-      {chatEnabled && isFullscreen && (
-        <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white/95 backdrop-blur-sm">
-          <ChatPanel
-            webinarId={webinar.id}
-            registrationId={access.registrationId}
-            userName={userName}
-            accessToken={accessToken}
-            slug={slug}
-            currentVideoTime={currentTime}
-            playbackMode={playback.mode}
-            interactions={activeInteractions}
-            onInteractionDismiss={dismissInteraction}
-            onInteractionRespond={handleInteractionResponse}
+      {/* Mobile chat panel - Slide up from bottom */}
+      {chatEnabled && !isFullscreen && showMobileChat && (
+        <div className="lg:hidden fixed inset-0 z-40 flex flex-col">
+          {/* Backdrop */}
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setShowMobileChat(false)}
           />
+          {/* Chat panel */}
+          <div className="h-[70vh] bg-white rounded-t-2xl shadow-2xl animate-slide-up">
+            <div className="flex items-center justify-between p-3 border-b">
+              <span className="font-medium text-gray-900">Chat</span>
+              <button
+                onClick={() => setShowMobileChat(false)}
+                className="p-1 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="h-[calc(70vh-52px)]">
+              <ChatPanel
+                webinarId={webinar.id}
+                registrationId={access.registrationId}
+                userName={userName}
+                accessToken={accessToken}
+                slug={slug}
+                currentVideoTime={currentTime}
+                playbackMode={playback.mode}
+                interactions={activeInteractions}
+                onInteractionDismiss={dismissInteraction}
+                onInteractionRespond={handleInteractionResponse}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen chat overlay - Toggleable */}
+      {chatEnabled && isFullscreen && showChatInFullscreen && (
+        <div className="absolute right-0 top-0 bottom-0 w-[400px] bg-white/95 backdrop-blur-sm shadow-2xl z-20">
+          <div className="flex items-center justify-between p-3 border-b bg-white">
+            <span className="font-medium text-gray-900">Chat</span>
+            <button
+              onClick={() => setShowChatInFullscreen(false)}
+              className="p-1 rounded-full hover:bg-gray-100"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+          <div className="h-[calc(100%-52px)]">
+            <ChatPanel
+              webinarId={webinar.id}
+              registrationId={access.registrationId}
+              userName={userName}
+              accessToken={accessToken}
+              slug={slug}
+              currentVideoTime={currentTime}
+              playbackMode={playback.mode}
+              interactions={activeInteractions}
+              onInteractionDismiss={dismissInteraction}
+              onInteractionRespond={handleInteractionResponse}
+            />
+          </div>
         </div>
       )}
 

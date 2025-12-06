@@ -168,9 +168,19 @@ const config: Config = {
           '50%': { opacity: '1' },
           '100%': { opacity: '0' },
         },
+        'slide-up': {
+          '0%': { transform: 'translateY(100%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+        'slide-down': {
+          '0%': { transform: 'translateY(0)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
       },
       animation: {
         flash: 'flash 200ms ease-out',
+        'slide-up': 'slide-up 300ms ease-out',
+        'slide-down': 'slide-down 300ms ease-out',
       },
     },
   },

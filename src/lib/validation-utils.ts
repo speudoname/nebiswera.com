@@ -50,12 +50,3 @@ export function getErrorMessage(error: unknown): string {
   }
   return 'An unknown error occurred'
 }
-
-/**
- * Sanitize text input (remove HTML tags)
- * @param text - Input text
- * @returns Sanitized text
- */
-export function sanitizeText(text: string): string {
-  return text.trim().replace(/[<>]/g, '')
-}

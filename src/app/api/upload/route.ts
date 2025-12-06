@@ -1,9 +1,9 @@
 // API endpoint for server-side file uploads to Bunny CDN
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadToBunnyStorage, generateUniqueFilename } from '@/lib/bunny-storage'
-import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { logger } from '@/lib'
+import { getAuthToken } from '@/lib/auth/utils'
+import { logger, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -22,6 +22,12 @@ const ALLOWED_MIME_TYPES = {
 }
 
 export async function POST(request: NextRequest) {
+  // Authentication required
+  const token = await getAuthToken(request)
+  if (!token?.email) {
+    return unauthorizedResponse()
+  }
+
   // Rate limiting
   const rateLimitResponse = await checkRateLimit(request, 'general')
   if (rateLimitResponse) return rateLimitResponse
@@ -33,10 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file exists and has required properties
     if (!file || typeof file === 'string' || !('size' in file) || !('type' in file)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing file' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid or missing file')
     }
 
     // Type assertion for file (FormData file can be Blob with additional properties)
@@ -45,10 +48,7 @@ export async function POST(request: NextRequest) {
     // Validate type parameter
     const validTypes = ['audio', 'video', 'image']
     if (!type || !validTypes.includes(type)) {
-      return NextResponse.json(
-        { error: 'Invalid type. Must be: audio, video, or image' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid type. Must be: audio, video, or image')
     }
 
     const uploadType = type as 'audio' | 'video' | 'image'
@@ -56,19 +56,13 @@ export async function POST(request: NextRequest) {
     // Validate file size
     const maxSize = MAX_FILE_SIZES[uploadType]
     if (uploadFile.size > maxSize) {
-      return NextResponse.json(
-        { error: `File too large. Maximum size for ${type}: ${Math.round(maxSize / 1024 / 1024)}MB` },
-        { status: 413 }
-      )
+      return errorResponse(`File too large. Maximum size for ${type}: ${Math.round(maxSize / 1024 / 1024)}MB`, 413)
     }
 
     // Validate MIME type
     const allowedTypes = ALLOWED_MIME_TYPES[uploadType]
     if (!allowedTypes.includes(uploadFile.type)) {
-      return NextResponse.json(
-        { error: `Invalid file type. Allowed types for ${type}: ${allowedTypes.join(', ')}` },
-        { status: 400 }
-      )
+      return badRequestResponse(`Invalid file type. Allowed types for ${type}: ${allowedTypes.join(', ')}`)
     }
 
     // Generate unique filename
@@ -95,9 +89,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Error uploading file:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload file' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to upload file')
   }
 }

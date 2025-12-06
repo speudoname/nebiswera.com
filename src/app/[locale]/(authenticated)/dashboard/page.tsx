@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
 import { EmailVerificationBanner } from './components/EmailVerificationBanner'
+import { MyCourses } from './components/MyCourses'
 import { Badge, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 import { generatePageMetadata } from '@/lib/metadata'
@@ -114,6 +115,11 @@ export default async function DashboardPage() {
             </Card>
           </div>
         </Card>
+
+        {/* My Courses */}
+        <div className="mt-6">
+          <MyCourses />
+        </div>
       </div>
     </div>
   )

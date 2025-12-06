@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { WebinarStatus } from '@prisma/client'
 
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(webinar)
   } catch (error) {
-    console.error('Failed to fetch webinar:', error)
+    logger.error('Failed to fetch webinar:', error)
     return NextResponse.json(
       { error: 'Failed to fetch webinar' },
       { status: 500 }
@@ -149,7 +150,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(webinar)
   } catch (error) {
-    console.error('Failed to update webinar:', error)
+    logger.error('Failed to update webinar:', error)
     return NextResponse.json(
       { error: 'Failed to update webinar' },
       { status: 500 }
@@ -191,7 +192,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete webinar:', error)
+    logger.error('Failed to delete webinar:', error)
     return NextResponse.json(
       { error: 'Failed to delete webinar' },
       { status: 500 }

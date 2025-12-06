@@ -2,23 +2,21 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { logContactCreated } from '@/app/api/admin/contacts/lib/contact-activity'
+import { parsePaginationParams, createPaginationResult, unauthorizedResponse, badRequestResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '10')
+  const { page, limit, skip } = parsePaginationParams(request, { defaultLimit: 10 })
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || 'all'
   const source = searchParams.get('source') || 'all'
   const tagId = searchParams.get('tagId') || ''
-
-  const skip = (page - 1) * limit
 
   const where: Prisma.ContactWhereInput = {}
 
@@ -81,24 +79,25 @@ export async function GET(request: NextRequest) {
     distinct: ['source'],
   })
 
-  return NextResponse.json({
-    contacts: contacts.map((contact) => ({
+  const result = createPaginationResult(
+    contacts.map((contact) => ({
       ...contact,
       tags: contact.tags.map((ct) => ct.tag),
     })),
+    total,
+    { page, limit, skip }
+  )
+
+  return NextResponse.json({
+    contacts: result.data,
     sources: sources.map((s) => s.source),
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    pagination: result.pagination,
   })
 }
 
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -107,11 +106,11 @@ export async function POST(request: NextRequest) {
     const { email, firstName, lastName, phone, source, sourceDetails, status, notes, tagIds } = body
 
     if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+      return badRequestResponse('Email is required')
     }
 
     if (!source) {
-      return NextResponse.json({ error: 'Source is required' }, { status: 400 })
+      return badRequestResponse('Source is required')
     }
 
     // Check if contact already exists
@@ -120,10 +119,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingContact) {
-      return NextResponse.json(
-        { error: 'A contact with this email already exists' },
-        { status: 400 }
-      )
+      return badRequestResponse('A contact with this email already exists')
     }
 
     // Create contact with tags
@@ -161,10 +157,7 @@ export async function POST(request: NextRequest) {
       tags: contact.tags.map((ct) => ct.tag),
     })
   } catch (error) {
-    console.error('Failed to create contact:', error)
-    return NextResponse.json(
-      { error: 'Failed to create contact' },
-      { status: 500 }
-    )
+    logger.error('Failed to create contact:', error)
+    return errorResponse('Failed to create contact')
   }
 }

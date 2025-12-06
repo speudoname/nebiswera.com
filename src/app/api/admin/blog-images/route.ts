@@ -2,13 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { listFromBunnyStorage } from '@/lib/bunny-storage'
 import { isAdmin } from '@/lib/auth/utils'
-import { logger } from '@/lib'
+import { logger, unauthorizedResponse, errorResponse } from '@/lib'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -17,9 +17,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ images })
   } catch (error: unknown) {
     logger.error('Error listing blog images:', error)
-    return NextResponse.json(
-      { error: 'Failed to list images' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to list images')
   }
 }

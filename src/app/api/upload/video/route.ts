@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadVideo } from '@/lib/storage/bunny'
 import { nanoid } from 'nanoid'
 import { checkRateLimit } from '@/lib/rate-limit'
-import { logger } from '@/lib'
+import { getAuthToken } from '@/lib/auth/utils'
+import { logger, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'
 
 export const runtime = 'nodejs'
 
@@ -14,6 +15,12 @@ const MAX_VIDEO_SIZE = 500 * 1024 * 1024
 const ALLOWED_MIME_TYPES = ['video/webm', 'video/mp4', 'video/quicktime']
 
 export async function POST(request: NextRequest) {
+  // Authentication required
+  const token = await getAuthToken(request)
+  if (!token?.email) {
+    return unauthorizedResponse()
+  }
+
   // Rate limiting
   const rateLimitResponse = await checkRateLimit(request, 'general')
   if (rateLimitResponse) return rateLimitResponse
@@ -25,28 +32,19 @@ export async function POST(request: NextRequest) {
 
     // Validate file exists and has required properties
     if (!file || typeof file === 'string' || !('size' in file) || !('type' in file)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing video file' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid or missing video file')
     }
 
     const uploadFile = file as Blob & { name: string; size: number; type: string }
 
     // Validate file size
     if (uploadFile.size > MAX_VIDEO_SIZE) {
-      return NextResponse.json(
-        { error: `Video too large. Maximum size: ${Math.round(MAX_VIDEO_SIZE / 1024 / 1024)}MB` },
-        { status: 413 }
-      )
+      return errorResponse(`Video too large. Maximum size: ${Math.round(MAX_VIDEO_SIZE / 1024 / 1024)}MB`, 413)
     }
 
     // Validate MIME type
     if (!ALLOWED_MIME_TYPES.includes(uploadFile.type)) {
-      return NextResponse.json(
-        { error: `Invalid video type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}` },
-        { status: 400 }
-      )
+      return badRequestResponse(`Invalid video type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`)
     }
 
     // Convert file to buffer
@@ -65,9 +63,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Error uploading video to Bunny:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to upload video' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to upload video')
   }
 }

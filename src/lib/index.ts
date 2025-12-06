@@ -13,6 +13,9 @@ export {
   type TimeFormatOptions
 } from './time-utils'
 
+// Duration formatting utility
+export { formatDuration } from './utils'
+
 // Validation utilities
 export {
   EMAIL_REGEX,
@@ -20,8 +23,19 @@ export {
   normalizeEmail,
   validateAndNormalizeEmail,
   getErrorMessage,
-  sanitizeText
 } from './validation-utils'
+
+// Pagination utilities
+export {
+  parsePaginationParams,
+  createPaginationResult,
+  parseSearchParams,
+  buildSearchWhere,
+  buildOrderBy,
+  PAGINATION_DEFAULTS,
+  type PaginationParams,
+  type PaginationResult
+} from './api/pagination'
 
 // API response utilities
 export {

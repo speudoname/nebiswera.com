@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ rules: rulesWithTagNames })
   } catch (error) {
-    console.error('Failed to fetch automation rules:', error)
+    logger.error('Failed to fetch automation rules:', error)
     return NextResponse.json({ error: 'Failed to fetch automation rules' }, { status: 500 })
   }
 }
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ rule })
   } catch (error) {
-    console.error('Failed to create automation rule:', error)
+    logger.error('Failed to create automation rule:', error)
     return NextResponse.json({ error: 'Failed to create automation rule' }, { status: 500 })
   }
 }

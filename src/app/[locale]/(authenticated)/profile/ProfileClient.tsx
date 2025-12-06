@@ -8,7 +8,6 @@ import { Button, Input, Select, Modal, IconBadge } from '@/components/ui'
 import { Card } from '@/components/ui/Card'
 import { Camera, Trash2, User } from 'lucide-react'
 import Image from 'next/image'
-import { MyCourses } from './MyCourses'
 import { MyCertificates } from './MyCertificates'
 
 interface UserProfile {
@@ -258,9 +257,6 @@ export function ProfileClient() {
           {message.text}
         </div>
       )}
-
-      {/* My Courses */}
-      <MyCourses />
 
       {/* My Certificates */}
       <MyCertificates />

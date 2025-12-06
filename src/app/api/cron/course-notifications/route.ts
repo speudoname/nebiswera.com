@@ -11,11 +11,18 @@ import type { NextRequest } from 'next/server'
 // This endpoint should be called by a cron job every 5-15 minutes
 // Example: curl -H "Authorization: Bearer $CRON_SECRET" https://nebiswera.com/api/cron/course-notifications
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization')
+  // Verify cron secret - fail closed if not configured
   const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    logger.error('CRON_SECRET environment variable is not configured')
+    return NextResponse.json(
+      { error: 'Cron endpoint not configured' },
+      { status: 503 }
+    )
+  }
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  const authHeader = request.headers.get('authorization')
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return unauthorizedResponse()
   }
 

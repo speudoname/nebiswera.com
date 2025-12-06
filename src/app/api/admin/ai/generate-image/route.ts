@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { uploadToBunnyStorage, generateBlogImageKey } from '@/lib/bunny-storage'
-import { logger } from '@/lib'
+import { logger, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120 // Allow up to 120 seconds for image generation
@@ -30,14 +30,11 @@ interface GenerateImageRequest {
 
 export async function POST(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   if (!GOOGLE_API_KEY) {
-    return NextResponse.json(
-      { error: 'Google API key not configured.' },
-      { status: 503 }
-    )
+    return errorResponse('Google API key not configured.', 503)
   }
 
   try {
@@ -45,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { prompt, style, aspectRatio = '16:9', imageSize = '2K', useFastModel = false } = body
 
     if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
+      return badRequestResponse('Prompt is required')
     }
 
     // Enhance prompt with style if provided
@@ -124,9 +121,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Error generating image:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate image' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to generate image')
   }
 }

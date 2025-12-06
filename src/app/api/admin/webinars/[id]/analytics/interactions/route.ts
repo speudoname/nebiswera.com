@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import { prisma } from '@/lib/db'
 
 export const runtime = 'nodejs'
@@ -244,7 +245,7 @@ export async function GET(
       dropOffAnalysis: dropOffPoints,
     })
   } catch (error) {
-    console.error('Failed to fetch interaction analytics:', error)
+    logger.error('Failed to fetch interaction analytics:', error)
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -224,7 +224,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       timeline,
     })
   } catch (error) {
-    console.error('Failed to fetch user journey:', error)
+    logger.error('Failed to fetch user journey:', error)
     return errorResponse('Failed to fetch user journey')
   }
 }

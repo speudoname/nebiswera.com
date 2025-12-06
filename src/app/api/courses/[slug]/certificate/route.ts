@@ -7,6 +7,7 @@ import {
   notFoundResponse,
   badRequestResponse,
   errorResponse,
+  logger,
 } from '@/lib'
 import { generateCertificate, hasCertificate } from '@/lib/lms/certificates'
 import { queueCertificateNotifications } from '@/app/api/courses/lib/notifications'
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       message: 'You are eligible for a certificate. Generate it now!',
     })
   } catch (error) {
-    console.error('Failed to get certificate:', error)
+    logger.error('Failed to get certificate:', error)
     return errorResponse('Failed to get certificate')
   }
 }
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
       await queueCertificateNotifications(enrollment.id, result.certificateUrl, result.certificateId)
     } catch (e) {
-      console.error('Failed to queue certificate notification:', e)
+      logger.error('Failed to queue certificate notification:', e)
     }
 
     return successResponse({
@@ -175,7 +176,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       message: 'Certificate generated successfully',
     })
   } catch (error) {
-    console.error('Failed to generate certificate:', error)
+    logger.error('Failed to generate certificate:', error)
     return errorResponse('Failed to generate certificate')
   }
 }

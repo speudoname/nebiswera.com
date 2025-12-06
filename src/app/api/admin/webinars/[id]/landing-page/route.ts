@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type {
   LandingPageTemplate,
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch landing page config:', error)
+    logger.error('Failed to fetch landing page config:', error)
     return NextResponse.json(
       { error: 'Failed to fetch landing page configuration' },
       { status: 500 }
@@ -269,7 +270,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to save landing page config:', error)
+    logger.error('Failed to save landing page config:', error)
     return NextResponse.json(
       { error: 'Failed to save landing page configuration' },
       { status: 500 }

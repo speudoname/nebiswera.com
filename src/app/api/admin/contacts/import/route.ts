@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin, getAuthToken } from '@/lib/auth/utils'
-import { isValidEmail, normalizeEmail, unauthorizedResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { isValidEmail, normalizeEmail, unauthorizedResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { UpdateStrategy } from '@prisma/client'
 
@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Import failed:', error)
+    logger.error('Import failed:', error)
     return errorResponse('Import failed')
   }
 }

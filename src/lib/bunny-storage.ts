@@ -203,6 +203,8 @@ export async function listFromBunnyStorage(folder: string): Promise<Array<{
   path: string
   url: string
   name: string
+  size: number
+  lastModified: string
 }>> {
   const cleanFolder = folder.startsWith('/') ? folder.slice(1) : folder
   const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanFolder}/`
@@ -240,4 +242,167 @@ export async function listFromBunnyStorage(folder: string): Promise<Array<{
       // Sort by lastModified descending (newest first)
       return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
     })
+}
+
+/**
+ * List files from a Bunny Storage folder recursively
+ * @param folder - Folder path to start from
+ * @returns Array of file objects
+ */
+export async function listFromBunnyStorageRecursive(folder: string): Promise<Array<{
+  path: string
+  url: string
+  name: string
+  size: number
+  lastModified: string
+  folder: string
+}>> {
+  const cleanFolder = folder.startsWith('/') ? folder.slice(1) : folder
+  const url = `https://${BUNNY_STORAGE_HOSTNAME}/${BUNNY_STORAGE_ZONE}/${cleanFolder}/`
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        AccessKey: BUNNY_STORAGE_PASSWORD,
+      },
+    })
+
+    if (!response.ok) {
+      return []
+    }
+
+    const items = await response.json() as Array<{
+      ObjectName: string
+      IsDirectory: boolean
+      Length: number
+      LastChanged: string
+    }>
+
+    const files: Array<{
+      path: string
+      url: string
+      name: string
+      size: number
+      lastModified: string
+      folder: string
+    }> = []
+
+    for (const item of items) {
+      if (item.IsDirectory) {
+        // Recursively fetch from subdirectories
+        const subFiles = await listFromBunnyStorageRecursive(`${cleanFolder}/${item.ObjectName}`)
+        files.push(...subFiles)
+      } else if (item.Length > 0) {
+        files.push({
+          path: `${cleanFolder}/${item.ObjectName}`,
+          url: `${BUNNY_CDN_URL}/${cleanFolder}/${item.ObjectName}`,
+          name: item.ObjectName,
+          size: item.Length,
+          lastModified: item.LastChanged,
+          folder: cleanFolder,
+        })
+      }
+    }
+
+    return files
+  } catch (error) {
+    console.error(`Failed to list from Bunny Storage folder ${folder}:`, error)
+    return []
+  }
+}
+
+/**
+ * List ALL content from Bunny Storage (images and videos from all folders)
+ * @returns Object containing arrays of images and videos
+ */
+export async function listAllBunnyContent(): Promise<{
+  images: Array<{
+    key: string
+    url: string
+    name: string
+    size: number
+    lastModified: string
+    source: string
+  }>
+  videos: Array<{
+    key: string
+    url: string
+    name: string
+    size: number
+    lastModified: string
+    source: string
+  }>
+}> {
+  const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
+  const videoExtensions = ['mp4', 'webm', 'mov', 'avi', 'mkv']
+
+  // Folders to scan for content
+  const foldersToScan = [
+    { path: 'email-images', source: 'Email' },
+    { path: 'blog-images', source: 'Blog' },
+    { path: 'webinar-media/images', source: 'Webinar' },
+    { path: 'webinar-media/videos', source: 'Webinar' },
+    { path: 'lms', source: 'Course' },
+    { path: 'testimonials', source: 'Testimonials' },
+    { path: 'user-profiles', source: 'User Profiles' },
+  ]
+
+  const images: Array<{
+    key: string
+    url: string
+    name: string
+    size: number
+    lastModified: string
+    source: string
+  }> = []
+
+  const videos: Array<{
+    key: string
+    url: string
+    name: string
+    size: number
+    lastModified: string
+    source: string
+  }> = []
+
+  // Fetch content from all folders in parallel
+  const results = await Promise.all(
+    foldersToScan.map(async ({ path, source }) => {
+      try {
+        const files = await listFromBunnyStorageRecursive(path)
+        return { files, source }
+      } catch (error) {
+        console.error(`Failed to list from ${path}:`, error)
+        return { files: [], source }
+      }
+    })
+  )
+
+  // Categorize files into images and videos
+  for (const { files, source } of results) {
+    for (const file of files) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+      const item = {
+        key: file.path,
+        url: file.url,
+        name: file.name,
+        size: file.size,
+        lastModified: file.lastModified,
+        source,
+      }
+
+      if (imageExtensions.includes(ext)) {
+        images.push(item)
+      } else if (videoExtensions.includes(ext)) {
+        videos.push(item)
+      }
+    }
+  }
+
+  // Sort by lastModified descending (newest first)
+  images.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
+  videos.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
+
+  return { images, videos }
 }

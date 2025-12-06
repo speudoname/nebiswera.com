@@ -7,6 +7,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   errorResponse,
+  logger,
 } from '@/lib'
 import { queueEnrollmentNotifications } from '@/app/api/courses/lib/notifications'
 import { trackEnrollment } from '@/app/api/courses/lib/analytics'
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
       await queueEnrollmentNotifications(enrollment.id)
     } catch (notificationError) {
-      console.error('Failed to queue enrollment notifications:', notificationError)
+      logger.error('Failed to queue enrollment notifications:', notificationError)
       // Don't fail the enrollment if notifications fail
     }
 
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
       await trackEnrollment(course.id, session.user.id, enrollment.id)
     } catch (analyticsError) {
-      console.error('Failed to track enrollment analytics:', analyticsError)
+      logger.error('Failed to track enrollment analytics:', analyticsError)
     }
 
     return successResponse(
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       201
     )
   } catch (error) {
-    console.error('Failed to enroll in course:', error)
+    logger.error('Failed to enroll in course:', error)
     return errorResponse('Failed to enroll in course')
   }
 }
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to check enrollment status:', error)
+    logger.error('Failed to check enrollment status:', error)
     return errorResponse('Failed to check enrollment status')
   }
 }

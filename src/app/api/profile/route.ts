@@ -4,12 +4,17 @@ import { getAuthToken } from '@/lib/auth/utils'
 import bcrypt from 'bcryptjs'
 import type { NextRequest } from 'next/server'
 import { profileUpdateSchema, formatZodError } from '@/lib/validations'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse } from '@/lib'
 
 export async function GET(request: NextRequest) {
+  // Rate limiting for profile reads
+  const rateLimitResponse = await checkRateLimit(request, 'general')
+  if (rateLimitResponse) return rateLimitResponse
   const token = await getAuthToken(request)
 
   if (!token?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const user = await prisma.user.findUnique({
@@ -29,17 +34,21 @@ export async function GET(request: NextRequest) {
   })
 
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return notFoundResponse('User not found')
   }
 
   return NextResponse.json(user)
 }
 
 export async function PATCH(request: NextRequest) {
+  // Rate limiting - stricter for password changes
+  const rateLimitResponse = await checkRateLimit(request, 'auth')
+  if (rateLimitResponse) return rateLimitResponse
+
   const token = await getAuthToken(request)
 
   if (!token?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const body = await request.json()
@@ -47,10 +56,7 @@ export async function PATCH(request: NextRequest) {
   // Validate input with Zod
   const result = profileUpdateSchema.safeParse(body)
   if (!result.success) {
-    return NextResponse.json(
-      { error: formatZodError(result.error) },
-      { status: 400 }
-    )
+    return badRequestResponse(formatZodError(result.error))
   }
 
   const { name, nameKa, nameEn, preferredLocale, currentPassword, newPassword } = result.data
@@ -60,7 +66,7 @@ export async function PATCH(request: NextRequest) {
   })
 
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return notFoundResponse('User not found')
   }
 
   const updateData: {
@@ -95,18 +101,12 @@ export async function PATCH(request: NextRequest) {
   if (currentPassword && newPassword) {
     // Verify current password
     if (!user.password) {
-      return NextResponse.json(
-        { error: 'Cannot change password for social login accounts' },
-        { status: 400 }
-      )
+      return badRequestResponse('Cannot change password for social login accounts')
     }
 
     const isValidPassword = await bcrypt.compare(currentPassword, user.password)
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 400 }
-      )
+      return badRequestResponse('Current password is incorrect')
     }
 
     updateData.password = await bcrypt.hash(newPassword, 12)
@@ -133,10 +133,14 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  // Rate limiting for account deletion
+  const rateLimitResponse = await checkRateLimit(request, 'auth')
+  if (rateLimitResponse) return rateLimitResponse
+
   const token = await getAuthToken(request)
 
   if (!token?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const user = await prisma.user.findUnique({
@@ -144,7 +148,7 @@ export async function DELETE(request: NextRequest) {
   })
 
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return notFoundResponse('User not found')
   }
 
   // Delete user and related data

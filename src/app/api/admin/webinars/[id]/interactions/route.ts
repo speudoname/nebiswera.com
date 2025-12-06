@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { WebinarInteractionType, WebinarInteractionPosition } from '@prisma/client'
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })),
     })
   } catch (error) {
-    console.error('Failed to fetch interactions:', error)
+    logger.error('Failed to fetch interactions:', error)
     return NextResponse.json(
       { error: 'Failed to fetch interactions' },
       { status: 500 }
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to create interaction:', error)
+    logger.error('Failed to create interaction:', error)
     return NextResponse.json(
       { error: 'Failed to create interaction' },
       { status: 500 }

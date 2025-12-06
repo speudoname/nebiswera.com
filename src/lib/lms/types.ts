@@ -230,7 +230,7 @@ export type AnalyticsEventData =
 // ===========================================
 
 /**
- * Certificate template data stored in LmsCertificate.templateData JSON field
+ * Certificate template data for PDF generation
  */
 export interface CertificateTemplateData {
   /** Custom title (default: "Certificate of Completion") */

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { Prisma, WebinarRegistrationStatus } from '@prisma/client'
 
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       totalPages: Math.ceil(total / limit),
     })
   } catch (error) {
-    console.error('Failed to fetch registrations:', error)
+    logger.error('Failed to fetch registrations:', error)
     return errorResponse('Failed to fetch registrations')
   }
 }

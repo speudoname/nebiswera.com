@@ -10,14 +10,20 @@ const BUNNY_LIBRARY_ID = process.env.BUNNY_LIBRARY_ID!
 const BUNNY_LIBRARY_API_KEY = process.env.BUNNY_LIBRARY_API_KEY!
 const BUNNY_CDN_HOSTNAME = process.env.BUNNY_CDN_HOSTNAME!
 
-interface BunnyVideo {
+export interface BunnyVideo {
   guid: string
   title: string
   status: number // 0=created, 1=uploading, 2=processing, 3=transcoding, 4=finished, 5=error, 6=upload_failed
-  length: number
+  length: number // Duration in seconds
   thumbnailFileName: string
   dateUploaded: string
   encodeProgress: number
+  views?: number
+  storageSize?: number
+  captions?: { srclang: string; label: string }[]
+  hasMP4Fallback?: boolean
+  collectionId?: string
+  category?: string
 }
 
 interface CreateVideoResponse {
@@ -120,6 +126,71 @@ export async function uploadVideoFromUrl(
   if (!response.ok) {
     const error = await response.text()
     throw new Error(`Failed to fetch video to Bunny: ${error}`)
+  }
+}
+
+/**
+ * List all videos from Bunny Stream library
+ */
+export async function listBunnyVideos(
+  page: number = 1,
+  itemsPerPage: number = 100
+): Promise<{
+  videos: BunnyVideo[]
+  totalItems: number
+  currentPage: number
+  itemsPerPage: number
+}> {
+  const response = await fetch(
+    `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos?page=${page}&itemsPerPage=${itemsPerPage}&orderBy=date`,
+    {
+      headers: {
+        'AccessKey': BUNNY_LIBRARY_API_KEY,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.text()
+    throw new Error(`Failed to list Bunny videos: ${error}`)
+  }
+
+  const data = await response.json()
+  return {
+    videos: data.items || [],
+    totalItems: data.totalItems || 0,
+    currentPage: data.currentPage || page,
+    itemsPerPage: data.itemsPerPage || itemsPerPage,
+  }
+}
+
+/**
+ * Get video statistics from Bunny Stream
+ */
+export async function getBunnyVideoStats(videoId: string): Promise<{
+  views: number
+  watchTime: number
+  averageWatchTime: number
+}> {
+  const response = await fetch(
+    `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${videoId}/heatmap`,
+    {
+      headers: {
+        'AccessKey': BUNNY_LIBRARY_API_KEY,
+      },
+    }
+  )
+
+  if (!response.ok) {
+    // Stats may not be available for all videos
+    return { views: 0, watchTime: 0, averageWatchTime: 0 }
+  }
+
+  const data = await response.json()
+  return {
+    views: data.viewCount || 0,
+    watchTime: data.watchTime || 0,
+    averageWatchTime: data.averageWatchTime || 0,
   }
 }
 

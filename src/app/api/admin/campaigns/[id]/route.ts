@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse, successResponse } from '@/lib/api-response'
+import { logger } from '@/lib/logger'
 import type { NextRequest } from 'next/server'
 import type { TargetType } from '@prisma/client'
 
@@ -11,7 +13,7 @@ interface RouteParams {
 // GET /api/admin/campaigns/[id] - Get campaign details
 export async function GET(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -30,23 +32,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!campaign) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     return NextResponse.json(campaign)
   } catch (error) {
-    console.error('Failed to fetch campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch campaign' },
-      { status: 500 }
-    )
+    logger.error('Failed to fetch campaign:', error)
+    return errorResponse('Failed to fetch campaign')
   }
 }
 
 // PATCH /api/admin/campaigns/[id] - Update campaign
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -59,15 +58,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Only allow editing DRAFT campaigns
     if (existing.status !== 'DRAFT') {
-      return NextResponse.json(
-        { error: 'Can only edit draft campaigns' },
-        { status: 400 }
-      )
+      return badRequestResponse('Can only edit draft campaigns')
     }
 
     const body = await request.json()
@@ -108,10 +104,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         'CUSTOM_FILTER',
       ]
       if (!validTargetTypes.includes(targetType)) {
-        return NextResponse.json(
-          { error: 'Invalid target type' },
-          { status: 400 }
-        )
+        return badRequestResponse('Invalid target type')
       }
       updateData.targetType = targetType
     }
@@ -128,18 +121,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(campaign)
   } catch (error) {
-    console.error('Failed to update campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to update campaign' },
-      { status: 500 }
-    )
+    logger.error('Failed to update campaign:', error)
+    return errorResponse('Failed to update campaign')
   }
 }
 
 // DELETE /api/admin/campaigns/[id] - Delete campaign
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { id } = await params
@@ -152,27 +142,21 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     })
 
     if (!existing) {
-      return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
+      return notFoundResponse('Campaign not found')
     }
 
     // Only allow deleting DRAFT or CANCELLED campaigns
     if (!['DRAFT', 'CANCELLED'].includes(existing.status)) {
-      return NextResponse.json(
-        { error: 'Can only delete draft or cancelled campaigns' },
-        { status: 400 }
-      )
+      return badRequestResponse('Can only delete draft or cancelled campaigns')
     }
 
     await prisma.campaign.delete({
       where: { id },
     })
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
-    console.error('Failed to delete campaign:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete campaign' },
-      { status: 500 }
-    )
+    logger.error('Failed to delete campaign:', error)
+    return errorResponse('Failed to delete campaign')
   }
 }

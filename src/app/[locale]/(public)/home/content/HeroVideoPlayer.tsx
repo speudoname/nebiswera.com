@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { Volume2, VolumeX } from 'lucide-react'
+import { useVideoAnalytics } from '@/hooks/useVideoAnalytics'
 
 const HERO_VIDEO = {
   videoId: '973721e6-63ae-4773-877f-021b677f08f7',
@@ -15,13 +16,20 @@ interface HeroVideoPlayerProps {
 }
 
 /**
- * Hero video player with HLS streaming and custom unmute button
+ * Hero video player with HLS streaming, custom unmute button, and analytics
  * Uses HLS for instant playback, falls back to MP4
  */
 export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const hlsRef = useRef<any>(null)
   const [isMuted, setIsMuted] = useState(true)
+
+  // Use shared analytics hook - trackOnlyFirstLoop for looping video
+  const { trackEvent } = useVideoAnalytics(videoRef, {
+    bunnyVideoId: HERO_VIDEO.videoId,
+    source: 'homepage_hero',
+    trackOnlyFirstLoop: true,
+  })
 
   useEffect(() => {
     const video = videoRef.current
@@ -86,8 +94,14 @@ export function HeroVideoPlayer({ locale }: HeroVideoPlayerProps) {
   function toggleMute() {
     const video = videoRef.current
     if (video) {
+      const wasMuted = video.muted
       video.muted = !video.muted
       setIsMuted(video.muted)
+
+      // Track unmute as engagement signal
+      if (wasMuted && !video.muted) {
+        trackEvent('VIDEO_UNMUTED')
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })),
     })
   } catch (error) {
-    console.error('Failed to fetch sessions:', error)
+    logger.error('Failed to fetch sessions:', error)
     return errorResponse(error)
   }
 }

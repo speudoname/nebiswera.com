@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth/config'
-import { successResponse, unauthorizedResponse, errorResponse } from '@/lib'
+import { successResponse, unauthorizedResponse, errorResponse, logger } from '@/lib'
 
 // GET /api/profile/courses - Get user's enrolled courses with progress
 export async function GET(request: NextRequest) {
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse({ courses })
   } catch (error) {
-    console.error('Failed to fetch enrolled courses:', error)
+    logger.error('Failed to fetch enrolled courses:', error)
     return errorResponse('Failed to fetch courses')
   }
 }

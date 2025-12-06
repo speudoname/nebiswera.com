@@ -55,7 +55,7 @@ export function MyCourses() {
         const res = await fetch('/api/profile/courses')
         if (res.ok) {
           const data = await res.json()
-          setCourses(data.data?.courses || [])
+          setCourses(data.courses || [])
         }
       } catch (error) {
         console.error('Failed to fetch courses:', error)

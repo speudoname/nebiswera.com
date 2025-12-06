@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth/config'
-import { successResponse, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'
+import { successResponse, unauthorizedResponse, badRequestResponse, errorResponse, logger } from '@/lib'
 import { LmsProgressStatus } from '@prisma/client'
 
 interface LocalStoragePartProgress {
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
 
         migratedCourses.push(courseId)
       } catch (e) {
-        console.error(`Failed to migrate course ${courseId}:`, e)
+        logger.error(`Failed to migrate course ${courseId}:`, e)
         errors.push(`Failed to migrate course ${courseId}`)
       }
     }
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
           : 'No courses migrated',
     })
   } catch (error) {
-    console.error('Failed to migrate progress:', error)
+    logger.error('Failed to migrate progress:', error)
     return errorResponse('Failed to migrate progress')
   }
 }

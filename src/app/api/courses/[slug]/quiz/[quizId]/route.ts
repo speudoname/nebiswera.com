@@ -7,6 +7,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   errorResponse,
+  logger,
 } from '@/lib'
 import { parseQuizOptions } from '@/lib/lms/types'
 
@@ -153,7 +154,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         : null,
     })
   } catch (error) {
-    console.error('Failed to get quiz:', error)
+    logger.error('Failed to get quiz:', error)
     return errorResponse('Failed to get quiz')
   }
 }

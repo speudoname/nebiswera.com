@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -52,7 +53,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to update simulated message:', error)
+    logger.error('Failed to update simulated message:', error)
     return NextResponse.json(
       { error: 'Failed to update simulated message' },
       { status: 500 }
@@ -88,7 +89,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete simulated message:', error)
+    logger.error('Failed to delete simulated message:', error)
     return NextResponse.json(
       { error: 'Failed to delete simulated message' },
       { status: 500 }

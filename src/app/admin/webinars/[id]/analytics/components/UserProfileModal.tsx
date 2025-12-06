@@ -16,6 +16,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
+import { formatDuration } from '@/lib'
 
 interface TimelineEvent {
   id: string
@@ -108,12 +109,6 @@ export function UserProfileModal({
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const formatDuration = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
-    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`
   }
 
   const getEngagementLabel = (score: number | null) => {

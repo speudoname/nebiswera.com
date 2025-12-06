@@ -77,8 +77,10 @@ function verifyBasicAuth(request: Request): boolean {
   const webhookUsername = process.env.POSTMARK_MARKETING_WEBHOOK_USERNAME
   const webhookPassword = process.env.POSTMARK_MARKETING_WEBHOOK_PASSWORD
 
+  // SECURITY: Require authentication - deny if not configured (fail-closed)
   if (!webhookUsername || !webhookPassword) {
-    return true
+    logger.error('Marketing webhook credentials not configured - denying request')
+    return false
   }
 
   const authHeader = request.headers.get('Authorization')

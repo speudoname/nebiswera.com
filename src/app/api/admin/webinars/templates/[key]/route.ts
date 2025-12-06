@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import { getRawTemplateContent, type WebinarTemplateKey } from '@content/email-templates/webinar'
 
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       bodyText: content.text,
     })
   } catch (error) {
-    console.error('Failed to get template content:', error)
+    logger.error('Failed to get template content:', error)
     return notFoundResponse('Template not found')
   }
 }

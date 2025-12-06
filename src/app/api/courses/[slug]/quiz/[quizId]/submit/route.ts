@@ -7,6 +7,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   errorResponse,
+  logger,
 } from '@/lib'
 import { parseQuizOptions } from '@/lib/lms/types'
 import { markPartCompleteByQuiz, recordQuizResultWithNotifications } from '@/lib/lms/progress'
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       try {
         await markPartCompleteByQuiz(enrollment.id, partId)
       } catch (e) {
-        console.error('Failed to mark part complete:', e)
+        logger.error('Failed to mark part complete:', e)
       }
     }
 
@@ -224,7 +225,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           attemptsRemaining
         )
       } catch (e) {
-        console.error('Failed to queue quiz notifications:', e)
+        logger.error('Failed to queue quiz notifications:', e)
       }
     }
 
@@ -239,7 +240,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { score, passingScore: quiz.passingScore }
       )
     } catch (e) {
-      console.error('Failed to track quiz submit:', e)
+      logger.error('Failed to track quiz submit:', e)
     }
 
     return successResponse({
@@ -254,7 +255,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       cooldownMinutes: quiz.cooldownMinutes,
     })
   } catch (error) {
-    console.error('Failed to submit quiz:', error)
+    logger.error('Failed to submit quiz:', error)
     return errorResponse('Failed to submit quiz')
   }
 }

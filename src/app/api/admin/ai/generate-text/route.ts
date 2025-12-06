@@ -1,7 +1,7 @@
 // API endpoint for generating blog text using Claude API
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
-import { logger } from '@/lib'
+import { logger, unauthorizedResponse, badRequestResponse, errorResponse } from '@/lib'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60 // Allow up to 60 seconds for AI generation
@@ -21,15 +21,12 @@ interface GenerateTextRequest {
 export async function POST(request: NextRequest) {
   // Check admin auth
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   // Check if API key is configured
   if (!CLAUDE_API_KEY) {
-    return NextResponse.json(
-      { error: 'Claude API key not configured. Please add CLAUDE_API_KEY to environment variables.' },
-      { status: 503 }
-    )
+    return errorResponse('Claude API key not configured. Please add CLAUDE_API_KEY to environment variables.', 503)
   }
 
   try {
@@ -38,11 +35,11 @@ export async function POST(request: NextRequest) {
 
     // For translation, we need sourceContent
     if (type === 'translate' && !sourceContent) {
-      return NextResponse.json({ error: 'Source content is required for translation' }, { status: 400 })
+      return badRequestResponse('Source content is required for translation')
     }
 
     if (type !== 'translate' && !prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
+      return badRequestResponse('Prompt is required')
     }
 
     // Build system prompt based on type and language
@@ -123,9 +120,6 @@ Only output the translated content, no explanations.`
     })
   } catch (error: unknown) {
     logger.error('Error generating text:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate text' },
-      { status: 500 }
-    )
+    return errorResponse(error instanceof Error ? error.message : 'Failed to generate text')
   }
 }

@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { logger } from '@/lib'
+import { logger, badRequestResponse, errorResponse } from '@/lib'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
+  // Rate limiting - prevent token enumeration attacks
+  const rateLimitResponse = await checkRateLimit(request, 'auth')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
 
     if (!token) {
-      return NextResponse.json({ error: 'Token is required' }, { status: 400 })
+      return badRequestResponse('Token is required')
     }
 
     // Find the verification token
@@ -23,10 +28,7 @@ export async function GET(request: Request) {
     })
 
     if (!verificationToken) {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid or expired token')
     }
 
     // Update user's email verification status
@@ -48,9 +50,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, message: 'Email verified successfully' })
   } catch (error) {
     logger.error('Email verification error:', error)
-    return NextResponse.json(
-      { error: 'Something went wrong' },
-      { status: 500 }
-    )
+    return errorResponse('Something went wrong')
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse, successResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse, successResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { NotificationTriggerType, NotificationChannel } from '@prisma/client'
 import { formatTriggerDescription } from '@/app/api/webinars/lib/notifications'
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch notification:', error)
+    logger.error('Failed to fetch notification:', error)
     return errorResponse('Failed to fetch notification')
   }
 }
@@ -183,7 +183,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to update notification:', error)
+    logger.error('Failed to update notification:', error)
     return errorResponse('Failed to update notification')
   }
 }
@@ -227,7 +227,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to toggle notification:', error)
+    logger.error('Failed to toggle notification:', error)
     return errorResponse('Failed to toggle notification')
   }
 }
@@ -271,7 +271,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return successResponse({ success: true })
   } catch (error) {
-    console.error('Failed to delete notification:', error)
+    logger.error('Failed to delete notification:', error)
     return errorResponse('Failed to delete notification')
   }
 }

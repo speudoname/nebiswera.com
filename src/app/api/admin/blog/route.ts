@@ -3,12 +3,13 @@ import { isAdmin, getAuthToken } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { generateSlug } from '@/lib/utils/transliterate'
 import { calculateReadingTime, extractExcerpt } from '@/lib/utils/reading-time'
+import { logger, unauthorizedResponse, errorResponse } from '@/lib'
 
 // GET /api/admin/blog - List all blog posts
 export async function GET(request: NextRequest) {
   try {
     if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const posts = await prisma.blogPost.findMany({
@@ -17,11 +18,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(posts)
   } catch (error) {
-    console.error('Error fetching blog posts:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch blog posts' },
-      { status: 500 }
-    )
+    logger.error('Error fetching blog posts:', error)
+    return errorResponse('Failed to fetch blog posts')
   }
 }
 
@@ -29,7 +27,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const token = await getAuthToken(request)
@@ -73,11 +71,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error('Error creating blog post:', error)
-    return NextResponse.json(
-      { error: 'Failed to create blog post' },
-      { status: 500 }
-    )
+    logger.error('Error creating blog post:', error)
+    return errorResponse('Failed to create blog post')
   }
 }
 

@@ -1916,8 +1916,8 @@ model Enrollment {
   progressPercent Int    @default(0)
   completedAt     DateTime?
 
-  // Certificate
-  certificateId   String? @unique
+  // Certificate (certificateId is the verification code, not a FK)
+  certificateId   String?
   certificateUrl  String?
   certificateIssuedAt DateTime?
 
@@ -2235,6 +2235,8 @@ enum CourseEventType {
   VIDEO_PROGRESS     // Every 10% milestone
   VIDEO_COMPLETED
   VIDEO_SEEKED
+  VIDEO_PAUSED
+  VIDEO_UNMUTED      // Engagement signal for muted autoplay videos
   AUDIO_STARTED
   AUDIO_COMPLETED
   FILE_DOWNLOADED
@@ -2263,31 +2265,3 @@ enum CourseEventType {
   @@schema("lms")
 }
 
-// ----------------
-// CERTIFICATES
-// ----------------
-
-model LmsCertificate {
-  id               String   @id @default(cuid())
-
-  // Verification
-  verificationCode String   @unique // Public verification ID
-
-  // Content (for PDF generation)
-  studentName      String
-  courseName       String
-  completedAt      DateTime
-
-  // Template used
-  templateData     Json     @default("{}")
-
-  // Generated PDF
-  pdfUrl           String?  // Bunny CDN URL
-
-  // Metadata
-  createdAt        DateTime @default(now())
-
-  @@index([verificationCode])
-  @@schema("lms")
-  @@map("certificates")
-}

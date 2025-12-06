@@ -23,6 +23,7 @@ import {
   Play,
   Layers,
 } from 'lucide-react'
+import { formatDuration } from '@/lib'
 
 type EnrollmentStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED' | 'SUSPENDED'
 type ProgressStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED'
@@ -208,15 +209,6 @@ export default function StudentProgressPage() {
   const completedParts = enrollment.partProgress.filter(p => p.status === 'COMPLETED').length
   const inProgressParts = enrollment.partProgress.filter(p => p.status === 'IN_PROGRESS').length
   const totalWatchTime = enrollment.partProgress.reduce((acc, p) => acc + p.watchTime, 0)
-
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    }
-    return `${minutes}m`
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">

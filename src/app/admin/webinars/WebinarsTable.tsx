@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Clock,
 } from 'lucide-react'
+import { formatDuration } from '@/lib'
 
 type WebinarStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 
@@ -178,13 +179,6 @@ export function WebinarsTable() {
     )
   }
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return '-'
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -287,7 +281,7 @@ export function WebinarsTable() {
                   <td className="px-6 py-4 text-right text-sm">
                     <div className="flex items-center justify-end gap-1">
                       <Clock className="w-3 h-3 text-text-muted" />
-                      {formatDuration(webinar.videoDuration)}
+                      {webinar.videoDuration ? formatDuration(webinar.videoDuration) : '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right text-sm">

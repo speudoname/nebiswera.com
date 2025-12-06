@@ -1,5 +1,5 @@
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse, logger } from '@/lib'
 import { prisma } from '@/lib/db'
 import type { NextRequest } from 'next/server'
 import {
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return successResponse({ message: 'Unknown view' })
   } catch (error) {
-    console.error('Failed to fetch analytics:', error)
+    logger.error('Failed to fetch analytics:', error)
     return errorResponse('Failed to fetch analytics')
   }
 }

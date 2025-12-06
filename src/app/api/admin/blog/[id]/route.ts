@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
 import { calculateReadingTime } from '@/lib/utils/reading-time'
+import { logger, unauthorizedResponse, notFoundResponse, errorResponse } from '@/lib'
 
 // GET /api/admin/blog/[id] - Get single blog post
 export async function GET(
@@ -10,7 +11,7 @@ export async function GET(
 ) {
   try {
     if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { id } = await params
@@ -20,16 +21,13 @@ export async function GET(
     })
 
     if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+      return notFoundResponse('Post not found')
     }
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error('Error fetching blog post:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch blog post' },
-      { status: 500 }
-    )
+    logger.error('Error fetching blog post:', error)
+    return errorResponse('Failed to fetch blog post')
   }
 }
 
@@ -40,7 +38,7 @@ export async function PUT(
 ) {
   try {
     if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { id } = await params
@@ -52,7 +50,7 @@ export async function PUT(
     })
 
     if (!existingPost) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+      return notFoundResponse('Post not found')
     }
 
     // Calculate reading time if content changed
@@ -103,11 +101,8 @@ export async function PUT(
 
     return NextResponse.json(post)
   } catch (error) {
-    console.error('Error updating blog post:', error)
-    return NextResponse.json(
-      { error: 'Failed to update blog post' },
-      { status: 500 }
-    )
+    logger.error('Error updating blog post:', error)
+    return errorResponse('Failed to update blog post')
   }
 }
 
@@ -118,7 +113,7 @@ export async function DELETE(
 ) {
   try {
     if (!(await isAdmin(request))) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { id } = await params
@@ -129,11 +124,8 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting blog post:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete blog post' },
-      { status: 500 }
-    )
+    logger.error('Error deleting blog post:', error)
+    return errorResponse('Failed to delete blog post')
   }
 }
 

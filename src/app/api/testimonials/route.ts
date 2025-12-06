@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
-import { logger } from '@/lib'
+import { logger, errorResponse, badRequestResponse } from '@/lib'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 // GET /api/testimonials - List testimonials (admin with all, public with approved only)
 export async function GET(request: NextRequest) {
@@ -78,21 +79,22 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error: unknown) {
     logger.error('Error fetching testimonials:', error)
-    return NextResponse.json({ error: 'Failed to fetch testimonials' }, { status: 500 })
+    return errorResponse('Failed to fetch testimonials')
   }
 }
 
 // POST /api/testimonials - Submit new testimonial (public)
 export async function POST(request: NextRequest) {
+  // Rate limiting - 5 submissions per hour per IP
+  const rateLimitResponse = await checkRateLimit(request, 'registration')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
 
     // Validate required fields
     if (!body.name || !body.email || !body.text) {
-      return NextResponse.json(
-        { error: 'Missing required fields: name, email, text' },
-        { status: 400 }
-      )
+      return badRequestResponse('Missing required fields: name, email, text')
     }
 
     // Create testimonial
@@ -116,6 +118,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, testimonial }, { status: 201 })
   } catch (error: unknown) {
     logger.error('Error creating testimonial:', error)
-    return NextResponse.json({ error: 'Failed to create testimonial' }, { status: 500 })
+    return errorResponse('Failed to create testimonial')
   }
 }

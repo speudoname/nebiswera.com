@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 
 interface RouteParams {
   params: Promise<{ id: string; ruleId: string }>
@@ -61,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ rule })
   } catch (error) {
-    console.error('Failed to update automation rule:', error)
+    logger.error('Failed to update automation rule:', error)
     return NextResponse.json({ error: 'Failed to update automation rule' }, { status: 500 })
   }
 }
@@ -81,7 +82,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Failed to delete automation rule:', error)
+    logger.error('Failed to delete automation rule:', error)
     return NextResponse.json({ error: 'Failed to delete automation rule' }, { status: 500 })
   }
 }

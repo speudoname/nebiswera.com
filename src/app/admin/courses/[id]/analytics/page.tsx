@@ -357,9 +357,6 @@ export default function CourseAnalyticsPage() {
                     <td className="py-2 px-2 text-text-muted">{item.order}</td>
                     <td className="py-2 px-2">
                       <span className="font-medium">{item.title}</span>
-                      <span className="ml-2 text-xs text-text-muted capitalize">
-                        ({item.type.toLowerCase()})
-                      </span>
                     </td>
                     <td className="py-2 px-2 text-text-secondary">{item.lessonTitle}</td>
                     <td className="py-2 px-2 text-right">{item.completions}</td>

@@ -17,6 +17,7 @@ import {
   Newspaper,
 } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { sanitizeHtml } from '@/lib/sanitize'
 
 interface TranslationResult {
   title: string
@@ -613,7 +614,7 @@ ${includeImages ? `- Add ${imageCount} image placeholders where images would enh
                   <div className="p-3 bg-white border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
                     <div
                       className="text-sm prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: generatedArticle }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(generatedArticle) }}
                     />
                   </div>
                   <div className="flex gap-2">
@@ -711,7 +712,7 @@ ${includeImages ? `- Add ${imageCount} image placeholders where images would enh
                   <div className="p-3 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
                     <div
                       className="text-sm prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: generatedText }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(generatedText) }}
                     />
                   </div>
                   <div className="flex gap-2">
@@ -956,7 +957,7 @@ ${includeImages ? `- Add ${imageCount} image placeholders where images would enh
                     <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Translated Content</h4>
                     <div
                       className="text-sm prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: translationResult.content || '(empty)' }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(translationResult.content) || '(empty)' }}
                     />
                   </div>
 

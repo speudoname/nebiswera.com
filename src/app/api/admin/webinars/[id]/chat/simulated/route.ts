@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })),
     })
   } catch (error) {
-    console.error('Failed to fetch simulated messages:', error)
+    logger.error('Failed to fetch simulated messages:', error)
     return NextResponse.json(
       { error: 'Failed to fetch simulated messages' },
       { status: 500 }
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     }, { status: 201 })
   } catch (error) {
-    console.error('Failed to create simulated message:', error)
+    logger.error('Failed to create simulated message:', error)
     return NextResponse.json(
       { error: 'Failed to create simulated message' },
       { status: 500 }

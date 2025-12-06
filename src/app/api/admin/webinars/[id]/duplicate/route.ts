@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return successResponse(duplicate, 201)
   } catch (error) {
-    console.error('Failed to duplicate webinar:', error)
+    logger.error('Failed to duplicate webinar:', error)
     return errorResponse(error)
   }
 }

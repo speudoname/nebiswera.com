@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
-import { DateRangeSelector, type DateRange } from '@/components/analytics/DateRangeSelector'
-import { SessionFilter } from '@/components/analytics/SessionFilter'
-import { FunnelChart } from '@/components/analytics/FunnelChart'
-import { VideoTimelineAnalytics } from '@/components/analytics/VideoTimelineAnalytics'
-import { CohortAnalytics } from '@/components/analytics/CohortAnalytics'
-import { ComparativeAnalytics } from '@/components/analytics/ComparativeAnalytics'
-import { WidgetResponseModal } from '@/components/analytics/WidgetResponseModal'
-import { UserProfileModal } from '@/components/analytics/UserProfileModal'
+import { DateRangeSelector, type DateRange } from './components/DateRangeSelector'
+import { SessionFilter } from './components/SessionFilter'
+import { FunnelChart } from './components/FunnelChart'
+import { VideoTimelineAnalytics } from './components/VideoTimelineAnalytics'
+import { CohortAnalytics } from './components/CohortAnalytics'
+import { ComparativeAnalytics } from './components/ComparativeAnalytics'
+import { WidgetResponseModal } from './components/WidgetResponseModal'
+import { UserProfileModal } from './components/UserProfileModal'
 import {
   Users,
   Eye,

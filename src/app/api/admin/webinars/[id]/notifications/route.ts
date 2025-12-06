@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse } from '@/lib'
+import { unauthorizedResponse, notFoundResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 import type { NotificationTriggerType, NotificationChannel } from '@prisma/client'
 import {
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return successResponse({ notifications: notificationsWithStats })
   } catch (error) {
-    console.error('Failed to fetch notifications:', error)
+    logger.error('Failed to fetch notifications:', error)
     return errorResponse(error)
   }
 }
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to create notification:', error)
+    logger.error('Failed to create notification:', error)
     return errorResponse(error)
   }
 }

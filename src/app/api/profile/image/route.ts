@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadToBunnyStorage, deleteFromBunnyStorage, generateUserProfileKey } from '@/lib/bunny-storage'
 import { getAuthToken } from '@/lib/auth/utils'
 import { prisma } from '@/lib/db'
-import { logger } from '@/lib'
+import { logger, unauthorizedResponse, notFoundResponse, badRequestResponse, errorResponse } from '@/lib'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -12,10 +13,14 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp
 
 // POST /api/profile/image - Upload profile image
 export async function POST(request: NextRequest) {
+  // Rate limiting for image uploads
+  const rateLimitResponse = await checkRateLimit(request, 'general')
+  if (rateLimitResponse) return rateLimitResponse
+
   const token = await getAuthToken(request)
 
   if (!token?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -26,7 +31,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return notFoundResponse('User not found')
     }
 
     const formData = await request.formData()
@@ -34,28 +39,19 @@ export async function POST(request: NextRequest) {
 
     // Validate file exists
     if (!file || typeof file === 'string' || !('size' in file) || !('type' in file)) {
-      return NextResponse.json(
-        { error: 'Invalid or missing file' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid or missing file')
     }
 
     const uploadFile = file as Blob & { name: string; size: number; type: string }
 
     // Validate file size
     if (uploadFile.size > MAX_IMAGE_SIZE) {
-      return NextResponse.json(
-        { error: 'Image too large. Maximum size: 5MB' },
-        { status: 413 }
-      )
+      return errorResponse('Image too large. Maximum size: 5MB', 413)
     }
 
     // Validate MIME type
     if (!ALLOWED_IMAGE_TYPES.includes(uploadFile.type)) {
-      return NextResponse.json(
-        { error: 'Invalid image type. Allowed: JPEG, PNG, WebP' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid image type. Allowed: JPEG, PNG, WebP')
     }
 
     // Delete old profile image if exists
@@ -98,19 +94,20 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Error uploading profile image:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload image' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to upload image')
   }
 }
 
 // DELETE /api/profile/image - Remove profile image
 export async function DELETE(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = await checkRateLimit(request, 'general')
+  if (rateLimitResponse) return rateLimitResponse
+
   const token = await getAuthToken(request)
 
   if (!token?.email) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   try {
@@ -120,7 +117,7 @@ export async function DELETE(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return notFoundResponse('User not found')
     }
 
     // Delete from Bunny Storage if it's a user-profiles image
@@ -154,9 +151,6 @@ export async function DELETE(request: NextRequest) {
     })
   } catch (error: unknown) {
     logger.error('Error deleting profile image:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete image' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to delete image')
   }
 }

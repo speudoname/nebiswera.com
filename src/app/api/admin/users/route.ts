@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { parsePaginationParams, createPaginationResult, buildSearchWhere, unauthorizedResponse } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
   if (!(await isAdmin(request))) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return unauthorizedResponse()
   }
 
   const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '10')
+  const { page, limit, skip } = parsePaginationParams(request, { defaultLimit: 10 })
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || 'all'
-
-  const skip = (page - 1) * limit
 
   const where: {
     OR?: { email?: { contains: string; mode: 'insensitive' }; name?: { contains: string; mode: 'insensitive' } }[]
@@ -52,13 +50,9 @@ export async function GET(request: NextRequest) {
     prisma.user.count({ where }),
   ])
 
+  const result = createPaginationResult(users, total, { page, limit, skip })
   return NextResponse.json({
-    users,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    users: result.data,
+    pagination: result.pagination,
   })
 }

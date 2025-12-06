@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
-import { unauthorizedResponse, badRequestResponse, successResponse, errorResponse, logger } from '@/lib'
+import { unauthorizedResponse, badRequestResponse, successResponse, errorResponse, logger, parsePaginationParams, createPaginationResult } from '@/lib'
 import { createDefaultNotifications } from '@/app/api/webinars/lib/notifications'
 import type { NextRequest } from 'next/server'
 import type { WebinarStatus, Prisma } from '@prisma/client'
@@ -13,12 +12,9 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '20')
+  const { page, limit, skip } = parsePaginationParams(request)
   const status = searchParams.get('status') || 'all'
   const search = searchParams.get('search') || ''
-
-  const skip = (page - 1) * limit
 
   const where: Prisma.WebinarWhereInput = {}
 
@@ -70,14 +66,10 @@ export async function GET(request: NextRequest) {
       prisma.webinar.count({ where }),
     ])
 
+    const result = createPaginationResult(webinars, total, { page, limit, skip })
     return successResponse({
-      webinars,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
+      webinars: result.data,
+      pagination: result.pagination,
     })
   } catch (error) {
     logger.error('Failed to fetch webinars:', error)

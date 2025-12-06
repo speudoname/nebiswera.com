@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isAdmin } from '@/lib/auth/utils'
+import { logger } from '@/lib'
 import type { NextRequest } from 'next/server'
 
 interface RouteParams {
@@ -159,7 +160,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
   } catch (error) {
-    console.error('Failed to fetch interaction responses:', error)
+    logger.error('Failed to fetch interaction responses:', error)
     return NextResponse.json(
       { error: 'Failed to fetch interaction responses' },
       { status: 500 }

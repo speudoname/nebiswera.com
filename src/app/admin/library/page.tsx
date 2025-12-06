@@ -1,33 +1,40 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Upload, Trash2, Copy, Check, Loader2, Image, RefreshCw, ExternalLink } from 'lucide-react'
+import { Upload, Trash2, Copy, Check, Loader2, Image, Video, RefreshCw, ExternalLink, FolderOpen, Film, ImageIcon } from 'lucide-react'
 import { Button, Card } from '@/components/ui'
 
-interface EmailImage {
+type ContentType = 'all' | 'images' | 'videos'
+
+interface ContentItem {
   key: string
   url: string
   size: number
-  lastModified?: string
+  lastModified: string
   name: string
+  source: string
 }
 
 export default function LibraryPage() {
-  const [images, setImages] = useState<EmailImage[]>([])
+  const [images, setImages] = useState<ContentItem[]>([])
+  const [videos, setVideos] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
-  const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [contentType, setContentType] = useState<ContentType>('all')
+  const [sourceFilter, setSourceFilter] = useState<string>('all')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const loadImages = useCallback(async () => {
+  const loadContent = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/email-images')
-      if (!res.ok) throw new Error('Failed to load images')
+      const res = await fetch('/api/admin/content-library')
+      if (!res.ok) throw new Error('Failed to load content')
       const data = await res.json()
       setImages(data.images || [])
+      setVideos(data.videos || [])
     } catch (error) {
       console.error('Failed to load library:', error)
     } finally {
@@ -36,8 +43,8 @@ export default function LibraryPage() {
   }, [])
 
   useEffect(() => {
-    loadImages()
-  }, [loadImages])
+    loadContent()
+  }, [loadContent])
 
   const copyToClipboard = async (url: string) => {
     try {
@@ -71,7 +78,7 @@ export default function LibraryPage() {
       }
 
       // Refresh the list
-      await loadImages()
+      await loadContent()
     } catch (error: any) {
       alert(`Upload failed: ${error.message}`)
     } finally {
@@ -83,7 +90,7 @@ export default function LibraryPage() {
   }
 
   const handleDelete = async (key: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return
+    if (!confirm('Are you sure you want to delete this file?')) return
 
     setDeleting(key)
     try {
@@ -96,9 +103,9 @@ export default function LibraryPage() {
         throw new Error(error.error || 'Delete failed')
       }
 
-      // Remove from local state
-      setImages(images.filter(img => img.key !== key))
-      setSelectedImages(prev => {
+      // Refresh content
+      await loadContent()
+      setSelectedItems(prev => {
         const next = new Set(prev)
         next.delete(key)
         return next
@@ -111,12 +118,12 @@ export default function LibraryPage() {
   }
 
   const handleBulkDelete = async () => {
-    if (selectedImages.size === 0) return
-    if (!confirm(`Are you sure you want to delete ${selectedImages.size} image(s)?`)) return
+    if (selectedItems.size === 0) return
+    if (!confirm(`Are you sure you want to delete ${selectedItems.size} file(s)?`)) return
 
     setDeleting('bulk')
     try {
-      const keysToDelete = Array.from(selectedImages)
+      const keysToDelete = Array.from(selectedItems)
       for (const key of keysToDelete) {
         const res = await fetch(`/api/admin/email-images/${encodeURIComponent(key)}`, {
           method: 'DELETE',
@@ -128,8 +135,8 @@ export default function LibraryPage() {
       }
 
       // Refresh the list
-      await loadImages()
-      setSelectedImages(new Set())
+      await loadContent()
+      setSelectedItems(new Set())
     } catch (error: any) {
       alert(`Delete failed: ${error.message}`)
     } finally {
@@ -138,7 +145,7 @@ export default function LibraryPage() {
   }
 
   const toggleSelect = (key: string) => {
-    setSelectedImages(prev => {
+    setSelectedItems(prev => {
       const next = new Set(prev)
       if (next.has(key)) {
         next.delete(key)
@@ -147,14 +154,6 @@ export default function LibraryPage() {
       }
       return next
     })
-  }
-
-  const selectAll = () => {
-    if (selectedImages.size === images.length) {
-      setSelectedImages(new Set())
-    } else {
-      setSelectedImages(new Set(images.map(img => img.key)))
-    }
   }
 
   const formatSize = (bytes: number) => {
@@ -174,30 +173,76 @@ export default function LibraryPage() {
     })
   }
 
-  const totalSize = images.reduce((sum, img) => sum + img.size, 0)
+  // Filter content based on type and source
+  const filteredContent = (() => {
+    let items: ContentItem[] = []
+
+    if (contentType === 'all') {
+      items = [...images, ...videos].sort((a, b) =>
+        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+      )
+    } else if (contentType === 'images') {
+      items = images
+    } else {
+      items = videos
+    }
+
+    if (sourceFilter !== 'all') {
+      items = items.filter(item => item.source === sourceFilter)
+    }
+
+    return items
+  })()
+
+  // Get unique sources for filter dropdown
+  const allSources = Array.from(new Set([...images.map(i => i.source), ...videos.map(v => v.source)]))
+
+  const totalSize = filteredContent.reduce((sum, item) => sum + item.size, 0)
+
+  const selectAll = () => {
+    if (selectedItems.size === filteredContent.length) {
+      setSelectedItems(new Set())
+    } else {
+      setSelectedItems(new Set(filteredContent.map(item => item.key)))
+    }
+  }
+
+  // Check if item is a video
+  const isVideo = (item: ContentItem) => {
+    const ext = item.name.split('.').pop()?.toLowerCase() || ''
+    return ['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">Image Library</h1>
+          <h1 className="text-3xl font-bold text-text-primary flex items-center gap-3">
+            <FolderOpen className="w-8 h-8" />
+            Content Library
+          </h1>
           <p className="text-text-muted mt-1">
-            {images.length} images ({formatSize(totalSize)} total)
+            {filteredContent.length} items ({formatSize(totalSize)} total)
+            {images.length > 0 && videos.length > 0 && (
+              <span className="ml-2">
+                ({images.length} images, {videos.length} videos)
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             multiple
             onChange={handleUpload}
             className="hidden"
           />
           <Button
             variant="ghost"
-            onClick={loadImages}
+            onClick={loadContent}
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -216,22 +261,78 @@ export default function LibraryPage() {
             ) : (
               <>
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Images
+                Upload
               </>
             )}
           </Button>
         </div>
       </div>
 
+      {/* Filters */}
+      <Card variant="raised" padding="sm">
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Content Type Tabs */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setContentType('all')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                contentType === 'all'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setContentType('images')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                contentType === 'images'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+              Images ({images.length})
+            </button>
+            <button
+              onClick={() => setContentType('videos')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                contentType === 'videos'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Film className="w-4 h-4" />
+              Videos ({videos.length})
+            </button>
+          </div>
+
+          {/* Source Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Source:</span>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="text-sm border border-gray-200 rounded-md px-2 py-1.5 bg-white"
+            >
+              <option value="all">All Sources</option>
+              {allSources.map(source => (
+                <option key={source} value={source}>{source}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </Card>
+
       {/* Bulk Actions */}
-      {selectedImages.size > 0 && (
+      {selectedItems.size > 0 && (
         <Card variant="raised" padding="sm">
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-secondary">
-              {selectedImages.size} image(s) selected
+              {selectedItems.size} item(s) selected
             </span>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setSelectedImages(new Set())}>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedItems(new Set())}>
                 Clear Selection
               </Button>
               <Button
@@ -253,20 +354,20 @@ export default function LibraryPage() {
         </Card>
       )}
 
-      {/* Image Grid */}
-      {loading && images.length === 0 ? (
+      {/* Content Grid */}
+      {loading && filteredContent.length === 0 ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
-      ) : images.length === 0 ? (
+      ) : filteredContent.length === 0 ? (
         <Card variant="raised" padding="lg">
           <div className="text-center py-12">
-            <Image className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-text-primary mb-2">No images yet</h3>
-            <p className="text-text-muted mb-4">Upload your first image to get started</p>
+            <FolderOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-text-primary mb-2">No content yet</h3>
+            <p className="text-text-muted mb-4">Upload your first file to get started</p>
             <Button variant="primary" onClick={() => fileInputRef.current?.click()}>
               <Upload className="w-4 h-4 mr-2" />
-              Upload Images
+              Upload Content
             </Button>
           </div>
         </Card>
@@ -276,7 +377,7 @@ export default function LibraryPage() {
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
-              checked={selectedImages.size === images.length && images.length > 0}
+              checked={selectedItems.size === filteredContent.length && filteredContent.length > 0}
               onChange={selectAll}
               className="w-4 h-4 rounded border-gray-300"
             />
@@ -284,49 +385,65 @@ export default function LibraryPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {images.map((img) => (
+            {filteredContent.map((item) => (
               <Card
-                key={img.key}
+                key={item.key}
                 variant="raised"
                 padding="none"
                 className={`group overflow-hidden ${
-                  selectedImages.has(img.key) ? 'ring-2 ring-primary-500' : ''
+                  selectedItems.has(item.key) ? 'ring-2 ring-primary-500' : ''
                 }`}
               >
                 {/* Selection checkbox */}
                 <div className="absolute top-2 left-2 z-10">
                   <input
                     type="checkbox"
-                    checked={selectedImages.has(img.key)}
-                    onChange={() => toggleSelect(img.key)}
+                    checked={selectedItems.has(item.key)}
+                    onChange={() => toggleSelect(item.key)}
                     className="w-4 h-4 rounded border-gray-300 bg-white/80"
                   />
                 </div>
 
-                {/* Image */}
+                {/* Source Badge */}
+                <div className="absolute top-2 right-2 z-10">
+                  <span className="px-2 py-0.5 text-xs font-medium bg-black/50 text-white rounded">
+                    {item.source}
+                  </span>
+                </div>
+
+                {/* Preview */}
                 <div className="relative aspect-square bg-gray-100">
-                  <img
-                    src={img.url}
-                    alt={img.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  {isVideo(item) ? (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                      <Video className="w-12 h-12 text-gray-400" />
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 text-xs font-medium bg-purple-600 text-white rounded">
+                        VIDEO
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={item.url}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
 
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <button
-                      onClick={() => copyToClipboard(img.url)}
+                      onClick={() => copyToClipboard(item.url)}
                       className="p-2 bg-white rounded-full hover:bg-gray-100 transition-colors"
                       title="Copy URL"
                     >
-                      {copiedUrl === img.url ? (
+                      {copiedUrl === item.url ? (
                         <Check className="w-4 h-4 text-green-600" />
                       ) : (
                         <Copy className="w-4 h-4 text-gray-700" />
                       )}
                     </button>
                     <a
-                      href={img.url}
+                      href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 bg-white rounded-full hover:bg-gray-100 transition-colors"
@@ -335,12 +452,12 @@ export default function LibraryPage() {
                       <ExternalLink className="w-4 h-4 text-gray-700" />
                     </a>
                     <button
-                      onClick={() => handleDelete(img.key)}
-                      disabled={deleting === img.key}
+                      onClick={() => handleDelete(item.key)}
+                      disabled={deleting === item.key}
                       className="p-2 bg-white rounded-full hover:bg-red-50 transition-colors"
                       title="Delete"
                     >
-                      {deleting === img.key ? (
+                      {deleting === item.key ? (
                         <Loader2 className="w-4 h-4 animate-spin text-gray-700" />
                       ) : (
                         <Trash2 className="w-4 h-4 text-red-600" />
@@ -349,15 +466,15 @@ export default function LibraryPage() {
                   </div>
                 </div>
 
-                {/* Image Info */}
+                {/* Item Info */}
                 <div className="p-2">
-                  <p className="text-xs font-medium text-text-primary truncate" title={img.name}>
-                    {img.name}
+                  <p className="text-xs font-medium text-text-primary truncate" title={item.name}>
+                    {item.name}
                   </p>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-text-muted">{formatSize(img.size)}</span>
-                    {img.lastModified && (
-                      <span className="text-xs text-text-muted">{formatDate(img.lastModified)}</span>
+                    <span className="text-xs text-text-muted">{formatSize(item.size)}</span>
+                    {item.lastModified && (
+                      <span className="text-xs text-text-muted">{formatDate(item.lastModified)}</span>
                     )}
                   </div>
                 </div>

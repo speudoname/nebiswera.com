@@ -14,9 +14,9 @@ import {
   Filter,
 } from 'lucide-react'
 import { Button } from '@/components/ui'
-import { DateRangeSelector, type DateRange } from '@/components/analytics/DateRangeSelector'
-import { SessionFilter } from '@/components/analytics/SessionFilter'
-import { UserProfileModal } from '@/components/analytics/UserProfileModal'
+import { DateRangeSelector, type DateRange } from '../analytics/components/DateRangeSelector'
+import { SessionFilter } from '../analytics/components/SessionFilter'
+import { UserProfileModal } from '../analytics/components/UserProfileModal'
 
 interface Registration {
   id: string

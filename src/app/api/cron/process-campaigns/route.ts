@@ -6,9 +6,6 @@ import {
 } from '@/app/api/admin/campaigns/lib/campaign-sender'
 import { logger } from '@/lib'
 
-// Security: Verify cron secret
-const CRON_SECRET = process.env.CRON_SECRET
-
 /**
  * POST /api/cron/process-campaigns
  *
@@ -27,11 +24,19 @@ const CRON_SECRET = process.env.CRON_SECRET
  * Recommended: Call every 1-2 minutes for responsive sending
  */
 export async function POST(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = authHeader?.replace('Bearer ', '')
+  // Verify cron secret - fail closed if not configured
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    logger.error('CRON_SECRET environment variable is not configured')
+    return NextResponse.json(
+      { error: 'Cron endpoint not configured' },
+      { status: 503 }
+    )
+  }
 
-  if (CRON_SECRET && cronSecret !== CRON_SECRET) {
+  const authHeader = request.headers.get('authorization')
+  const providedSecret = authHeader?.replace('Bearer ', '')
+  if (providedSecret !== cronSecret) {
     logger.warn('Unauthorized cron request')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -102,11 +107,18 @@ export async function POST(request: NextRequest) {
  * Returns status of campaigns that need processing (for monitoring)
  */
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization')
-  const cronSecret = authHeader?.replace('Bearer ', '')
+  // Verify cron secret - fail closed if not configured
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    return NextResponse.json(
+      { error: 'Cron endpoint not configured' },
+      { status: 503 }
+    )
+  }
 
-  if (CRON_SECRET && cronSecret !== CRON_SECRET) {
+  const authHeader = request.headers.get('authorization')
+  const providedSecret = authHeader?.replace('Bearer ', '')
+  if (providedSecret !== cronSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

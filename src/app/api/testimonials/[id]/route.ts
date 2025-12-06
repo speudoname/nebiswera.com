@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/config'
 import { prisma } from '@/lib/db'
-import { logger } from '@/lib'
+import { logger, notFoundResponse, unauthorizedResponse, errorResponse } from '@/lib'
 
 // GET /api/testimonials/[id] - Get single testimonial
 export async function GET(
@@ -18,18 +18,18 @@ export async function GET(
     })
 
     if (!testimonial) {
-      return NextResponse.json({ error: 'Testimonial not found' }, { status: 404 })
+      return notFoundResponse('Testimonial not found')
     }
 
     // Non-admin users can only see approved testimonials
     if (testimonial.status !== 'APPROVED' && session?.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      return notFoundResponse()
     }
 
     return NextResponse.json({ testimonial })
   } catch (error: unknown) {
     logger.error('Error fetching testimonial:', error)
-    return NextResponse.json({ error: 'Failed to fetch testimonial' }, { status: 500 })
+    return errorResponse('Failed to fetch testimonial')
   }
 }
 
@@ -42,7 +42,7 @@ export async function PUT(
     const session = await auth()
 
     if (session?.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { id } = await params
@@ -65,7 +65,7 @@ export async function PUT(
     return NextResponse.json({ success: true, testimonial })
   } catch (error: unknown) {
     logger.error('Error updating testimonial:', error)
-    return NextResponse.json({ error: 'Failed to update testimonial' }, { status: 500 })
+    return errorResponse('Failed to update testimonial')
   }
 }
 
@@ -102,7 +102,7 @@ export async function PATCH(
     return NextResponse.json({ success: true, testimonial })
   } catch (error: unknown) {
     logger.error('Error updating testimonial:', error)
-    return NextResponse.json({ error: 'Failed to update testimonial' }, { status: 500 })
+    return errorResponse('Failed to update testimonial')
   }
 }
 
@@ -115,7 +115,7 @@ export async function DELETE(
     const session = await auth()
 
     if (session?.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return unauthorizedResponse()
     }
 
     const { id } = await params
@@ -127,6 +127,6 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
     logger.error('Error deleting testimonial:', error)
-    return NextResponse.json({ error: 'Failed to delete testimonial' }, { status: 500 })
+    return errorResponse('Failed to delete testimonial')
   }
 }

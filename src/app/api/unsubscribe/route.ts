@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSettings } from '@/lib/settings'
 import { verifyUnsubscribeToken } from '@/app/api/lib/unsubscribe-token'
-import { logger } from '@/lib'
+import { logger, badRequestResponse, errorResponse } from '@/lib'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 /**
@@ -18,17 +18,14 @@ export async function POST(request: Request) {
     const { token, reason } = body
 
     if (!token) {
-      return NextResponse.json({ error: 'Token is required' }, { status: 400 })
+      return badRequestResponse('Token is required')
     }
 
     // Verify the token
     const email = verifyUnsubscribeToken(token)
 
     if (!email) {
-      return NextResponse.json(
-        { error: 'Invalid or expired unsubscribe link' },
-        { status: 400 }
-      )
+      return badRequestResponse('Invalid or expired unsubscribe link')
     }
 
     // Find the contact
@@ -72,10 +69,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     logger.error('Unsubscribe error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process unsubscribe request' },
-      { status: 500 }
-    )
+    return errorResponse('Failed to process unsubscribe request')
   }
 }
 
@@ -87,16 +81,13 @@ export async function GET(request: Request) {
   const token = searchParams.get('token')
 
   if (!token) {
-    return NextResponse.json({ error: 'Token is required' }, { status: 400 })
+    return badRequestResponse('Token is required')
   }
 
   const email = verifyUnsubscribeToken(token)
 
   if (!email) {
-    return NextResponse.json(
-      { error: 'Invalid or expired unsubscribe link' },
-      { status: 400 }
-    )
+    return badRequestResponse('Invalid or expired unsubscribe link')
   }
 
   // Mask the email for display

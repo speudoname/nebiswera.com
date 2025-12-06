@@ -7,6 +7,7 @@ import {
   unauthorizedResponse,
   notFoundResponse,
   errorResponse,
+  logger,
 } from '@/lib'
 import { trackQuizEvent } from '@/app/api/courses/lib/analytics'
 
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         enrollment?.id || null
       )
     } catch (e) {
-      console.error('Failed to track quiz start:', e)
+      logger.error('Failed to track quiz start:', e)
     }
 
     return successResponse({
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       isResume: false,
     }, 201)
   } catch (error) {
-    console.error('Failed to start quiz:', error)
+    logger.error('Failed to start quiz:', error)
     return errorResponse('Failed to start quiz')
   }
 }

@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Rate limiting - prevent spam submissions
+  const rateLimitResponse = await checkRateLimit(request, 'general')
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
     const { email, source = 'home_page_test' } = body

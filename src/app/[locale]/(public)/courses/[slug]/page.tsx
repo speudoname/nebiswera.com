@@ -22,6 +22,7 @@ import {
   HelpCircle,
 } from 'lucide-react'
 import { parseCourseSettings, parseContentBlocks } from '@/lib/lms/types'
+import { formatDuration } from '@/lib'
 import { EnrollButton } from './EnrollButton'
 
 interface PageParams {
@@ -111,16 +112,6 @@ function calculateCourseDuration(
   }
 
   return totalSeconds
-}
-
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  }
-  return `${minutes}m`
 }
 
 // Get icon for content block type

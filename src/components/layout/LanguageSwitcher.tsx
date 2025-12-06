@@ -1,7 +1,7 @@
 'use client'
 
 import { useLocale, useTranslations } from 'next-intl'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { locales, type Locale } from '@/i18n/config'
 import { setStoredLocale } from '@/lib/locale-storage'
 
@@ -20,14 +20,14 @@ interface LanguageSwitcherProps {
 export function LanguageSwitcher({ darkBg = false, compact = false }: LanguageSwitcherProps) {
   const locale = useLocale() as Locale
   const t = useTranslations('languages')
-  const router = useRouter()
   const pathname = usePathname()
 
   const switchLocale = (newLocale: Locale) => {
     setStoredLocale(newLocale)
     const segments = (pathname || '/').split('/')
     segments[1] = newLocale
-    router.push(segments.join('/'))
+    // Use hard navigation to ensure middleware runs and server components re-render
+    window.location.href = segments.join('/')
   }
 
   const otherLocale = locales.find((l) => l !== locale) as Locale

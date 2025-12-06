@@ -47,12 +47,14 @@ export async function GET(request: NextRequest) {
       where: {
         createdAt: { gte: startDate },
         eventType: {
-          in: ['VIDEO_PLAY', 'VIDEO_PAUSE'],
+          in: ['VIDEO_PLAY', 'VIDEO_PAUSE', 'VIDEO_PROGRESS', 'VIDEO_COMPLETE', 'VIDEO_SEEKED'],
         },
       },
       select: {
         id: true,
         eventType: true,
+        elementId: true,
+        elementText: true,
         metadata: true,
         targetUrl: true,
         pageViewId: true,
@@ -89,14 +91,18 @@ export async function GET(request: NextRequest) {
     const videoStarts = courseVideoEvents.filter((e) => e.eventType === 'VIDEO_STARTED').length
     const videoCompletes = courseVideoEvents.filter((e) => e.eventType === 'VIDEO_COMPLETED').length
     const pageVideoPlays = pageVideoEvents.filter((e) => e.eventType === 'VIDEO_PLAY').length
+    const pageVideoCompletes = pageVideoEvents.filter((e) => e.eventType === 'VIDEO_COMPLETE').length
 
-    // Unique viewers (by userId or anonymousId)
+    // Unique viewers (by userId or anonymousId for courses, pageViewId for pages)
     const uniqueViewers = new Set([
       ...courseVideoEvents.map((e) => e.userId || e.anonymousId).filter(Boolean),
+      ...pageVideoEvents.map((e) => e.pageViewId),
     ]).size
 
-    // Completion rate
-    const completionRate = videoStarts > 0 ? Math.round((videoCompletes / videoStarts) * 100) : 0
+    // Completion rate (all videos)
+    const totalStarts = videoStarts + pageVideoPlays
+    const totalCompletes = videoCompletes + pageVideoCompletes
+    const completionRate = totalStarts > 0 ? Math.round((totalCompletes / totalStarts) * 100) : 0
 
     // Average progress from VIDEO_PROGRESS events
     const progressEvents = courseVideoEvents.filter((e) => e.eventType === 'VIDEO_PROGRESS')
@@ -151,14 +157,36 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Page video breakdown
-    const pageVideoStats = new Map<string, number>()
+    // Page video breakdown by path and video
+    const pageVideoStats = new Map<string, { plays: number; completes: number; videoIds: Set<string> }>()
     for (const event of pageVideoEvents) {
       const pageView = pageViewMap.get(event.pageViewId)
-      if (event.eventType === 'VIDEO_PLAY' && pageView?.path) {
+      if (pageView?.path) {
         const path = pageView.path
-        pageVideoStats.set(path, (pageVideoStats.get(path) || 0) + 1)
+        if (!pageVideoStats.has(path)) {
+          pageVideoStats.set(path, { plays: 0, completes: 0, videoIds: new Set() })
+        }
+        const stats = pageVideoStats.get(path)!
+        if (event.eventType === 'VIDEO_PLAY') stats.plays++
+        if (event.eventType === 'VIDEO_COMPLETE') stats.completes++
+        if (event.elementId) stats.videoIds.add(event.elementId)
       }
+    }
+
+    // Video stats by video ID (from page videos)
+    const videoIdStats = new Map<string, { title: string; plays: number; completes: number; paths: Set<string> }>()
+    for (const event of pageVideoEvents) {
+      const pageView = pageViewMap.get(event.pageViewId)
+      const videoId = event.elementId || 'unknown'
+      const videoTitle = event.elementText || 'Untitled Video'
+
+      if (!videoIdStats.has(videoId)) {
+        videoIdStats.set(videoId, { title: videoTitle, plays: 0, completes: 0, paths: new Set() })
+      }
+      const stats = videoIdStats.get(videoId)!
+      if (event.eventType === 'VIDEO_PLAY') stats.plays++
+      if (event.eventType === 'VIDEO_COMPLETE') stats.completes++
+      if (pageView?.path) stats.paths.add(pageView.path)
     }
 
     // Recent video events
@@ -189,10 +217,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       overview: {
-        totalVideoStarts: videoStarts + pageVideoPlays,
+        totalVideoStarts: totalStarts,
         courseVideoStarts: videoStarts,
         pageVideoPlays,
-        videoCompletes,
+        videoCompletes: totalCompletes,
+        courseVideoCompletes: videoCompletes,
+        pageVideoCompletes,
         completionRate,
         avgProgress,
         uniqueViewers,
@@ -221,9 +251,27 @@ export async function GET(request: NextRequest) {
         .sort((a, b) => b.starts - a.starts)
         .slice(0, 20),
       pageVideoStats: Array.from(pageVideoStats.entries())
-        .map(([path, plays]) => ({ path, plays }))
+        .map(([path, stats]) => ({
+          path,
+          plays: stats.plays,
+          completes: stats.completes,
+          completionRate: stats.plays > 0 ? Math.round((stats.completes / stats.plays) * 100) : 0,
+          uniqueVideos: stats.videoIds.size,
+        }))
         .sort((a, b) => b.plays - a.plays)
         .slice(0, 15),
+      videoIdStats: Array.from(videoIdStats.entries())
+        .filter(([videoId]) => videoId !== 'unknown')
+        .map(([videoId, stats]) => ({
+          videoId,
+          title: stats.title,
+          plays: stats.plays,
+          completes: stats.completes,
+          completionRate: stats.plays > 0 ? Math.round((stats.completes / stats.plays) * 100) : 0,
+          usedOnPages: Array.from(stats.paths),
+        }))
+        .sort((a, b) => b.plays - a.plays)
+        .slice(0, 20),
       dailyViews: Array.from(dailyViews.entries())
         .map(([date, count]) => ({ date, count }))
         .sort((a, b) => a.date.localeCompare(b.date)),

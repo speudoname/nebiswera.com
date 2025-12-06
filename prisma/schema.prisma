@@ -2866,8 +2866,11 @@ enum PageEventType {
   LINK_CLICK      // External/internal link
   BUTTON_CLICK    // Button interaction
   FORM_SUBMIT     // Form submission
-  VIDEO_PLAY      // Video started
+  VIDEO_PLAY      // Video started/resumed
   VIDEO_PAUSE     // Video paused
+  VIDEO_PROGRESS  // Video milestone reached (25%, 50%, 75%, 90%)
+  VIDEO_COMPLETE  // Video finished
+  VIDEO_SEEKED    // Video position changed
   SCROLL_MILESTONE // 25%, 50%, 75%, 100%
   CTA_CLICK       // Call-to-action button
   SHARE           // Social share

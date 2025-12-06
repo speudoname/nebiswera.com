@@ -8,6 +8,7 @@ import { TIMING, minutesToMs } from '@/lib/webinar/constants'
 type AccessRegistration = {
   sessionType: WebinarSessionType
   maxVideoPosition: number
+  attendedAt: Date | null  // When they first joined (for ON_DEMAND timing)
 }
 
 // ===========================================
@@ -60,7 +61,8 @@ interface DisabledState {
 /**
  * Calculate start position based on session type and timing
  *
- * - SCHEDULED, JUST_IN_TIME, ON_DEMAND: Simulated live - position based on elapsed time from session start
+ * - SCHEDULED, JUST_IN_TIME: Simulated live - position based on elapsed time from session.scheduledAt
+ * - ON_DEMAND: Simulated live - position based on elapsed time from registration.attendedAt (first join)
  * - REPLAY: Resume from last watched position (user can seek freely)
  */
 function calculateStartPosition(
@@ -69,6 +71,8 @@ function calculateStartPosition(
   registration: AccessRegistration,
   videoDurationMinutes: number
 ): number {
+  const videoDurationSeconds = videoDurationMinutes * 60
+
   switch (sessionType) {
     case 'REPLAY':
       // Replay: Resume from last watched position
@@ -76,16 +80,25 @@ function calculateStartPosition(
 
     case 'SCHEDULED':
     case 'JUST_IN_TIME':
-    case 'ON_DEMAND':
       // Simulated live: Calculate position based on elapsed time since session start
-      // ON_DEMAND is just like scheduled but with 0 waiting time
       if (session) {
         const now = new Date()
         const elapsed = Math.floor((now.getTime() - session.scheduledAt.getTime()) / 1000)
-        const videoDurationSeconds = videoDurationMinutes * 60
         // Cap at video duration - 1 to avoid seeking past end
         return Math.max(0, Math.min(elapsed, videoDurationSeconds - 1))
       }
+      return 0
+
+    case 'ON_DEMAND':
+      // ON_DEMAND: Simulated live starting from when user first joined (attendedAt)
+      // If they haven't attended yet, start from 0 (this will be their first view)
+      if (registration.attendedAt) {
+        const now = new Date()
+        const elapsed = Math.floor((now.getTime() - registration.attendedAt.getTime()) / 1000)
+        // Cap at video duration - 1 to avoid seeking past end
+        return Math.max(0, Math.min(elapsed, videoDurationSeconds - 1))
+      }
+      // First time viewing - start from beginning
       return 0
 
     default:

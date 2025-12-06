@@ -257,6 +257,7 @@ export async function validateAccessToken(
     webinarId: string
     maxVideoPosition: number
     completedAt: Date | null
+    attendedAt: Date | null
   }
 }> {
   const registration = await prisma.webinarRegistration.findFirst({
@@ -282,6 +283,7 @@ export async function validateAccessToken(
       webinarId: registration.webinarId,
       maxVideoPosition: registration.maxVideoPosition,
       completedAt: registration.completedAt,
+      attendedAt: registration.attendedAt,
     },
   }
 }
